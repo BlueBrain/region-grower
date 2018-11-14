@@ -1,0 +1,6 @@
+[gerrit]
+host=bbpcode.epfl.ch
+port=22
+project=molecularsystems/region-grower
+defaultbranch=master
+defaultremote=origin

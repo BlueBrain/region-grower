@@ -1,0 +1,11 @@
+Run Default
+{
+    CircuitPath /gpfs/bbp.cscs.ch/project/proj68/circuits/dev-large/20180920-25um
+    nrnPath /gpfs/bbp.cscs.ch/project/proj68/circuits/dev-large/20180920-25um/connectome/functional
+    MorphologyPath /gpfs/bbp.cscs.ch/project/proj66/entities/morphologies/2018.02.16
+    METypePath /gpfs/bbp.cscs.ch/project/proj66/entities/emodels/2018.02.26.dev0/hoc
+    MEComboInfoFile /gpfs/bbp.cscs.ch/project/proj66/entities/emodels/2018.02.26.dev0/mecombo_emodel.tsv
+    CellLibraryFile circuit.mvd3
+    BioName /gpfs/bbp.cscs.ch/project/proj68/circuits/dev-large/20180920-25um/bioname
+    Atlas /gpfs/bbp.cscs.ch/project/proj68/entities/dev/atlas/ccf_2017-25um/20181012/
+}
