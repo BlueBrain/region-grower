@@ -1,6 +1,5 @@
 # Use spatial properties to grow a cell
 
-from bluepy.v2 import Circuit
 from voxcell import OrientationField
 from voxcell.nexus.voxelbrain import Atlas
 #from voxcell.nexus.voxelbrain import CellCollection
@@ -15,14 +14,12 @@ class SpaceContext(object):
     basic functionality to query spatial properties
     required for neuronal synthesis.
     """
-    def __init__(self, circuit_config):
+    def __init__(self, atlas_file, cells_file):
         """Initialization with an atlas (of a BBP circuit)
         and the corresponding cell types
         """
-        circuit = Circuit(circuit_config)
-        self.atlas = circuit.atlas
-        self.cells = circuit.cells
-        self.cell_properties = self.cells.get(properties=['mtype', 'x', 'y', 'z'])
+        self.atlas = Atlas.open(atlas_file)
+        self.cells = CellCollection.load(cells_file)
         self.hierarchy = self.atlas.load_hierarchy()
         self.brain_regions = self.atlas.load_data('brain_regions')
         self.depths = self.atlas.load_data('depth')
@@ -37,17 +34,17 @@ class SpaceContext(object):
     def get_cell_position(self, n=23):
         """Returns the position of the cell with ID=n
         """
-        return self.cells.positions(n).values
+        return self.cells.positions[n]
 
     def get_mtype(self, n=23):
         """Returns the mtype of the selected cell with ID=n
         """
-        return self.cells.get(n).mtype
+        return self.cells.properties.mtype[n]
 
     def get_brain_region(self, n=23):
         """Returns the brain region of the selected cell with ID=n
         """
-        return self.cells.get(n).region
+        return self.cells.properties.region[n]
 
     def get_brain_region_name(self, position):
         """Returns the brain region for the selected cell with ID=n that corresponds
@@ -66,7 +63,7 @@ class SpaceContext(object):
 
     def filter_by_mtype(self, mtype):
         '''Returns ids of cell with the given mtype'''
-        return self.cell_properties.index[self.cell_properties.mtype.str.contains(mtype)]
+        return self.cells.properties.index[self.cells.properties.mtype.str.contains(mtype)]
 
     def get_depth(self, position):
         """Returns the depth for the selected cell with ID=n that corresponds
