@@ -8,7 +8,6 @@ from setuptools import find_packages
 VERSION = "0.0.0"
 
 REQS = ['voxcell>=2.5.4',
-        'bluepy>=0.12.7',
         'mayavi>=4.6.2']
 
 
