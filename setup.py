@@ -7,8 +7,7 @@ from setuptools import find_packages
 
 VERSION = "0.0.0"
 
-REQS = ['voxcell>=2.5.4',
-        'mayavi>=4.6.2']
+REQS = ['voxcell>=2.5.4',]
 
 
 config = {
@@ -16,6 +15,8 @@ config = {
     'install_requires': REQS,
     'packages': find_packages(),
     'name': 'space_synthesis',
+    'extras_require': {
+    'validate': ['mayavi==4.5.0'],
 }
 
 setup(**config)
