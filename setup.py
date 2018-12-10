@@ -14,6 +14,7 @@ setup(**{
         'voxcell>=2.5.4',
         'click>=7.0',
         'tqdm>=4.28.1',
+        'tns>=1.0.1',
     ],
     'packages': find_packages(),
     'extras_require': {
