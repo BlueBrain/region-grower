@@ -7,23 +7,24 @@ from voxcell import CellCollection
 import numpy as np
 
 from collections import namedtuple
-SpacePos = namedtuple('SpacePos', ['position','depth', 'orientation', 'thickness_layers'])
+SpacePos = namedtuple(
+    'SpacePos', ['position', 'depth', 'orientation', 'thickness_layers'])
+
 
 class SpaceContext(object):
     """Loads spatial information and provides
     basic functionality to query spatial properties
     required for neuronal synthesis.
     """
-    def __init__(self, atlas_file, cells_file):
-        """Initialization with an atlas (of a BBP circuit)
-        and the corresponding cell types
-        """
+
+    def __init__(self, atlas_file):
+        """Initialization with an atlas (of a BBP circuit)"""
         self.atlas = Atlas.open(atlas_file)
-        self.cells = CellCollection.load(cells_file)
         self.hierarchy = self.atlas.load_hierarchy()
         self.brain_regions = self.atlas.load_data('brain_regions')
         self.depths = self.atlas.load_data('depth')
-        self.orientations = self.atlas.load_data('orientation', cls=OrientationField)
+        self.orientations = self.atlas.load_data(
+            'orientation', cls=OrientationField)
         self.L1 = self.atlas.load_data('thickness:L1')
         self.L2 = self.atlas.load_data('thickness:L2')
         self.L3 = self.atlas.load_data('thickness:L3')
@@ -31,20 +32,25 @@ class SpaceContext(object):
         self.L5 = self.atlas.load_data('thickness:L5')
         self.L6 = self.atlas.load_data('thickness:L6')
 
-    def get_cell_position(self, n=23):
-        """Returns the position of the cell with ID=n
-        """
-        return self.cells.positions[n]
+    def get_corrected_params(self, params, position):
+        '''Return a copy of the passed parameter with the correct orientation and
+        recentered at [0,0,0]'''
+        result = dict(params)
+        result['origin'] = [0, 0, 0]
+        orientations = [
+            self.get_orientation(position, i) for i in params['apical']['orientation']
+        ]
 
-    def get_mtype(self, n=23):
-        """Returns the mtype of the selected cell with ID=n
-        """
-        return self.cells.properties.mtype[n]
+        result['apical'].update({
+            'branching_method': 'bio_oriented',
+            'randomness': 0.18,
+            'targeting': 0.18,
+            'apical_distance': 200,
+            'radius': 0.7,
+            'orientation': orientations,
+        })
 
-    def get_brain_region(self, n=23):
-        """Returns the brain region of the selected cell with ID=n
-        """
-        return self.cells.properties.region[n]
+        return result
 
     def get_brain_region_name(self, position):
         """Returns the brain region for the selected cell with ID=n that corresponds
@@ -57,13 +63,9 @@ class SpaceContext(object):
            to the position extracted from get_cell_position
         """
         if vector is None:
-            vector = [0, 1, 0] # assume direction towards the pia.
+            vector = [0, 1, 0]  # assume direction towards the pia.
 
         return np.dot(self.orientations.lookup(position), vector)[0]
-
-    def filter_by_mtype(self, mtype):
-        '''Returns ids of cell with the given mtype'''
-        return self.cells.properties.index[self.cells.properties.mtype.str.contains(mtype)]
 
     def get_depth(self, position):
         """Returns the depth for the selected cell with ID=n that corresponds

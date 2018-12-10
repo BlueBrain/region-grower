@@ -1,2 +1,2 @@
 all:
-	python space_synthesis/main.py
+	python region_grower/main.py
