@@ -17,9 +17,9 @@ class SpaceContext(object):
     required for neuronal synthesis.
     """
 
-    def __init__(self, atlas_file):
+    def __init__(self, atlas):
         """Initialization with an atlas (of a BBP circuit)"""
-        self.atlas = Atlas.open(atlas_file)
+        self.atlas = atlas
         self.hierarchy = self.atlas.load_hierarchy()
         self.brain_regions = self.atlas.load_data('brain_regions')
         self.depths = self.atlas.load_data('depth')

@@ -6,7 +6,6 @@ import numpy as np
 from tqdm import tqdm
 
 import tns
-from region_grower.context import SpaceContext
 from region_grower.utils import NumpyEncoder
 
 @click.group()
