@@ -1,12 +1,10 @@
-# Use spatial properties to grow a cell
-
-from voxcell import OrientationField
-from voxcell.nexus.voxelbrain import Atlas
-#from voxcell.nexus.voxelbrain import CellCollection
-from voxcell import CellCollection
-import numpy as np
+'''Use spatial properties to grow a cell'''
 
 from collections import namedtuple
+
+import numpy as np
+from voxcell import OrientationField
+
 SpacePos = namedtuple(
     'SpacePos', ['position', 'depth', 'orientation', 'thickness_layers'])
 
@@ -85,6 +83,7 @@ class SpaceContext(object):
                 self.L6.lookup(position)]
 
     def get_data(self, position):
+        '''Get data'''
         depth = self.get_depth(position)
         orientation = self.get_orientation(position)
         thickness_layers = self.get_thickness_layers(position)

@@ -1,12 +1,13 @@
+'''App module that defines the command line interface'''
 import json
 import os
 
 import click
-import numpy as np
 from tqdm import tqdm
 
 import tns
 from region_grower.utils import NumpyEncoder
+
 
 @click.group()
 def cli():
@@ -27,6 +28,7 @@ def train_tmd(input_folder, output_filename):
         for mtype in tqdm(os.listdir(input_folder))
     }
 
+    output_folder = '.'
     with open(os.path.join(output_folder, output_filename), 'w') as f:
         json.dump(distributions, f, cls=NumpyEncoder)
 
