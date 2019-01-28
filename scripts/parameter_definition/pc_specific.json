@@ -1,0 +1,99 @@
+{
+    "L2_IPC": {
+        "bias": 0.7,
+        "bias_length": 100,
+        "growth_method": "tmd_gradient_path",
+        "orientation": [
+            [
+                0.0,
+                -1.0,
+                0.0
+            ]
+        ]
+    },
+    "L2_TPC:A": {
+        "growth_method": "tmd_apical_path"
+    },
+    "L2_TPC:B": {
+        "bias": 0.6,
+        "bias_length": 70,
+        "growth_method": "tmd_gradient_path"
+    },
+    "L3_TPC:A": {
+        "bias": 0.5,
+        "bias_length": 100,
+        "growth_method": "tmd_gradient_path"
+    },
+    "L4_SSC": {
+        "growth_method": "tmd_apical_path"
+    },
+    "L4_TPC": {
+        "growth_method": "tmd_apical_path"
+    },
+    "L4_UPC": {
+        "growth_method": "tmd_apical_path"
+    },
+    "L5_TPC:A": {
+        "bias": 0.3,
+        "bias_length": 200,
+        "growth_method": "tmd_gradient_path"
+    },
+    "L5_TPC:B": {
+        "bias": 0.7,
+        "bias_length": 140,
+        "growth_method": "tmd_gradient_path"
+    },
+    "L5_TPC:C": {
+        "growth_method": "tmd_apical_path"
+    },
+    "L5_UPC": {
+        "growth_method": "tmd_apical"
+    },
+    "L6_BPC": {
+        "bias": 0.4,
+        "bias_length": 120,
+        "growth_method": "tmd_gradient_path",
+        "orientation": [
+            [
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.63,
+                -0.77,
+                0.0
+            ]
+        ]
+    },
+    "L6_HPC": {
+        "bias": 0.2,
+        "bias_length": 50,
+        "growth_method": "tmd_gradient_path"
+    },
+    "L6_IPC": {
+        "bias": 0.62,
+        "bias_length": 80,
+        "growth_method": "tmd_gradient_path",
+        "orientation": [
+            [
+                0.0,
+                -1.0,
+                0.0
+            ]
+        ]
+    },
+    "L6_TPC:A": {
+        "bias": 0.4,
+        "bias_length": 100,
+        "growth_method": "tmd_gradient_path"
+    },
+    "L6_TPC:C": {
+        "bias": 0.5,
+        "bias_length": 100,
+        "growth_method": "tmd_gradient_path"
+    },
+    "L6_UPC": {
+        "growth_method": "tmd_apical"
+    }
+}

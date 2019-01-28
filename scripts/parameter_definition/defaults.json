@@ -1,0 +1,63 @@
+{
+    "IN": {
+        "apical": {},
+        "axon": {},
+        "basal": {
+            "branching_method": "bio_oriented",
+            "growth_method": "tmd",
+            "modify": null,
+            "orientation": null,
+            "radius": 0.3,
+            "randomness": 0.15,
+            "targeting": 0.12,
+            "tree_type": 3
+        },
+        "grow_types": [
+            "basal"
+        ],
+        "origin": [
+            0.0,
+            0.0,
+            0.0
+        ]
+    },
+    "PC": {
+        "apical": {
+            "apical_distance": 0,
+            "branching_method": "bio_oriented",
+            "growth_method": "tmd_apical",
+            "modify": null,
+            "orientation": [
+                [
+                    0.0,
+                    1.0,
+                    0.0
+                ]
+            ],
+            "radius": 0.35,
+            "randomness": 0.18,
+            "targeting": 0.14,
+            "tree_type": 4
+        },
+        "axon": {},
+        "basal": {
+            "branching_method": "bio_oriented",
+            "growth_method": "tmd",
+            "modify": null,
+            "orientation": null,
+            "radius": 0.3,
+            "randomness": 0.18,
+            "targeting": 0.12,
+            "tree_type": 3
+        },
+        "grow_types": [
+            "basal",
+            "apical"
+        ],
+        "origin": [
+            0.0,
+            0.0,
+            0.0
+        ]
+    }
+}
