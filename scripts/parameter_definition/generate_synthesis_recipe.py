@@ -1,5 +1,6 @@
 import json
 import numpy as np
+import copy
 
 def run():
     # Get all m-types within current circuit
@@ -30,10 +31,10 @@ def run():
 
     # Fill in dictionary with parameters for each m-type
     for m in mtypes_all:
-        mdict[m] = defaults[pc_in[m]]
+        mdict[m] = copy.deepcopy(defaults[pc_in[m]])
         # Redefine pc-specific data
         if m in pc_specific:
-            mdict[m].update(pc_specific[m])
+            mdict[m]['apical'].update(pc_specific[m])
 
     # Save the updated parameters for all m-types
     with open('tmd_parameters.json', 'w') as F:

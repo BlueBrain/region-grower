@@ -332,13 +332,15 @@
     "L2_IPC": {
         "apical": {
             "apical_distance": 0,
+            "bias": 0.7,
+            "bias_length": 100,
             "branching_method": "bio_oriented",
-            "growth_method": "tmd_apical",
+            "growth_method": "tmd_gradient_path",
             "modify": null,
             "orientation": [
                 [
                     0.0,
-                    1.0,
+                    -1.0,
                     0.0
                 ]
             ],
@@ -358,19 +360,9 @@
             "targeting": 0.12,
             "tree_type": 3
         },
-        "bias": 0.5,
-        "bias_length": 100,
         "grow_types": [
             "basal",
             "apical"
-        ],
-        "growth_method": "tmd_apical",
-        "orientation": [
-            [
-                0.0,
-                -1.0,
-                0.0
-            ]
         ],
         "origin": [
             0.0,
@@ -382,7 +374,7 @@
         "apical": {
             "apical_distance": 0,
             "branching_method": "bio_oriented",
-            "growth_method": "tmd_apical",
+            "growth_method": "tmd_apical_path",
             "modify": null,
             "orientation": [
                 [
@@ -407,19 +399,9 @@
             "targeting": 0.12,
             "tree_type": 3
         },
-        "bias": 0.5,
-        "bias_length": 100,
         "grow_types": [
             "basal",
             "apical"
-        ],
-        "growth_method": "tmd_apical",
-        "orientation": [
-            [
-                0.0,
-                -1.0,
-                0.0
-            ]
         ],
         "origin": [
             0.0,
@@ -430,8 +412,10 @@
     "L2_TPC:B": {
         "apical": {
             "apical_distance": 0,
+            "bias": 0.6,
+            "bias_length": 70,
             "branching_method": "bio_oriented",
-            "growth_method": "tmd_apical",
+            "growth_method": "tmd_gradient_path",
             "modify": null,
             "orientation": [
                 [
@@ -456,19 +440,9 @@
             "targeting": 0.12,
             "tree_type": 3
         },
-        "bias": 0.5,
-        "bias_length": 100,
         "grow_types": [
             "basal",
             "apical"
-        ],
-        "growth_method": "tmd_apical",
-        "orientation": [
-            [
-                0.0,
-                -1.0,
-                0.0
-            ]
         ],
         "origin": [
             0.0,
@@ -479,8 +453,10 @@
     "L3_TPC:A": {
         "apical": {
             "apical_distance": 0,
+            "bias": 0.5,
+            "bias_length": 100,
             "branching_method": "bio_oriented",
-            "growth_method": "tmd_apical",
+            "growth_method": "tmd_gradient_path",
             "modify": null,
             "orientation": [
                 [
@@ -505,19 +481,9 @@
             "targeting": 0.12,
             "tree_type": 3
         },
-        "bias": 0.5,
-        "bias_length": 100,
         "grow_types": [
             "basal",
             "apical"
-        ],
-        "growth_method": "tmd_apical",
-        "orientation": [
-            [
-                0.0,
-                -1.0,
-                0.0
-            ]
         ],
         "origin": [
             0.0,
@@ -554,19 +520,9 @@
             "targeting": 0.12,
             "tree_type": 3
         },
-        "bias": 0.5,
-        "bias_length": 100,
         "grow_types": [
             "basal",
             "apical"
-        ],
-        "growth_method": "tmd_apical",
-        "orientation": [
-            [
-                0.0,
-                -1.0,
-                0.0
-            ]
         ],
         "origin": [
             0.0,
@@ -776,7 +732,7 @@
         "apical": {
             "apical_distance": 0,
             "branching_method": "bio_oriented",
-            "growth_method": "tmd_apical",
+            "growth_method": "tmd_apical_path",
             "modify": null,
             "orientation": [
                 [
@@ -801,19 +757,9 @@
             "targeting": 0.12,
             "tree_type": 3
         },
-        "bias": 0.5,
-        "bias_length": 100,
         "grow_types": [
             "basal",
             "apical"
-        ],
-        "growth_method": "tmd_apical",
-        "orientation": [
-            [
-                0.0,
-                -1.0,
-                0.0
-            ]
         ],
         "origin": [
             0.0,
@@ -825,7 +771,7 @@
         "apical": {
             "apical_distance": 0,
             "branching_method": "bio_oriented",
-            "growth_method": "tmd_apical",
+            "growth_method": "tmd_apical_path",
             "modify": null,
             "orientation": [
                 [
@@ -850,19 +796,9 @@
             "targeting": 0.12,
             "tree_type": 3
         },
-        "bias": 0.5,
-        "bias_length": 100,
         "grow_types": [
             "basal",
             "apical"
-        ],
-        "growth_method": "tmd_apical",
-        "orientation": [
-            [
-                0.0,
-                -1.0,
-                0.0
-            ]
         ],
         "origin": [
             0.0,
@@ -874,7 +810,7 @@
         "apical": {
             "apical_distance": 0,
             "branching_method": "bio_oriented",
-            "growth_method": "tmd_apical",
+            "growth_method": "tmd_apical_path",
             "modify": null,
             "orientation": [
                 [
@@ -899,19 +835,9 @@
             "targeting": 0.12,
             "tree_type": 3
         },
-        "bias": 0.5,
-        "bias_length": 100,
         "grow_types": [
             "basal",
             "apical"
-        ],
-        "growth_method": "tmd_apical",
-        "orientation": [
-            [
-                0.0,
-                -1.0,
-                0.0
-            ]
         ],
         "origin": [
             0.0,
@@ -1120,8 +1046,10 @@
     "L5_TPC:A": {
         "apical": {
             "apical_distance": 0,
+            "bias": 0.3,
+            "bias_length": 200,
             "branching_method": "bio_oriented",
-            "growth_method": "tmd_apical",
+            "growth_method": "tmd_gradient_path",
             "modify": null,
             "orientation": [
                 [
@@ -1146,19 +1074,9 @@
             "targeting": 0.12,
             "tree_type": 3
         },
-        "bias": 0.5,
-        "bias_length": 100,
         "grow_types": [
             "basal",
             "apical"
-        ],
-        "growth_method": "tmd_apical",
-        "orientation": [
-            [
-                0.0,
-                -1.0,
-                0.0
-            ]
         ],
         "origin": [
             0.0,
@@ -1169,8 +1087,10 @@
     "L5_TPC:B": {
         "apical": {
             "apical_distance": 0,
+            "bias": 0.7,
+            "bias_length": 140,
             "branching_method": "bio_oriented",
-            "growth_method": "tmd_apical",
+            "growth_method": "tmd_gradient_path",
             "modify": null,
             "orientation": [
                 [
@@ -1195,19 +1115,9 @@
             "targeting": 0.12,
             "tree_type": 3
         },
-        "bias": 0.5,
-        "bias_length": 100,
         "grow_types": [
             "basal",
             "apical"
-        ],
-        "growth_method": "tmd_apical",
-        "orientation": [
-            [
-                0.0,
-                -1.0,
-                0.0
-            ]
         ],
         "origin": [
             0.0,
@@ -1219,7 +1129,7 @@
         "apical": {
             "apical_distance": 0,
             "branching_method": "bio_oriented",
-            "growth_method": "tmd_apical",
+            "growth_method": "tmd_apical_path",
             "modify": null,
             "orientation": [
                 [
@@ -1244,19 +1154,9 @@
             "targeting": 0.12,
             "tree_type": 3
         },
-        "bias": 0.5,
-        "bias_length": 100,
         "grow_types": [
             "basal",
             "apical"
-        ],
-        "growth_method": "tmd_apical",
-        "orientation": [
-            [
-                0.0,
-                -1.0,
-                0.0
-            ]
         ],
         "origin": [
             0.0,
@@ -1293,19 +1193,9 @@
             "targeting": 0.12,
             "tree_type": 3
         },
-        "bias": 0.5,
-        "bias_length": 100,
         "grow_types": [
             "basal",
             "apical"
-        ],
-        "growth_method": "tmd_apical",
-        "orientation": [
-            [
-                0.0,
-                -1.0,
-                0.0
-            ]
         ],
         "origin": [
             0.0,
@@ -1338,13 +1228,20 @@
     "L6_BPC": {
         "apical": {
             "apical_distance": 0,
+            "bias": 0.4,
+            "bias_length": 120,
             "branching_method": "bio_oriented",
-            "growth_method": "tmd_apical",
+            "growth_method": "tmd_gradient_path",
             "modify": null,
             "orientation": [
                 [
                     0.0,
                     1.0,
+                    0.0
+                ],
+                [
+                    0.63,
+                    -0.77,
                     0.0
                 ]
             ],
@@ -1364,19 +1261,9 @@
             "targeting": 0.12,
             "tree_type": 3
         },
-        "bias": 0.5,
-        "bias_length": 100,
         "grow_types": [
             "basal",
             "apical"
-        ],
-        "growth_method": "tmd_apical",
-        "orientation": [
-            [
-                0.0,
-                -1.0,
-                0.0
-            ]
         ],
         "origin": [
             0.0,
@@ -1453,8 +1340,10 @@
     "L6_HPC": {
         "apical": {
             "apical_distance": 0,
+            "bias": 0.2,
+            "bias_length": 50,
             "branching_method": "bio_oriented",
-            "growth_method": "tmd_apical",
+            "growth_method": "tmd_gradient_path",
             "modify": null,
             "orientation": [
                 [
@@ -1479,19 +1368,9 @@
             "targeting": 0.12,
             "tree_type": 3
         },
-        "bias": 0.5,
-        "bias_length": 100,
         "grow_types": [
             "basal",
             "apical"
-        ],
-        "growth_method": "tmd_apical",
-        "orientation": [
-            [
-                0.0,
-                -1.0,
-                0.0
-            ]
         ],
         "origin": [
             0.0,
@@ -1502,13 +1381,15 @@
     "L6_IPC": {
         "apical": {
             "apical_distance": 0,
+            "bias": 0.62,
+            "bias_length": 80,
             "branching_method": "bio_oriented",
-            "growth_method": "tmd_apical",
+            "growth_method": "tmd_gradient_path",
             "modify": null,
             "orientation": [
                 [
                     0.0,
-                    1.0,
+                    -1.0,
                     0.0
                 ]
             ],
@@ -1528,19 +1409,9 @@
             "targeting": 0.12,
             "tree_type": 3
         },
-        "bias": 0.5,
-        "bias_length": 100,
         "grow_types": [
             "basal",
             "apical"
-        ],
-        "growth_method": "tmd_apical",
-        "orientation": [
-            [
-                0.0,
-                -1.0,
-                0.0
-            ]
         ],
         "origin": [
             0.0,
@@ -1661,8 +1532,10 @@
     "L6_TPC:A": {
         "apical": {
             "apical_distance": 0,
+            "bias": 0.4,
+            "bias_length": 100,
             "branching_method": "bio_oriented",
-            "growth_method": "tmd_apical",
+            "growth_method": "tmd_gradient_path",
             "modify": null,
             "orientation": [
                 [
@@ -1687,19 +1560,9 @@
             "targeting": 0.12,
             "tree_type": 3
         },
-        "bias": 0.5,
-        "bias_length": 100,
         "grow_types": [
             "basal",
             "apical"
-        ],
-        "growth_method": "tmd_apical",
-        "orientation": [
-            [
-                0.0,
-                -1.0,
-                0.0
-            ]
         ],
         "origin": [
             0.0,
@@ -1710,8 +1573,10 @@
     "L6_TPC:C": {
         "apical": {
             "apical_distance": 0,
+            "bias": 0.5,
+            "bias_length": 100,
             "branching_method": "bio_oriented",
-            "growth_method": "tmd_apical",
+            "growth_method": "tmd_gradient_path",
             "modify": null,
             "orientation": [
                 [
@@ -1736,19 +1601,9 @@
             "targeting": 0.12,
             "tree_type": 3
         },
-        "bias": 0.5,
-        "bias_length": 100,
         "grow_types": [
             "basal",
             "apical"
-        ],
-        "growth_method": "tmd_apical",
-        "orientation": [
-            [
-                0.0,
-                -1.0,
-                0.0
-            ]
         ],
         "origin": [
             0.0,
@@ -1785,19 +1640,9 @@
             "targeting": 0.12,
             "tree_type": 3
         },
-        "bias": 0.5,
-        "bias_length": 100,
         "grow_types": [
             "basal",
             "apical"
-        ],
-        "growth_method": "tmd_apical",
-        "orientation": [
-            [
-                0.0,
-                -1.0,
-                0.0
-            ]
         ],
         "origin": [
             0.0,
