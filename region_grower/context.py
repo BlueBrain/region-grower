@@ -35,18 +35,12 @@ class SpaceContext(object):
         recentered at [0,0,0]'''
         result = dict(params)
         result['origin'] = [0, 0, 0]
-        orientations = [
-            self.get_orientation(position, i) for i in params['apical']['orientation']
-        ]
 
-        result['apical'].update({
-            'branching_method': 'bio_oriented',
-            'randomness': 0.18,
-            'targeting': 0.18,
-            'apical_distance': 200,
-            'radius': 0.7,
-            'orientation': orientations,
-        })
+        if 'apical' in params['grow_types']:
+            result['apical']['orientation'] = [
+                self.get_orientation(position, i)
+                for i in params['apical']['orientation']
+            ]
 
         return result
 
