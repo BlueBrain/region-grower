@@ -1,43 +1,91 @@
+#!/usr/bin/env python
+
+from __future__ import print_function
+
+import argparse
 import json
+import os.path
+import multiprocessing
+import sys
+
 import numpy as np
+
 from tns import extract_input
 
-data = {'mouse': '/gpfs/bbp.cscs.ch/project/proj49/LidaSYN/BioInput/Mouse/',
-        'rat': '/gpfs/bbp.cscs.ch/project/proj49/LidaSYN/BioInput/Rat/'}
-output_file = 'tmd_distributions.json'
 
-# Get all m-types within current circuit
-# mtypes_all = np.unique(test.cells.properties.mtype.values)
-mtypes_all = np.array([u'L1_DAC', u'L1_HAC', u'L1_LAC', u'L1_NGC-DA', u'L1_NGC-SA',
-                       u'L1_SAC', u'L23_BP', u'L23_BTC', u'L23_CHC', u'L23_DBC',
-                       u'L23_LBC', u'L23_MC', u'L23_NBC', u'L23_NGC', u'L23_SBC',
-                       u'L2_IPC', u'L2_TPC', u'L3_TPC',
-                       u'L4_BP', u'L4_BTC', u'L4_CHC', u'L4_DBC', u'L4_LBC', u'L4_MC',
-                       u'L4_NBC', u'L4_NGC', u'L4_SBC', u'L4_SSC', u'L4_TPC', u'L4_UPC',
-                       u'L5_BP', u'L5_BTC', u'L5_CHC', u'L5_DBC', u'L5_LBC', u'L5_MC',
-                       u'L5_NBC', u'L5_SBC', u'L5_TPC', u'L5_UPC',
-                       u'L6_BPC', u'L6_BTC', u'L6_CHC',
-                       u'L6_DBC', u'L6_HPC', u'L6_IPC', u'L6_LBC', u'L6_MC', u'L6_NBC',
-                       u'L6_NGC', u'L6_SBC', u'L6_TPC', u'L6_UPC'])
+MTYPES = [
+    'L1_DAC', 'L1_HAC', 'L1_LAC', 'L1_NGC-DA', 'L1_NGC-SA', 'L1_SAC',
+    'L23_BP', 'L23_BTC', 'L23_CHC', 'L23_DBC', 'L23_LBC', 'L23_MC', 'L23_NBC', 'L23_NGC', 'L23_SBC',
+    'L2_IPC', 'L2_TPC:A', 'L2_TPC:B',
+    'L3_TPC:A', 'L3_TPC:B',
+    'L4_BP', 'L4_BTC', 'L4_CHC', 'L4_DBC', 'L4_LBC', 'L4_MC', 'L4_NBC', 'L4_NGC', 'L4_SBC', 'L4_SSC', 'L4_TPC', 'L4_UPC',
+    'L5_BP', 'L5_BTC', 'L5_CHC', 'L5_DBC', 'L5_LBC', 'L5_MC', 'L5_NBC', 'L5_NGC', 'L5_SBC', 'L5_TPC:A', 'L5_TPC:B', 'L5_TPC:C', 'L5_UPC',
+    'L6_BP', 'L6_BPC', 'L6_BTC', 'L6_CHC', 'L6_DBC', 'L6_HPC', 'L6_IPC', 'L6_LBC', 'L6_MC', 'L6_NBC', 'L6_NGC', 'L6_SBC', 'L6_TPC:A', 'L6_TPC:C', 'L6_UPC'
+]
 
 
-def run(species_select, mtypes, feature='path_distances_2'):
-    # Create new dictionary for all mtypes
-    mdict = {}
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
 
-    # Fill in dictionary with distributions for each m-type
-    for m in mtypes:
-        mdict[m] = extract_input.distributions(data.get(species_select) + m + '/',
-                                               neurite_types=['basal', 'apical'],
-                                               feature=feature)
-    # Hack for missing mtypes
-    mdict['L5_NGC'] = mdict['L6_NGC']
-    mdict['L6_BP'] = mdict['L5_BP']
 
-    # Save the updated parameters for all m-types
-    with open(output_file, 'w') as F:
-        json.dump(mdict, F, sort_keys=True)
+class Worker:
+    def __init__(self, base_dir, feature):
+        self.base_dir = base_dir
+        self.feature = feature
+
+    def check(self, mtype):
+        if not os.path.exists(os.path.join(self.base_dir, mtype)):
+            raise RuntimeError("No data for '%s'" % mtype)
+
+    def __call__(self, mtype):
+        print("%s..." % mtype, file=sys.stderr)
+        result = extract_input.distributions(
+            os.path.join(self.base_dir, mtype),
+            neurite_types=['basal', 'apical'],
+            feature=self.feature
+        )
+        print("%s...done" % mtype, file=sys.stderr)
+        return result
+
+
+def main(args):
+    worker = Worker(args.base_dir, args.feature)
+    for mtype in MTYPES:
+        worker.check(mtype)
+
+    if args.jobs is None:
+        mapper = map
+    else:
+        pool = multiprocessing.Pool(args.jobs)
+        mapper = pool.map
+    result = dict(zip(MTYPES, mapper(worker, MTYPES)))
+
+    with open(args.output, 'w') as f:
+        json.dump(result, f, sort_keys=True, indent=2, cls=NumpyEncoder)
 
 
 if __name__ == '__main__':
-    run(species_select='mouse', mtypes=mtypes_all)
+    parser = argparse.ArgumentParser("Extract TNS distributions")
+    parser.add_argument(
+        "base_dir",
+        help="Base morphology folder"
+    )
+    parser.add_argument(
+        "--feature",
+        help="??? [default: %(default)s]",
+        default="path_distances_2",
+    )
+    parser.add_argument(
+        "-j", "--jobs", type=int,
+        help="Number of jobs to run in parallel",
+        default=None
+    )
+    parser.add_argument(
+        "-o", "--output",
+        help="Path to output JSON file",
+        required=True
+    )
+    main(parser.parse_args())
