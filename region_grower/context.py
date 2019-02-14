@@ -24,23 +24,30 @@ class SpaceContext(object):
 
     def __init__(self, atlas, tmd_distributions_path, tmd_parameters_path):
         """Initialization with an atlas (of a BBP circuit)"""
-        self.atlas = atlas
-        self.brain_regions = self.atlas.load_data('brain_regions')
-        self.depths = self.atlas.load_data('depth')
-        self.orientations = self.atlas.load_data(
+        self.brain_regions = atlas.load_data('brain_regions')
+        self.depths = atlas.load_data('depth')
+        self.orientations = atlas.load_data(
             'orientation', cls=OrientationField)
-        self.L1 = self.atlas.load_data('thickness:L1')
-        self.L2 = self.atlas.load_data('thickness:L2')
-        self.L3 = self.atlas.load_data('thickness:L3')
-        self.L4 = self.atlas.load_data('thickness:L4')
-        self.L5 = self.atlas.load_data('thickness:L5')
-        self.L6 = self.atlas.load_data('thickness:L6')
+        self.L1 = atlas.load_data('thickness:L1')
+        self.L2 = atlas.load_data('thickness:L2')
+        self.L3 = atlas.load_data('thickness:L3')
+        self.L4 = atlas.load_data('thickness:L4')
+        self.L5 = atlas.load_data('thickness:L5')
+        self.L6 = atlas.load_data('thickness:L6')
 
         with open(tmd_distributions_path, 'r') as f:
             self.tmd_distributions = json.load(f)
 
         with open(tmd_parameters_path, 'r') as f:
             self.tmd_parameters = json.load(f)
+
+    def verify(self, mtypes):
+        """ Check that context has distributions / parameters for all given mtypes. """
+        for mtype in mtypes:
+            if mtype not in self.tmd_distributions['mtypes']:
+                raise RegionGrowerError("Missing distributions for mtype: '%s'" % mtype)
+            if mtype not in self.tmd_parameters:
+                raise RegionGrowerError("Missing parameters for mtype: '%s'" % mtype)
 
     def synthesize(self, position, mtype):
         '''Synthesize a cell based on the position and mtype'''
