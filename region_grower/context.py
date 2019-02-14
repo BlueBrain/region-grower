@@ -22,7 +22,7 @@ class SpaceContext(object):
     required for neuronal synthesis.
     """
 
-    def __init__(self, atlas, tmd_distributions_path, tmd_parameters_path):
+    def __init__(self, atlas, tmd_distributions_path, tmd_parameters_path, recenter=True):
         """Initialization with an atlas (of a BBP circuit)"""
         self.brain_regions = atlas.load_data('brain_regions')
         self.depths = atlas.load_data('depth')
@@ -34,6 +34,8 @@ class SpaceContext(object):
         self.L4 = atlas.load_data('thickness:L4')
         self.L5 = atlas.load_data('thickness:L5')
         self.L6 = atlas.load_data('thickness:L6')
+
+        self.recenter = recenter
 
         with open(tmd_distributions_path, 'r') as f:
             self.tmd_distributions = json.load(f)
@@ -55,6 +57,14 @@ class SpaceContext(object):
             self.tmd_parameters[mtype],
             self.tmd_distributions['metadata']['cortical_thickness'],
             position)
+
+        # Today we don't use the atlas during the synthesis (we just use it to
+        # generate the parameters)so we can
+        # grow the cell as if it was in [0, 0, 0]
+        # But the day we use it during the actual growth, we will need to grow the cell at its
+        # absolute position and translate to [0, 0, 0] after the growth
+        if self.recenter:
+            par['origin'] = [0, 0, 0]
 
         N = NeuronGrower(
             input_parameters=par, input_distributions=self.tmd_distributions['mtypes'][mtype])
