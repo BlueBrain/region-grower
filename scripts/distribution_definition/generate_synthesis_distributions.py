@@ -23,6 +23,12 @@ MTYPES = [
     'L6_BP', 'L6_BPC', 'L6_BTC', 'L6_CHC', 'L6_DBC', 'L6_HPC', 'L6_IPC', 'L6_LBC', 'L6_MC', 'L6_NBC', 'L6_NGC', 'L6_SBC', 'L6_TPC:A', 'L6_TPC:C', 'L6_UPC'
 ]
 
+# Experimental cortical thicknesses from which
+# the experimental cells were extracted
+# Ordering is L1 to L6
+THICKNESSES = {'mouse': [118.3, 93.01, 169.5, 178.6, 349.2, 420.5],
+               'rat': [165, 149, 353, 190, 525, 700]}
+
 
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -61,7 +67,8 @@ def main(args):
     else:
         pool = multiprocessing.Pool(args.jobs)
         mapper = pool.map
-    result = dict(zip(MTYPES, mapper(worker, MTYPES)))
+    result = {'mtypes': dict(zip(MTYPES, mapper(worker, MTYPES))),
+              'metadata': {'cortical_thickness': THICKNESSES[args.species]}}
 
     with open(args.output, 'w') as f:
         json.dump(result, f, sort_keys=True, indent=2, cls=NumpyEncoder)
@@ -72,6 +79,11 @@ if __name__ == '__main__':
     parser.add_argument(
         "base_dir",
         help="Base morphology folder"
+    )
+    parser.add_argument(
+        "--species",
+        choices=['mouse', 'rat'],
+        help="Whether mouse or rat. This is needed to get the correct source cortical thicknesses"
     )
     parser.add_argument(
         "--feature",
