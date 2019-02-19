@@ -11,7 +11,6 @@ from tns import NeuronGrower
 
 from region_grower import modify, RegionGrowerError
 
-
 SpacePos = namedtuple(
     'SpacePos', ['position', 'depth', 'orientation', 'thickness_layers'])
 
@@ -66,9 +65,13 @@ class SpaceContext(object):
         if self.recenter:
             par['origin'] = [0, 0, 0]
 
-        N = NeuronGrower(
+        grower = NeuronGrower(
             input_parameters=par, input_distributions=self.tmd_distributions['mtypes'][mtype])
-        return N.grow()
+
+        grower.grow()
+        grower.diametrize()
+
+        return grower.neuron
 
     def _cumulative_thicknesses(self, position):
         '''cumulative thicknesses starting at layer 1'''
