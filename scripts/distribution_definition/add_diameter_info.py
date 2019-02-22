@@ -25,7 +25,10 @@ def main(args):
 
     for mtype in d['mtypes'].keys():
         with open(os.path.join(args.diameter_folder, '{}.json'.format(mtype))) as f:
-            d['mtypes'][mtype]['diameter'] = json.load(f)
+            diam_info = json.load(f)
+            if not 'method' in diam_info:
+                diam_info['method'] = 'M5'
+            d['mtypes'][mtype]['diameter'] = diam_info
 
     with open(args.output_distrib, 'w+') as f:
         json.dump(d, f, indent=4, sort_keys=True)
