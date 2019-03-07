@@ -39,8 +39,6 @@ def test_get_layer():
                  4)
 
 
-
-
 def test_context():
     np.random.seed(0)
 
@@ -53,6 +51,11 @@ def test_context():
     context._get_layer = MagicMock(return_value = 1)
 
     neuron = context.synthesize([6001.39477031, 772.6250185, 3778.3698741], 'L2_TPC:A')
+
+    # This tests that input orientations are not mutated by the synthesize() call
+    assert_array_almost_equal(context.tmd_parameters['L2_TPC:A']['apical']['orientation'],
+                              [[0.0, 1.0, 0.0]])
+
     assert_array_almost_equal(neuron.soma.points,
                               np.array([[-6.2937384 ,  0.23849252,  0.        ],
                                         [-2.089914  , -5.7473774 ,  0.        ],
@@ -77,6 +80,5 @@ def test_context():
 
 
     assert_array_almost_equal(neuron.root_sections[0].diameters,
-                              np.array([1.008451, 1.002116, 0.985651, 0.96885 , 0.946666, 0.925244,
-       0.905946, 0.891195],
-                                       dtype=np.float32))
+                              np.array([1.058735, 1.052401, 1.035936, 1.019135, 0.99695 , 0.975528,
+                                        0.956231, 0.94148 ], dtype=np.float32))

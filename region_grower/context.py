@@ -1,6 +1,7 @@
 '''Use spatial properties to grow a cell'''
 
 from collections import namedtuple
+from copy import deepcopy
 import json
 
 import numpy as np
@@ -95,7 +96,7 @@ class SpaceContext(object):
     def _correct_position_orientation_scaling(self, params, cortical_thickness, position):
         '''Return a copy of the passed parameter with the correct orientation and
         recentered at [0,0,0]'''
-        result = dict(params)
+        result = deepcopy(params)
         result['origin'] = position
 
         for neurite_type in params['grow_types']:
