@@ -37,16 +37,31 @@ def create_dirs_per_mtype_from_xml(filename='./neuronDB.xml', output_dir='Subtyp
         shutil.copy(m.find('name').text + '.h5', mtype + '/' + m.find('name').text + '.h5')
 
 
+def subtitute_mtype(from_type, to_type, output_dir):
+    """If directory of to_type exists clean it up
+       by deleting existing data.
+       If not make directory.
+       Then copy all cells "from_type" to "to_type"
+    """
+    output_path = os.path.join(output_dir, to_type)
+    input_path = os.path.join(output_dir, from_type)
+    # Clean up or create output directory
+    shutil.rmtree(output_path, ignore_errors=True)
+    # Copy all cells from input to output
+    shutil.copytree(input_path, output_path)
+
+
 def hack_mtype_problems(output_dir='Subtypes/'):
     '''Generates missing mtypes and removes misclassified L6HPC'''
     # Hack missing morphology m-types
-    os.mkdir(output_dir + 'L5_NGC')
-    for m in os.listdir(output_dir + 'L6_NGC'):
-        shutil.copy(output_dir + 'L6_NGC/' + m, 'L5_NGC/' + m)
+    subtitute_mtype('L5_BP', 'L6_BP/', output_dir)
+    subtitute_mtype('L6_NGC/', 'L5_NGC/', output_dir)
 
-    os.mkdir(output_dir + 'L6_BP')
-    for m in os.listdir(output_dir + 'L5_BP'):
-        shutil.copy(output_dir + 's/L5_BP/' + m, 'L6_BP/' + m)
+    # Hack substitution morphology m-types
+    subtitute_mtype('L23_NGC', 'L4_NGC', output_dir)
+    subtitute_mtype('L5_CHC', 'L4_CHC', output_dir)
+    subtitute_mtype('L5_CHC', 'L6_CHC', output_dir)
+    subtitute_mtype('L5_DBC', 'L6_DBC', output_dir)
 
     # Cleaning up directory of L6_HPC cells to exclude misclassified L6_BPC as L6_HPC
     pop = tmd.io.load_population(output_dir + 'L6_HPC')
