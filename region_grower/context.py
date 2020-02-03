@@ -70,7 +70,6 @@ class SpaceContext(object):
             input_parameters=par, input_distributions=self.tmd_distributions['mtypes'][mtype])
 
         grower.grow()
-        grower.diametrize()
 
         return grower.neuron
 

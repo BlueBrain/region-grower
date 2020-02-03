@@ -9,4 +9,8 @@ class NumpyEncoder(json.JSONEncoder):
         '''encoder'''
         if isinstance(o, np.ndarray):
             return o.tolist()
+        if isinstance(o, np.floating):
+            return float(o)
+        if isinstance(o, np.integer):
+            return int(o)
         return json.JSONEncoder.default(self, o)
