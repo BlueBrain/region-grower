@@ -40,35 +40,39 @@
             "metric": "path_distances",
             "tree_type": 4
         },
-        "axon": {
-            "randomness": 0.15,
-            "targeting": 0.12,
-            "radius": 0.3,
-            "orientation": [
-                [
-                    0.0,
-                    -1.0,
-                    0.0
-                ]
-            ],
-            "growth_method": "tmd",
-            "branching_method": "bio_oriented",
-            "modify": null,
-            "step_size": {
-                "norm": {
-                    "mean": 1.0,
-                    "std": 0.2
-                }
-            },
-            "metric": "path_distances",
-            "tree_type": 2
-        },
-        "origin": "data_test/L2_TPC:A",
+        "axon": {},
+        "origin": "input-cells/L2_TPC:A",
         "grow_types": [
             "basal",
-            "apical",
-            "axon"
+            "apical"
         ],
-        "diameter_params": {"method": "default"}
+        "diameter_params": {
+            "extra_params": {
+                "generic": {
+                    "taper": {
+                        "max": 0.005,
+                        "max_residual": 100,
+                        "min": -0.01,
+                        "zeros": 1e-08
+                    },
+                    "terminal_threshold": 2.0,
+                    "threshold": {
+                        "apical": 0.2,
+                        "basal": 1.0
+                    },
+                    "trunk_max_tries": 100
+                }
+            },
+            "models": [
+                "generic"
+            ],
+            "mtypes_sort": "mtypes",
+            "n_samples": 5,
+            "neurite_types": [
+                "basal",
+                "apical"
+            ],
+            "method": "external"
+        }
     }
 }

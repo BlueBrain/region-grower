@@ -14,12 +14,13 @@ setup(
         'voxcell>=2.5.4',
         'click>=7.0',
         'tqdm>=4.28.1',
-        'tns>=2.0.2',
+        'tns>=2.0.4',
+        'diameter-synthesis>=0.0.13'
     ],
     packages=find_packages(),
     entry_points={
         'console_scripts': [
-            'region-grower=region_grower.app:cli'
+            'region-grower=region_grower.cli:cli'
         ]
     },
 )
