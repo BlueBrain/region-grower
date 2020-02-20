@@ -14,11 +14,13 @@ setup(
         'attrs>=19.3.0',
         'click>=7.0',
         'diameter-synthesis>=0.0.13',
+        'morphio>=2.3.4',
         'tns>=2.0.4',
         'tqdm>=4.28.1',
         'voxcell>=2.5.4',
     ],
     packages=find_packages(),
+    python_requires='>=3.6',
     entry_points={
         'console_scripts': [
             'region-grower=region_grower.cli:cli'

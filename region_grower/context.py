@@ -12,6 +12,7 @@ from copy import deepcopy
 import json
 
 import attr
+import morphio
 import numpy as np
 from voxcell import OrientationField
 from voxcell.cell_collection import CellCollection
@@ -27,10 +28,12 @@ SpacePos = namedtuple(
 
 
 @attr.s
-class MetaData:
+class SynthesisResult:
     '''
-    MetaData to be returned by SpaceContext.synthesized()
+    The object returned by SpaceContext.synthesized()
     '''
+    #: The grown morphology
+    neuron = attr.ib(type=morphio.mut.Morphology)  # pylint: disable=no-member
 
     #: The apical points
     apical_points = attr.ib(type=[])
@@ -72,13 +75,8 @@ class SpaceContext(object):
             if mtype not in self.tmd_parameters:
                 raise RegionGrowerError("Missing parameters for mtype: '%s'" % mtype)
 
-    def synthesize(self, position, mtype):
-        """Synthesize a cell based on the position and mtype.
-
-        Returns:
-            a tuple (Morphology, MetaData) of a synthesized morphology
-                and its metadata
-        """
+    def synthesize(self, position, mtype) -> SynthesisResult:
+        """Synthesize a cell based on the position and mtype."""
         par = self._correct_position_orientation_scaling(
             self.tmd_parameters[mtype],
             self.tmd_distributions["metadata"]["cortical_thickness"],
@@ -113,9 +111,7 @@ class SpaceContext(object):
         )
         grower.grow()
 
-        metadata = MetaData(grower.apical_points or [])
-
-        return grower.neuron, metadata
+        return SynthesisResult(grower.neuron, grower.apical_points or [])
 
     def _cumulative_thicknesses(self, position):
         """cumulative thicknesses starting at layer 1"""

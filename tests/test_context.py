@@ -50,15 +50,15 @@ def test_context():
     context._cumulative_thicknesses = MagicMock(return_value = [ 125, 225, 450, 575, 900, 1250])
     context._get_layer = MagicMock(return_value = 1)
 
-    neuron, metadata = context.synthesize([6001.39477031, 772.6250185, 3778.3698741], 'L2_TPC:A')
+    result = context.synthesize([6001.39477031, 772.6250185, 3778.3698741], 'L2_TPC:A')
 
-    assert_array_almost_equal(metadata.apical_points, [[-14.207288, -34.351606,  -9.616721]])
+    assert_array_almost_equal(result.apical_points, [[-14.207288, -34.351606,  -9.616721]])
 
     # This tests that input orientations are not mutated by the synthesize() call
     assert_array_almost_equal(context.tmd_parameters['L2_TPC:A']['apical']['orientation'],
                               [[0.0, 1.0, 0.0]])
 
-    assert_array_almost_equal(neuron.soma.points,
+    assert_array_almost_equal(result.neuron.soma.points,
                               np.array([[ 9.104976 ,  -0.8350304,  0.,      0.],
                                         [ 0.1265565,  9.05724   ,  0.,      0.],
                                         [-4.1508913,  7.8628845 ,  0.,      0.],
@@ -68,8 +68,8 @@ def test_context():
                                         [ 4.670966 , -7.8600206 ,  0.,      0.]],
                                        dtype=np.float32))
 
-    assert_equal(len(neuron.root_sections), 7)
-    assert_array_almost_equal(neuron.neurites[0].root_node.points,
+    assert_equal(len(result.neuron.root_sections), 7)
+    assert_array_almost_equal(result.neuron.neurites[0].root_node.points,
                               np.array(
                                   [[ 0.12655652,  9.05724 ,    1.2442882,  0.3],
                                    [ 0.1398302 , 10.007194,    1.3747933,  0.3],
@@ -88,14 +88,14 @@ def test_context_external_diametrizer():
     context._cumulative_thicknesses = MagicMock(return_value = [ 125, 225, 450, 575, 900, 1250])
     context._get_layer = MagicMock(return_value = 1)
 
-    neuron, metadata = context.synthesize([6001.39477031, 772.6250185, 3778.3698741], 'L2_TPC:A')
-    assert_array_almost_equal(metadata.apical_points, [[-14.207288, -34.351606,  -9.616721]])
+    result = context.synthesize([6001.39477031, 772.6250185, 3778.3698741], 'L2_TPC:A')
+    assert_array_almost_equal(result.apical_points, [[-14.207288, -34.351606,  -9.616721]])
 
     # This tests that input orientations are not mutated by the synthesize() call
     assert_array_almost_equal(context.tmd_parameters['L2_TPC:A']['apical']['orientation'],
                               [[0.0, 1.0, 0.0]])
 
-    assert_array_almost_equal(neuron.soma.points,
+    assert_array_almost_equal(result.neuron.soma.points,
                               np.array([[ 9.104976 ,  -0.8350304,  0.,       0.],
                                         [ 0.1265565,  9.05724   ,  0.,       0.],
                                         [-4.1508913,  7.8628845 ,  0.,       0.],
@@ -106,8 +106,8 @@ def test_context_external_diametrizer():
                                        dtype=np.float32))
 
 
-    assert_equal(len(neuron.root_sections), 7)
-    assert_array_almost_equal(neuron.neurites[0].root_node.points,
+    assert_equal(len(result.neuron.root_sections), 7)
+    assert_array_almost_equal(result.neuron.neurites[0].root_node.points,
                               np.array(
                                   [[ 0.12655652,  9.05724 ,    1.2442882,  0.5201028],
                                    [ 0.1398302 , 10.007194,    1.3747933,  0.5162242],
