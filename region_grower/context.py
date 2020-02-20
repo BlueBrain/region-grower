@@ -1,9 +1,17 @@
-"""Use spatial properties to grow a cell"""
+"""Use spatial properties to grow a cell.
+
+The objective of this module is to provide an interface between
+synthesis tools (here TNS) and the circuit building pipeline.
+
+TLDR: SpaceContext.synthesized() is being called by
+the placement_algorithm package to synthesize circuit morphologies.
+"""
 
 from collections import namedtuple
 from copy import deepcopy
 import json
 
+import attr
 import numpy as np
 from voxcell import OrientationField
 from voxcell.cell_collection import CellCollection
@@ -16,6 +24,16 @@ from region_grower import modify, RegionGrowerError
 SpacePos = namedtuple(
     "SpacePos", ["position", "depth", "orientation", "thickness_layers"]
 )
+
+
+@attr.s
+class MetaData:
+    '''
+    MetaData to be returned by SpaceContext.synthesized()
+    '''
+
+    #: The apical points
+    apical_points = attr.ib(type=[])
 
 
 class SpaceContext(object):
@@ -47,7 +65,7 @@ class SpaceContext(object):
             self.tmd_parameters = json.load(f)
 
     def verify(self, mtypes):
-        """ Check that context has distributions / parameters for all given mtypes. """
+        """Check that context has distributions / parameters for all given mtypes."""
         for mtype in mtypes:
             if mtype not in self.tmd_distributions["mtypes"]:
                 raise RegionGrowerError("Missing distributions for mtype: '%s'" % mtype)
@@ -55,7 +73,12 @@ class SpaceContext(object):
                 raise RegionGrowerError("Missing parameters for mtype: '%s'" % mtype)
 
     def synthesize(self, position, mtype):
-        """Synthesize a cell based on the position and mtype"""
+        """Synthesize a cell based on the position and mtype.
+
+        Returns:
+            a tuple (Morphology, MetaData) of a synthesized morphology
+                and its metadata
+        """
         par = self._correct_position_orientation_scaling(
             self.tmd_parameters[mtype],
             self.tmd_distributions["metadata"]["cortical_thickness"],
@@ -90,7 +113,9 @@ class SpaceContext(object):
         )
         grower.grow()
 
-        return grower.neuron
+        metadata = MetaData(grower.apical_points or [])
+
+        return grower.neuron, metadata
 
     def _cumulative_thicknesses(self, position):
         """cumulative thicknesses starting at layer 1"""

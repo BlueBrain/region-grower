@@ -50,7 +50,9 @@ def test_context():
     context._cumulative_thicknesses = MagicMock(return_value = [ 125, 225, 450, 575, 900, 1250])
     context._get_layer = MagicMock(return_value = 1)
 
-    neuron = context.synthesize([6001.39477031, 772.6250185, 3778.3698741], 'L2_TPC:A')
+    neuron, metadata = context.synthesize([6001.39477031, 772.6250185, 3778.3698741], 'L2_TPC:A')
+
+    assert_array_almost_equal(metadata.apical_points, [[-14.207288, -34.351606,  -9.616721]])
 
     # This tests that input orientations are not mutated by the synthesize() call
     assert_array_almost_equal(context.tmd_parameters['L2_TPC:A']['apical']['orientation'],
@@ -86,7 +88,8 @@ def test_context_external_diametrizer():
     context._cumulative_thicknesses = MagicMock(return_value = [ 125, 225, 450, 575, 900, 1250])
     context._get_layer = MagicMock(return_value = 1)
 
-    neuron = context.synthesize([6001.39477031, 772.6250185, 3778.3698741], 'L2_TPC:A')
+    neuron, metadata = context.synthesize([6001.39477031, 772.6250185, 3778.3698741], 'L2_TPC:A')
+    assert_array_almost_equal(metadata.apical_points, [[-14.207288, -34.351606,  -9.616721]])
 
     # This tests that input orientations are not mutated by the synthesize() call
     assert_array_almost_equal(context.tmd_parameters['L2_TPC:A']['apical']['orientation'],

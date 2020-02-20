@@ -11,11 +11,12 @@ setup(
     name='region-grower',
     version=VERSION,
     install_requires=[
-        'voxcell>=2.5.4',
+        'attrs>=19.3.0',
         'click>=7.0',
-        'tqdm>=4.28.1',
+        'diameter-synthesis>=0.0.13',
         'tns>=2.0.4',
-        'diameter-synthesis>=0.0.13'
+        'tqdm>=4.28.1',
+        'voxcell>=2.5.4',
     ],
     packages=find_packages(),
     entry_points={
