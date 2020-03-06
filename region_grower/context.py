@@ -29,9 +29,10 @@ SpacePos = namedtuple(
 
 @attr.s
 class SynthesisResult:
-    '''
+    """
     The object returned by SpaceContext.synthesized()
-    '''
+    """
+
     #: The grown morphology
     neuron = attr.ib(type=morphio.mut.Morphology)  # pylint: disable=no-member
 
@@ -97,7 +98,7 @@ class SpaceContext(object):
                 return build_diameters.build(
                     neuron,
                     model,
-                    [neurite_type, ],
+                    [neurite_type],
                     self.tmd_parameters[mtype]["diameter_params"],
                 )
 
