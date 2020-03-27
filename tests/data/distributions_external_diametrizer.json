@@ -1433,16 +1433,16 @@
             },
             "axon": {},
             "diameter": {
-                "sibling_ratios": {
+	        "sibling_ratios": {
                     "basal": {
                         "distribution": "expon_rev",
                         "sequential": "asymmetry_threshold",
                         "params": {
                             "loc": -1.0,
-                            "scale": 0.1995,
-                            "min": 0.5025,
+                            "scale": 0.21045434474945068,
+                            "min": 0.5238109052181243,
                             "max": 1.0,
-                            "num_value": 63
+                            "num_value": 40
                         }
                     },
                     "apical": {
@@ -1450,36 +1450,36 @@
                         "sequential": "asymmetry_threshold",
                         "params": {
                             "loc": -1.0,
-                            "scale": 0.1878,
-                            "min": 0.4986,
+                            "scale": 0.18050134181976318,
+                            "min": 0.5907433211803437,
                             "max": 1.0,
-                            "num_value": 60
+                            "num_value": 28
                         }
                     }
                 },
-                "rall_deviations": {
+                "diameter_power_relation": {
                     "basal": {
                         "distribution": "exponnorm",
                         "sequential": "asymmetry_threshold",
                         "params": {
                             "a": 4,
-                            "loc": 2.0299,
-                            "scale": 0.5504,
-                            "min": 1.8088,
-                            "max": 9.6504,
-                            "num_value": 63
+                            "loc": 1.9792791892581325,
+                            "scale": 0.5891766224816013,
+                            "min": 1.7895178020000457,
+                            "max": 9.806136369705197,
+                            "num_value": 40
                         }
                     },
                     "apical": {
                         "distribution": "exponnorm",
                         "sequential": "asymmetry_threshold",
                         "params": {
-                            "a": 1.4394,
-                            "loc": 2.3523,
-                            "scale": 0.6353,
-                            "min": 1.9991,
-                            "max": 5.3148,
-                            "num_value": 60
+                            "a": 1.233998021953017,
+                            "loc": 2.456979375023876,
+                            "scale": 0.5969404580434721,
+                            "min": 2.0,
+                            "max": 4.7435270786285395,
+                            "num_value": 28
                         }
                     }
                 },
@@ -1488,12 +1488,12 @@
                         "distribution": "exponnorm",
                         "sequential": null,
                         "params": {
-                            "a": 1.2949,
-                            "loc": 0.353,
-                            "scale": 0.0919,
-                            "min": 0.28,
-                            "max": 0.7068,
-                            "num_value": 80
+                            "a": 0.3,
+                            "loc": 0.4195767929593571,
+                            "scale": 0.09320063938017001,
+                            "min": 0.2800000011920929,
+                            "max": 0.6009267716406412,
+                            "num_value": 51
                         }
                     },
                     "apical": {
@@ -1501,11 +1501,11 @@
                         "sequential": null,
                         "params": {
                             "a": 0.3,
-                            "loc": 0.4367,
-                            "scale": 0.1353,
-                            "min": 0.29,
-                            "max": 0.7174,
-                            "num_value": 79
+                            "loc": 0.4202748026152398,
+                            "scale": 0.10494426906821637,
+                            "min": 0.30000001192092896,
+                            "max": 0.6076470578418058,
+                            "num_value": 41
                         }
                     }
                 },
@@ -1514,76 +1514,48 @@
                         "distribution": "exponnorm",
                         "sequential": null,
                         "params": {
-                            "a": 2.3477,
-                            "loc": 0.6395,
-                            "scale": 0.3078,
-                            "min": 0.532,
-                            "max": 2.814,
-                            "num_value": 17
+                            "a": 2.322537865837945,
+                            "loc": 0.5842140480899951,
+                            "scale": 0.3175855631840826,
+                            "min": 0.45000001788139343,
+                            "max": 2.6399999856948853,
+                            "num_value": 11
                         }
                     },
                     "apical": {
                         "distribution": "exponnorm",
                         "sequential": null,
                         "params": {
-                            "a": 0.3,
-                            "loc": 1.7495,
-                            "scale": 0.8052,
-                            "min": 1.1235,
-                            "max": 2.8565,
-                            "num_value": 4
-                        }
-                    }
-                },
-                "trunk_tapers": {
-                    "basal": {
-                        "distribution": "skewnorm",
-                        "sequential": null,
-                        "params": {
                             "a": 4,
-                            "loc": -0.0041,
-                            "scale": 0.0328,
-                            "min": 0.0,
-                            "max": 0.0608,
-                            "num_value": 11
-                        }
-                    },
-                    "apical": {
-                        "distribution": "skewnorm",
-                        "sequential": null,
-                        "params": {
-                            "a": 4,
-                            "loc": 0.0139,
-                            "scale": 0.0401,
-                            "min": 0.0229,
-                            "max": 0.082,
+                            "loc": 1.0060146268845132,
+                            "scale": 0.13949357910258137,
+                            "min": 1.1190000176429749,
+                            "max": 2.6219999790191646,
                             "num_value": 3
                         }
                     }
                 },
                 "tapers": {
                     "basal": {
-                        "distribution": "exponnorm",
+                        "distribution": "expon_rev",
                         "sequential": null,
                         "params": {
-                            "a": 4,
-                            "loc": -0.0093,
-                            "scale": 0.0012,
-                            "min": -0.0093,
-                            "max": 0.0029,
-                            "num_value": 14
+                            "loc": -0.003256270719543696,
+                            "scale": 0.004840428028049248,
+                            "min": -0.0075725066852313765,
+                            "max": 0.003256270719543696,
+                            "num_value": 71
                         }
                     },
                     "apical": {
-                        "distribution": "exponnorm",
+                        "distribution": "expon_rev",
                         "sequential": null,
                         "params": {
-                            "a": 0.3231,
-                            "loc": -0.0035,
-                            "scale": 0.0038,
-                            "min": -0.0081,
-                            "max": 0.0039,
-                            "num_value": 17
+                            "loc": -0.004950796690304635,
+                            "scale": 0.005441384371736139,
+                            "min": -0.005218460300741877,
+                            "max": 0.004950796690304635,
+                            "num_value": 69
                         }
                     }
                 },

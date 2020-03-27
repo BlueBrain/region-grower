@@ -74,7 +74,7 @@ def generate_parameters(
         tmd_parameters = json.load(tmd_parameters)
 
     def get_parameters(mtype):
-        """allow for precomputed tmd_parmaeter to be stacked with diameter parameters"""
+        """allow for precomputed tmd_parameter to be stacked with diameter parameters"""
         if tmd_parameters is None:
             return extract_input.parameters(
                 neurite_types=neurite_types, diameter_parameters=diametrizer_config,

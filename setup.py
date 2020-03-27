@@ -13,9 +13,9 @@ setup(
     install_requires=[
         'attrs>=19.3.0',
         'click>=7.0',
-        'diameter-synthesis>=0.0.13',
+        'diameter-synthesis>=0.1.2',
         'morphio>=2.3.4',
-        'tns>=2.0.4',
+        'tns>=2.0.6',
         'tqdm>=4.28.1',
         'voxcell>=2.5.4',
     ],
