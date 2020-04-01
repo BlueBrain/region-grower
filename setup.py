@@ -17,7 +17,7 @@ setup(
         'morphio>=2.3.4',
         'tns>=2.0.6',
         'tqdm>=4.28.1',
-        'voxcell>=2.5.4',
+        'voxcell>=2.6.3',
     ],
     packages=find_packages(),
     python_requires='>=3.6',

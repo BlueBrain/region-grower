@@ -7,20 +7,20 @@ TLDR: SpaceContext.synthesized() is being called by
 the placement_algorithm package to synthesize circuit morphologies.
 """
 
+import json
 from collections import namedtuple
 from copy import deepcopy
-import json
 
 import attr
 import morphio
-import numpy as np
-from voxcell import OrientationField
-from voxcell.cell_collection import CellCollection
-
-from tns import NeuronGrower
 from diameter_synthesis import build_diameters
+from tns import NeuronGrower
 
-from region_grower import modify, RegionGrowerError
+from voxcell.cell_collection import CellCollection
+from voxcell.nexus.voxelbrain import Atlas
+
+from region_grower import RegionGrowerError, modify
+from region_grower.atlas_helper import AtlasHelper
 
 SpacePos = namedtuple(
     "SpacePos", ["position", "depth", "orientation", "thickness_layers"]
@@ -47,20 +47,11 @@ class SpaceContext(object):
     """
 
     def __init__(
-        self, atlas, tmd_distributions_path, tmd_parameters_path, recenter=True
+        self, atlas: Atlas, tmd_distributions_path, tmd_parameters_path, recenter=True
     ):
         """Initialization with an atlas (of a BBP circuit)"""
-        self.brain_regions = atlas.load_data("brain_regions")
-        self.depths = atlas.load_data("depth")
-        self.orientations = atlas.load_data("orientation", cls=OrientationField)
-        self.L1 = atlas.load_data("thickness:L1")
-        self.L2 = atlas.load_data("thickness:L2")
-        self.L3 = atlas.load_data("thickness:L3")
-        self.L4 = atlas.load_data("thickness:L4")
-        self.L5 = atlas.load_data("thickness:L5")
-        self.L6 = atlas.load_data("thickness:L6")
-
         self.recenter = recenter
+        self.atlas = AtlasHelper(atlas)
 
         with open(tmd_distributions_path, "r") as f:
             self.tmd_distributions = json.load(f)
@@ -114,28 +105,6 @@ class SpaceContext(object):
 
         return SynthesisResult(grower.neuron, grower.apical_points or [])
 
-    def _cumulative_thicknesses(self, position):
-        """cumulative thicknesses starting at layer 1"""
-        return np.cumsum(
-            [
-                self.L1.lookup(position),
-                self.L2.lookup(position),
-                self.L3.lookup(position),
-                self.L4.lookup(position),
-                self.L5.lookup(position),
-                self.L6.lookup(position),
-            ]
-        )
-
-    def _get_layer(self, position, cumulative_thickness):
-        """Find out in which layer position is"""
-        depth = self.depths.lookup(position)
-        for indice, thickness in enumerate(cumulative_thickness):
-            if thickness > depth:
-                return indice
-
-        return len(cumulative_thickness)
-
     def _correct_position_orientation_scaling(
         self, params, cortical_thickness, position
     ):
@@ -147,31 +116,12 @@ class SpaceContext(object):
         for neurite_type in params["grow_types"]:
             if isinstance(params[neurite_type]["orientation"], list):
                 result[neurite_type]["orientation"] = [
-                    self._get_orientation(position, orient)
+                    self.atlas.lookup_orientation(position, orient)
                     for orient in params[neurite_type]["orientation"]
                 ]
 
-        cumulative_thickness = self._cumulative_thicknesses(position)
-        layer = self._get_layer(position, cumulative_thickness)
-        target_thickness = cumulative_thickness[layer - 1]
-
-        if target_thickness < 1e-8:
-            raise RegionGrowerError(
-                "Zero thickness in space. This will not generate cell with ID: "
-            )
-
-        reference_thickness = np.cumsum(cortical_thickness)[layer - 1]
-
-        return modify.input_scaling(result, reference_thickness, target_thickness)
-
-    def _get_orientation(self, position, vector=None):
-        """Returns the orientation for the selected cell with the corresponding
-           input position, as extracted from spatial properties.
-        """
-        if vector is None:
-            vector = [0, 1, 0]  # assume direction towards the pia.
-
-        return np.dot(self.orientations.lookup(position), vector)[0]
+        target, reference = self.atlas.lookup_depths(position, cortical_thickness)
+        return modify.input_scaling(result, reference, target)
 
 
 class CellHelper(object):

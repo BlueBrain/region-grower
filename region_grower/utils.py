@@ -1,7 +1,9 @@
 """Utils module"""
 import os
 import json
+from itertools import tee
 from collections import defaultdict
+
 import numpy as np
 import pandas as pd
 
@@ -27,3 +29,13 @@ def create_morphologies_dict(dat_file, morph_path, ext=".asc"):
     for morph in morph_name.values:
         name_dict[morph[2]].append(os.path.join(morph_path, morph[0] + ext))
     return name_dict
+
+
+def pairwise(iterable):
+    """from itertools cookbook
+
+    s -> (s0,s1), (s1,s2), (s2, s3), ...
+    """
+    a, b = tee(iterable)
+    next(b, None)
+    return zip(a, b)

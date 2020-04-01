@@ -3,6 +3,8 @@
 import numpy as np
 from tmd.Topology.transformations import tmd_scale
 
+from region_grower import RegionGrowerError
+
 
 def scale_barcode(ph, reference_thickness, target_thickness):
     '''Modifies the barcode according to the reference and target thicknesses.
@@ -32,6 +34,9 @@ def input_scaling(params, ref_thickness, target_thickness):
        cells should live in. Input should be modified accordingly
        All neurite types are scaled uniformly. This should be corrected eventually.
     '''
+    if target_thickness < 1e-8:
+        raise RegionGrowerError("target_thickness too small to be able to scale the bar code")
+
     par = dict(params)
 
     for neurite_type in params['grow_types']:
