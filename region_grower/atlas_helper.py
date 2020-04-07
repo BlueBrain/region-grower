@@ -1,23 +1,21 @@
 '''An atlas helper to lookup the depths and orientations from an atlas
 without have to reason in term of [PH][1-6] and [PH]y'''
 import operator
-from itertools import accumulate, chain
+from itertools import accumulate
 from typing import List, Optional, Tuple, Union
 
 import numpy as np
 
 from voxcell import OrientationField, VoxelData
 from voxcell.nexus.voxelbrain import Atlas
-
 from region_grower import RegionGrowerError
-from region_grower.utils import pairwise
 
 Point = Union[List[float], np.array]
 
 
 class AtlasHelper:
     '''Atlas helper provides two lookup functions for region grower:
-    - lookup_depths
+    - lookup_target_reference_depths
     - lookup_orientation
     '''
     def __init__(self, atlas: Atlas):
@@ -54,31 +52,27 @@ class AtlasHelper:
 
         return np.dot(self.orientations.lookup(position), vector)[0]
 
-    def lookup_depths(
+    def lookup_target_reference_depths(
             self,
             position: Point,
-            cortical_thicknesses: List[float]
+            cortical_depths: List[float]
     ) -> Tuple[np.array, np.array]:
-        '''Returns a tuple of 2 depths (reminder: the pia has depth 0)
+        '''Returns the target and the reference depth for a given neuron position.
 
         Args:
-            position: the position whose depths will be returned
-            cortical_thicknesses: the thicknesses of the 6 layers in the cortical column
+            position: the position of a neuron in the atlas
+            cortical_depths: the depths of the 6 layers in the cortical column
 
-        First item is the depth of the upper (the closest from the pia) boundary of the layer in
-        which is located 'position'.
+        First item is the depth of the lower (the further away from the pia) boundary
+        of the layer in which is located 'position'.
 
         Second one is the equivalent value for the same layer but in the cortical column.
         '''
         current_depth = self.depths.lookup(position)
+        depths = accumulate(thickness.lookup(position) for thickness in self.thicknesses)
+        for depth, cortical_depth in zip(depths, cortical_depths):
+            if current_depth <= depth:
+                return depth, cortical_depth
 
-        thicknesses = (thickness.lookup(position) for thickness in self.thicknesses)
-        layer_depth_bounds = pairwise(accumulate(chain([0], thicknesses)))
-
-        cortical_depths = accumulate(chain([0], cortical_thicknesses))
-
-        for (depth_start, depth_end), cortical_depth in zip(layer_depth_bounds, cortical_depths):
-            if depth_end > current_depth:
-                return depth_start, cortical_depth
-
-        raise RegionGrowerError(f"Position ({position}) outside of circuit boundaries")
+        raise RegionGrowerError(f"Current depth ({current_depth}) for position ({position}) is"
+                                " outside of circuit boundaries")

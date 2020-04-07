@@ -80,11 +80,12 @@ def small_O1(folder_path):
     orientation[brain_regions > 0, :4] = [1, 0, 0, 0]
 
     PHy = np.full(brain_regions.shape, np.nan)
-    boundaries_y = [2000, 1800, 1200, 700, 400, 100, 0]
+    boundaries_y = [1000, 800, 700, 600, 500, 300, 0]
 
+    # set depths only inside the brain region
     y = np.linspace(boundaries_y[0], boundaries_y[-1], PHy.shape[1])
-    for y_index in range(PHy.shape[1]):
-        PHy[:, y_index, :] = y[y_index]
+    for y_index in range(PHy.shape[1] - 2):
+        PHy[:, y_index + 1, :] = y[y_index]
 
     placement_hints = {f'[PH]{layer}' + '.nrrd':
                        np.stack([np.float32(brain_regions > 0) * boundaries_y[n]

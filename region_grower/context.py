@@ -15,6 +15,7 @@ import attr
 import morphio
 from diameter_synthesis import build_diameters
 from tns import NeuronGrower
+import numpy as np
 
 from voxcell.cell_collection import CellCollection
 from voxcell.nexus.voxelbrain import Atlas
@@ -59,6 +60,8 @@ class SpaceContext(object):
         with open(tmd_parameters_path, "r") as f:
             self.tmd_parameters = json.load(f)
 
+        self.cortical_depths = np.cumsum(self.tmd_distributions["metadata"]["cortical_thickness"])
+
     def verify(self, mtypes):
         """Check that context has distributions / parameters for all given mtypes."""
         for mtype in mtypes:
@@ -71,7 +74,6 @@ class SpaceContext(object):
         """Synthesize a cell based on the position and mtype."""
         par = self._correct_position_orientation_scaling(
             self.tmd_parameters[mtype],
-            self.tmd_distributions["metadata"]["cortical_thickness"],
             position,
         )
 
@@ -106,7 +108,7 @@ class SpaceContext(object):
         return SynthesisResult(grower.neuron, grower.apical_points or [])
 
     def _correct_position_orientation_scaling(
-        self, params, cortical_thickness, position
+        self, params, position
     ):
         """Return a copy of the passed parameter with the correct orientation and
         recentered at [0,0,0]"""
@@ -120,7 +122,8 @@ class SpaceContext(object):
                     for orient in params[neurite_type]["orientation"]
                 ]
 
-        target, reference = self.atlas.lookup_depths(position, cortical_thickness)
+        target, reference = self.atlas.lookup_target_reference_depths(position,
+                                                                      self.cortical_depths)
         return modify.input_scaling(result, reference, target)
 
 

@@ -23,7 +23,7 @@ def test_context():
 
         result = context.synthesize([1000, 1000, 1000], 'L2_TPC:A')
 
-    assert_array_almost_equal(result.apical_points, np.array([[-4.11909129e+00,  1.52519118e+02,  3.71458816e-02]]))
+    assert_array_almost_equal(result.apical_points, np.array([[ 0.505352, 67.794989, -1.691661]]))
 
     # This tests that input orientations are not mutated by the synthesize() call
     assert_array_almost_equal(context.tmd_parameters['L2_TPC:A']['apical']['orientation'],
@@ -41,10 +41,9 @@ def test_context():
 
     assert_equal(len(result.neuron.root_sections), 7)
     assert_array_almost_equal(next(result.neuron.iter()).points,
-                              np.array(
-                                  [[ 0.12655652,  9.05724 ,    1.2442882],
-                                   [ 0.1398302 , 10.007194,    1.3747933],
-                                   [ 0.2490275 , 10.898591,   1.37083380]],
+                              np.array([[ 0.126557,  9.05724 ,  1.244288],
+                                        [ 0.13983 , 10.007194,  1.374793],
+                                        [ 0.249028, 10.898591,  1.370834]],
                                        dtype=np.float32))
     assert_array_almost_equal(next(result.neuron.iter()).diameters,
                               np.array([ 0.6, 0.6, 0.6], dtype=np.float32))
@@ -61,7 +60,7 @@ def test_context_external_diametrizer():
 
         result = context.synthesize([1000, 1000, 1000], 'L2_TPC:A')
 
-    assert_array_almost_equal(result.apical_points, np.array([[-4.11909129e+00,  1.52519118e+02,  3.71458816e-02]]))
+    assert_array_almost_equal(result.apical_points, np.array([[ 0.505352, 67.794989, -1.691661]]))
 
     # This tests that input orientations are not mutated by the synthesize() call
     assert_array_almost_equal(context.tmd_parameters['L2_TPC:A']['apical']['orientation'],
@@ -80,12 +79,11 @@ def test_context_external_diametrizer():
 
     assert_equal(len(result.neuron.root_sections), 7)
     assert_array_almost_equal(next(result.neuron.iter()).points,
-                              np.array(
-                                  [[ 0.12655652,  9.05724 ,    1.2442882,],
-                                   [ 0.1398302 , 10.007194,    1.3747933,],
-                                   [ 0.2490275 , 10.898591,   1.3708338,]],
-                              dtype=np.float32))
+                              np.array([[ 0.126557,  9.05724 ,  1.244288],
+                                        [ 0.13983 , 10.007194,  1.374793],
+                                        [ 0.249028, 10.898591,  1.370834]],
+                                       dtype=np.float32))
 
     assert_array_almost_equal(next(result.neuron.iter()).diameters,
-                              np.array([0.621927, 0.62058 , 0.619318],
+                              np.array([0.807079, 0.806512, 0.8059810],
                                        dtype=np.float32))
