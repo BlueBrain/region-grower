@@ -13,9 +13,10 @@ setup(
     install_requires=[
         'attrs>=19.3.0',
         'click>=7.0',
-        'diameter-synthesis>=0.1.2',
+        'diameter-synthesis>=0.1.7',
         'morphio>=2.3.4',
-        'tns>=2.0.6',
+        'neuroc>=0.2.3',
+        'tns>=2.2.4',
         'tqdm>=4.28.1',
         'voxcell>=2.6.3',
     ],
@@ -26,4 +27,5 @@ setup(
             'region-grower=region_grower.cli:cli'
         ]
     },
+    include_package_data=True,
 )

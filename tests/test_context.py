@@ -1,20 +1,17 @@
+from copy import deepcopy
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from copy import deepcopy
 
-import numpy as np
-from nose.tools import assert_equal
-from nose.tools import assert_almost_equal
-from nose.tools import assert_raises
-from numpy.testing import assert_array_almost_equal
 import jsonschema
-
+import numpy as np
+from nose.tools import assert_equal, assert_raises
+from numpy.testing import assert_array_almost_equal
+from region_grower import RegionGrowerError
+# from region_grower.context import SpaceNeuronGrower
+from region_grower.context import SpaceContext
 from voxcell.nexus.voxelbrain import Atlas
 
 from atlas_mock import small_O1
-from region_grower import RegionGrowerError
-from region_grower.context import SpaceContext
-
 
 DATA = Path(__file__).parent / "data"
 
@@ -137,10 +134,12 @@ def test_verify():
             Atlas.open(tempdir), DATA / "distributions.json", DATA / "parameters.json"
         )
 
+    initial_params = deepcopy(context.tmd_parameters)
+
     context.verify(["L2_TPC:A"])
     assert_raises(RegionGrowerError, context.verify, ["UNKNOWN_MTYPE"])
 
-    good_params = deepcopy(context.tmd_parameters)
+    good_params = deepcopy(initial_params)
 
     del context.tmd_parameters["L2_TPC:A"]
     assert_raises(RegionGrowerError, context.verify, ["L2_TPC:A"])
@@ -150,10 +149,9 @@ def test_verify():
     assert_raises(jsonschema.exceptions.ValidationError, context.verify, ["L2_TPC:A"])
 
 
-
-
 def test_scale():
     np.random.seed(0)
+    mtype = "L2_TPC:A"
 
     with TemporaryDirectory() as tempdir:
         small_O1(tempdir)
@@ -161,32 +159,41 @@ def test_scale():
             Atlas.open(tempdir), DATA / "distributions.json", DATA / "parameters.json"
         )
 
-    result = context.synthesize([100, -100, 100], "L2_TPC:A")
+    context.tmd_parameters[mtype]["context_constraints"] = {
+        "apical": {
+            "hard_limit_min": {
+                "layer": 1,
+                "fraction": 0.1,
+            },
+            "extent_to_target": {
+                "slope": 0.5,
+                "intercept": 1,
+                "layer": 1,
+                "fraction": 0.5,
+            },
+            "hard_limit_max": {
+                "layer": 1,
+                "fraction": 0.1,  # Set max < target to ensure a rescaling is processed
+            }
+        }
+    }
+    result = context.synthesize([100, -100, 100], mtype)
 
     assert_array_almost_equal(
-        result.apical_points, np.array([[9.40834, 114.985021, -25.603346]])
+        result.apical_points, np.array([[-1.54834383, 43.40647383, -1.60015317]])
     )
 
     # Test scale computation
-    neurite = result.neuron.root_sections[0]
-
     params = context.tmd_parameters["L2_TPC:A"]
-
-    # Set bias value
-    params["apical"]["bias_length"] = 1
 
     assert params.get("apical", {}).get("modify", {}) is None
     assert params.get("basal", {}).get("modify", {}) is None
 
-    fixed_params = context._correct_position_orientation_scaling(
-        params, [100, -100, 100]
-    )
+    fixed_params = context._correct_position_orientation_scaling(params)
 
-    expected = {"reference_thickness": 314, "target_thickness": 300.0}
+    expected_apical = {"target_path_distance": 76}
+    expected_basal = {"reference_thickness": 314, "target_thickness": 300.0}
     assert (
-        fixed_params.get("apical", {}).get("modify", {}).get("kwargs", {}) == expected
+        fixed_params.get("apical", {}).get("modify", {}).get("kwargs", {}) == expected_apical
     )
-    assert_almost_equal(
-        fixed_params.get("apical", {}).get("bias_length"), 0.9554140127388535
-    )
-    assert fixed_params.get("basal", {}).get("modify", {}).get("kwargs", {}) == expected
+    assert fixed_params.get("basal", {}).get("modify", {}).get("kwargs", {}) == expected_basal

@@ -1,60 +1,105 @@
 """ Use spatial properties to modify synthesis input."""
 
+from typing import Dict, Optional
+
 import numpy as np
 from tmd.Topology.transformations import tmd_scale
+from morphio import Section
+from neurom import COLS
 
 from region_grower import RegionGrowerError
 
 
-def scale_barcode(ph, reference_thickness, target_thickness):
+def scale_default_barcode(persistent_homologies, reference_thickness, target_thickness):
     """Modifies the barcode according to the reference and target thicknesses.
-       Reference thickness defines the property of input data.
-       Target thickness defines the property of space, which should be used by synthesis.
+    Reference thickness defines the property of input data.
+    Target thickness defines the property of space, which should be used by synthesis.
     """
-    max_p = np.max(ph)
-    scaling_reference = 1.0
+    max_p = np.max(persistent_homologies)
+    scaling_reference = np.nan_to_num(reference_thickness / max_p, nan=np.inf)
     # If cell is larger than the reference thickness it should be scaled down
     # This ensures that the cell will not grow more than the target thickness
-    if 1 - max_p / reference_thickness < 0:
-        scaling_reference = reference_thickness / max_p
+    scaling_reference = min(scaling_reference, 1.0)
 
-    return tmd_scale(ph, scaling_reference * target_thickness / reference_thickness)
+    scaling_ratio = scaling_reference * target_thickness / reference_thickness
 
-
-def scale_bias(bias_length, reference_thickness, target_thickness):
-    """Scales length according to reference and target thickness"""
-    return bias_length * target_thickness / reference_thickness
+    return tmd_scale(persistent_homologies, scaling_ratio)
 
 
-def input_scaling(params, reference_thickness, target_thickness):
-    """Modifies the input parameters to match the input data
-       taken from the spatial properties of the Atlas:
-       The reference_thicness is the expected thickness of input data
-       The target_thickness is the expected thickness that the synthesized
-       cells should live in. Input should be modified accordingly
-       All neurite types are scaled uniformly. This should be corrected eventually.
+def scale_target_barcode(persistent_homologies, target_path_distance):
+    """Modifies the barcode according to the target thicknesses.
+    Target thickness defines the total extend at which the cell can grow.
+    """
+    max_ph = np.nanmax([i[0] for i in persistent_homologies])
+    scaling_ratio = target_path_distance / max_ph
+
+    return tmd_scale(persistent_homologies, scaling_ratio)
+
+
+def input_scaling(params: Dict,
+                  reference_thickness: float,
+                  target_thickness: float,
+                  apical_target_extent: Optional[float]):
+    """Modifies the input parameters so that grown cells fit into the volume
+
+    If expected_apical_size is not None, the apical scaling uses a different scaling
+    than the rest of the dendrites.
+
+    Args:
+        params: the param dictionary that this function will modify
+        reference_thicness: the expected thickness of input data
+        target_thickness: the expected thickness that the synthesized cells should live in.
+        apical_target_extent: the expected extent of the apical dendrite
     """
     if target_thickness < 1e-8:
-        raise RegionGrowerError(
-            "target_thickness too small to be able to scale the bar code"
-        )
-
-    par = dict(params)
+        raise RegionGrowerError("target_thickness too small to be able to scale the bar code")
 
     for neurite_type in params["grow_types"]:
-        par[neurite_type].update(
-            {
-                "modify": {
-                    "funct": scale_barcode,
-                    "kwargs": {
-                        "target_thickness": target_thickness,
-                        "reference_thickness": reference_thickness,
-                    },
+        if (neurite_type == "apical" and apical_target_extent is not None):
+            apical_constraint = params["context_constraints"]["apical"]["extent_to_target"]
+            linear_fit = np.poly1d((apical_constraint["slope"], apical_constraint["intercept"]))
+
+            params[neurite_type]["modify"] = {
+                "funct": scale_target_barcode,
+                "kwargs": {"target_path_distance": linear_fit(apical_target_extent)},
+            }
+
+        else:
+            params[neurite_type]["modify"] = {
+                "funct": scale_default_barcode,
+                "kwargs": {
+                    "target_thickness": target_thickness,
+                    "reference_thickness": reference_thickness,
                 }
             }
-        )
-        if "bias_length" in par[neurite_type]:
-            par[neurite_type]["bias_length"] = scale_bias(
-                par[neurite_type]["bias_length"], reference_thickness, target_thickness
-            )
-    return par
+
+
+def output_scaling(
+    root_section: Section, target_min_length: float, target_max_length: float
+) -> float:
+    """Returns the scaling factor to be applied on Y axis for this neurite
+
+    The scaling is chosen such that the neurite is:
+    - upscaled to reach the min target length if it is too short
+    - downscaled to stop at the max target length if it is too long
+
+    Args:
+        root_section: the neurite for which the scale is computed
+        target_min_length: min length that the neurite must reach
+        target_max_length: max length that the neurite can reach
+
+    Returns: scale factor to apply"""
+    max_y = max(p for sec in root_section.iter() for p in sec.points[:, COLS.Y])
+    y_extent = max_y - root_section.points[0, COLS.Y]
+
+    if target_min_length is not None:
+        min_scale = target_min_length / y_extent
+        if min_scale > 1:
+            return min_scale
+
+    if target_max_length is not None:
+        max_scale = target_max_length / y_extent
+        if max_scale < 1:
+            return max_scale
+
+    return 1.0

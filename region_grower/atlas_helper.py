@@ -5,9 +5,9 @@ from itertools import accumulate
 from typing import List, Optional, Tuple, Union
 
 import numpy as np
-
 from voxcell import OrientationField, VoxelData
 from voxcell.nexus.voxelbrain import Atlas
+
 from region_grower import RegionGrowerError
 
 Point = Union[List[float], np.array]
@@ -76,3 +76,11 @@ class AtlasHelper:
 
         raise RegionGrowerError(f"Current depth ({current_depth}) for position ({position}) is"
                                 " outside of circuit boundaries")
+
+    def get_layer_boundary_depths(self, position: Point) -> np.array:
+        """Return layer depths at the given position.
+
+        Args:
+            position: the position of a neuron in the atlas
+        """
+        return np.cumsum([0] + [thickness.lookup(position) for thickness in self.thicknesses])
