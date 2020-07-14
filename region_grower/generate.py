@@ -121,10 +121,7 @@ def generate_distributions(
     )
 
     distributions = {
-        "mtypes": {
-            mtype: distribution
-            for mtype, distribution in tqdm(results, total=len(morphologies_dict))
-        },
+        "mtypes": dict(tqdm(results, total=len(morphologies_dict))),
         "metadata": {"cortical_thickness": [165, 149, 353, 190, 525, 700]},
     }
 

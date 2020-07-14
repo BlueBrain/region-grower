@@ -1,5 +1,7 @@
 """App module that defines the command line interface."""
 import click
+import region_grower.generate as generate
+
 
 # pylint: disable=redefined-outer-name
 
@@ -52,9 +54,7 @@ def generate_parameters(
         input_folder: folder containing cells (required)
         dat_file: .dat file with mtype for each cell (required)
     """
-    from .generate import generate_parameters
-
-    generate_parameters(
+    generate.generate_parameters(
         input_folder,
         dat_file,
         parameter_filename,
@@ -102,8 +102,7 @@ def generate_distributions(
         input_folder: folder containing cells (required)
         dat_file: .dat file with mtype for each cell (required)
     """
-    from .generate import generate_distributions
 
-    generate_distributions(
+    generate.generate_distributions(
         input_folder, dat_file, distribution_filename, diametrizer_config, ext
     )

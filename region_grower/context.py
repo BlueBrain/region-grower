@@ -118,7 +118,7 @@ class SpaceContext(object):
         for neurite_type in params["grow_types"]:
             if isinstance(params[neurite_type]["orientation"], list):
                 result[neurite_type]["orientation"] = [
-                    self.atlas.lookup_orientation(position, orient)
+                    self.atlas.lookup_orientation(position, orient).tolist()
                     for orient in params[neurite_type]["orientation"]
                 ]
 
