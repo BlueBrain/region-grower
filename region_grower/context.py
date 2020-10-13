@@ -13,10 +13,10 @@ from copy import deepcopy
 
 import attr
 import morphio
+import numpy as np
 from diameter_synthesis import build_diameters
 from tns import NeuronGrower
-import numpy as np
-
+from tns.validator import validate_neuron_params, validate_neuron_distribs
 from voxcell.cell_collection import CellCollection
 from voxcell.nexus.voxelbrain import Atlas
 
@@ -69,6 +69,9 @@ class SpaceContext(object):
                 raise RegionGrowerError("Missing distributions for mtype: '%s'" % mtype)
             if mtype not in self.tmd_parameters:
                 raise RegionGrowerError("Missing parameters for mtype: '%s'" % mtype)
+
+            validate_neuron_distribs(self.tmd_distributions["mtypes"][mtype])
+            validate_neuron_params(self.tmd_parameters[mtype])
 
     def synthesize(self, position, mtype) -> SynthesisResult:
         """Synthesize a cell based on the position and mtype."""

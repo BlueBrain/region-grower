@@ -1,11 +1,13 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from copy import deepcopy
 
 import numpy as np
 from nose.tools import assert_equal
 from nose.tools import assert_almost_equal
 from nose.tools import assert_raises
 from numpy.testing import assert_array_almost_equal
+import jsonschema
 
 from voxcell.nexus.voxelbrain import Atlas
 
@@ -129,7 +131,6 @@ def test_context_external_diametrizer():
 
 
 def test_verify():
-
     with TemporaryDirectory() as tempdir:
         small_O1(tempdir)
         context = SpaceContext(
@@ -137,12 +138,18 @@ def test_verify():
         )
 
     context.verify(["L2_TPC:A"])
-
     assert_raises(RegionGrowerError, context.verify, ["UNKNOWN_MTYPE"])
 
-    del context.tmd_parameters["L2_TPC:A"]
+    good_params = deepcopy(context.tmd_parameters)
 
+    del context.tmd_parameters["L2_TPC:A"]
     assert_raises(RegionGrowerError, context.verify, ["L2_TPC:A"])
+
+    context.tmd_parameters = good_params
+    del context.tmd_parameters["L2_TPC:A"]['origin']
+    assert_raises(jsonschema.exceptions.ValidationError, context.verify, ["L2_TPC:A"])
+
+
 
 
 def test_scale():
