@@ -14,7 +14,9 @@ from typing import Dict, List, Optional, Sequence, Union
 import attr
 import morphio
 import numpy as np
+import pkg_resources
 from diameter_synthesis import build_diameters
+from jsonschema import validate
 from morphio import SectionType
 from neuroc.scale import ScaleParameters, scale_section
 from tns import NeuronGrower
@@ -165,6 +167,12 @@ class SpaceContext(object):
             validate_neuron_distribs(self.tmd_distributions["mtypes"][mtype])
             validate_neuron_params(self.tmd_parameters[mtype])
 
+            schema_path = pkg_resources.resource_filename(
+                'region_grower', 'parameters_schema.json')
+            with open(schema_path) as param_file:
+                params_schema = json.load(param_file)
+            validate(self.tmd_parameters[mtype], params_schema)
+
     def _post_growth_rescaling(self, neuron: morphio.Morphology, params: Dict) -> None:
         """Scale all neurites so that their extents are compatible with the min and
         max hard limits rules."""
@@ -215,6 +223,7 @@ class SpaceContext(object):
             input_parameters=params,
             input_distributions=self.tmd_distributions["mtypes"][mtype],
             external_diametrizer=external_diametrizer,
+            skip_validation=True,
         )
         grower.grow()
 

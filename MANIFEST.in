@@ -1,1 +1,2 @@
 graft region_grower/data
+include region_grower/parameters_schema.json

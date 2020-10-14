@@ -16,7 +16,7 @@ setup(
         'diameter-synthesis>=0.1.7',
         'morphio>=2.3.4',
         'neuroc>=0.2.3',
-        'tns>=2.2.4',
+        'tns>=2.2.5',
         'tqdm>=4.28.1',
         'voxcell>=2.6.3',
     ],

@@ -1,3 +1,4 @@
+import itertools
 from copy import deepcopy
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -134,19 +135,55 @@ def test_verify():
             Atlas.open(tempdir), DATA / "distributions.json", DATA / "parameters.json"
         )
 
+    mtype = "L2_TPC:A"
     initial_params = deepcopy(context.tmd_parameters)
 
-    context.verify(["L2_TPC:A"])
+    context.verify([mtype])
     assert_raises(RegionGrowerError, context.verify, ["UNKNOWN_MTYPE"])
 
     good_params = deepcopy(initial_params)
 
-    del context.tmd_parameters["L2_TPC:A"]
-    assert_raises(RegionGrowerError, context.verify, ["L2_TPC:A"])
+    del context.tmd_parameters[mtype]
+    assert_raises(RegionGrowerError, context.verify, [mtype])
 
     context.tmd_parameters = good_params
-    del context.tmd_parameters["L2_TPC:A"]['origin']
-    assert_raises(jsonschema.exceptions.ValidationError, context.verify, ["L2_TPC:A"])
+    del context.tmd_parameters[mtype]['origin']
+    assert_raises(jsonschema.exceptions.ValidationError, context.verify, [mtype])
+
+    # Fail when missing attributes
+    attributes = ["layer", "fraction", "slope", "intercept"]
+    good_params = deepcopy(initial_params)
+    good_params[mtype]["context_constraints"] = {
+        "apical": {
+            "hard_limit_min": {
+                "layer": 1,
+                "fraction": 0.1,
+            },
+            "extent_to_target": {
+                "slope": 0.5,
+                "intercept": 1,
+                "layer": 1,
+                "fraction": 0.5,
+            },
+            "hard_limit_max": {
+                "layer": 1,
+                "fraction": 0.9,
+            }
+        }
+    }
+    context.tmd_parameters = deepcopy(good_params)
+    context.verify([mtype])
+    for i in range(1, 5):
+        for missing_attributes in itertools.combinations(attributes, i):
+            failing_params = deepcopy(good_params[mtype])
+            for att in missing_attributes:
+                del failing_params["context_constraints"]["apical"]["extent_to_target"][att]
+            context.tmd_parameters[mtype] = failing_params
+            assert_raises(
+                jsonschema.exceptions.ValidationError,
+                context.verify,
+                [mtype],
+            )
 
 
 def test_scale():
@@ -177,6 +214,7 @@ def test_scale():
             }
         }
     }
+    context.verify([mtype])
     result = context.synthesize([100, -100, 100], mtype)
 
     assert_array_almost_equal(
@@ -184,7 +222,7 @@ def test_scale():
     )
 
     # Test scale computation
-    params = context.tmd_parameters["L2_TPC:A"]
+    params = context.tmd_parameters[mtype]
 
     assert params.get("apical", {}).get("modify", {}) is None
     assert params.get("basal", {}).get("modify", {}) is None
