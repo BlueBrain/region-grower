@@ -8,6 +8,7 @@ from morphio import Section
 from neurom import COLS
 
 from region_grower import RegionGrowerError
+from region_grower.utils import formatted_logger
 
 
 def scale_default_barcode(persistent_homologies, reference_thickness, target_thickness):
@@ -23,6 +24,14 @@ def scale_default_barcode(persistent_homologies, reference_thickness, target_thi
 
     scaling_ratio = scaling_reference * target_thickness / reference_thickness
 
+    formatted_logger(
+        "Default barcode scale: %s",
+        max_p=max_p,
+        reference_thickness=reference_thickness,
+        target_thickness=target_thickness,
+        scaling_ratio=scaling_ratio,
+    )
+
     return tmd_scale(persistent_homologies, scaling_ratio)
 
 
@@ -32,6 +41,13 @@ def scale_target_barcode(persistent_homologies, target_path_distance):
     """
     max_ph = np.nanmax([i[0] for i in persistent_homologies])
     scaling_ratio = target_path_distance / max_ph
+
+    formatted_logger(
+        "Target barcode scale: %s",
+        max_ph=max_ph,
+        target_path_distance=target_path_distance,
+        scaling_ratio=scaling_ratio,
+    )
 
     return tmd_scale(persistent_homologies, scaling_ratio)
 
@@ -61,7 +77,9 @@ def input_scaling(params: Dict,
 
             params[neurite_type]["modify"] = {
                 "funct": scale_target_barcode,
-                "kwargs": {"target_path_distance": linear_fit(apical_target_extent)},
+                "kwargs": {
+                    "target_path_distance": linear_fit(apical_target_extent),
+                },
             }
 
         else:

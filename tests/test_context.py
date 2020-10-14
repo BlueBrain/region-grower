@@ -1,8 +1,8 @@
 import itertools
+import logging
 from copy import deepcopy
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from hashlib import md5
 
 import jsonschema
 import numpy as np
@@ -10,7 +10,6 @@ from morphio import SectionType
 from nose.tools import assert_equal, assert_raises
 from numpy.testing import assert_array_almost_equal
 from region_grower import RegionGrowerError
-# from region_grower.context import SpaceNeuronGrower
 from region_grower.context import SpaceContext
 from voxcell.nexus.voxelbrain import Atlas
 
@@ -313,3 +312,89 @@ def test_scale():
     )
     assert fixed_params["basal"]["modify"]["kwargs"] == expected_basal
     result = context.synthesize([100, -100, 100], mtype)
+
+
+def test_debug_scales():
+    def capture_logging(names=None):
+        # Capture logger entries
+        records = []
+
+        class CaptureHandler(logging.Handler):
+            def emit(self, record):
+                if names is None or record.name == names or record.name in names:
+                    records.append(record)
+
+            def __enter__(self):
+                logging.getLogger().addHandler(self)
+                return records
+
+            def __exit__(self, exc_type, exc_val, exc_tb):
+                logging.getLogger().removeHandler(self)
+
+        return CaptureHandler()
+
+    # Test debug logger
+    np.random.seed(0)
+    mtype = "L2_TPC:A"
+    position = [100, -100, 100]
+
+    with TemporaryDirectory() as tempdir:
+        small_O1(tempdir)
+        context = SpaceContext(
+            Atlas.open(tempdir),
+            DATA / "distributions.json",
+            DATA / "parameters.json",
+        )
+
+        # Test with hard limit scale
+        context.tmd_parameters[mtype]["context_constraints"] = {
+            "apical": {
+                "hard_limit_min": {
+                    "layer": 1,
+                    "fraction": 0.1,
+                },
+                "extent_to_target": {
+                    "slope": 0.5,
+                    "intercept": 1,
+                    "layer": 1,
+                    "fraction": 0.5,
+                },
+                "hard_limit_max": {
+                    "layer": 1,
+                    "fraction": 0.1,  # Set max < target to ensure a rescaling is processed
+                },
+            }
+        }
+
+        with capture_logging(names="region_grower.utils") as log:
+            context.synthesize(position, mtype)
+
+    expected_messages = (
+        [
+            'Neurite type and position: {"mtype": "L2_TPC:A", "position": [100, -100, 100]}'
+        ]
+        + [
+            'Default barcode scale: {"max_p": NaN, "reference_thickness": 314, "target_thickness":'
+            ' 300.0, "scaling_ratio": 0.9554140127388535}'
+        ] * 6
+        + [
+            'Target barcode scale: {"max_ph": 255.45843100194077, "target_path_distance": 76.0, '
+            '"scaling_ratio": 0.2975043716581138}'
+        ]
+        + [
+            f'Neurite hard limit rescaling: {{"neurite_id": {i}, "neurite_type": "basal", '
+            '"scale": 1.0, "target_min_length": null, "target_max_length": null}'
+            for i in [0, 1, 2]
+        ]
+        + [
+            'Neurite hard limit rescaling: {"neurite_id": 5, "neurite_type": "apical", "scale": '
+            '0.9379790509042846, "target_min_length": 70.0, "target_max_length": 70.0}'
+        ]
+        + [
+            f'Neurite hard limit rescaling: {{"neurite_id": {i}, "neurite_type": "basal", '
+            '"scale": 1.0, "target_min_length": null, "target_max_length": null}'
+            for i in [6, 14, 16]
+        ]
+    )
+
+    assert [i.msg % i.args for i in log] == expected_messages

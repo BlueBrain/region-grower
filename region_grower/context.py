@@ -26,6 +26,7 @@ from voxcell.nexus.voxelbrain import Atlas
 
 from region_grower import RegionGrowerError, modify
 from region_grower.atlas_helper import AtlasHelper
+from region_grower.utils import formatted_logger
 
 Point = Union[List[float], np.array]
 
@@ -182,10 +183,22 @@ class SpaceContext(object):
             constraints = params.get("context_constraints", {}).get(
                 TYPE_TO_STR[root_section.type], {})
 
+            target_min_length = self._distance_to_constraint(constraints.get("hard_limit_min"))
+            target_max_length = self._distance_to_constraint(constraints.get("hard_limit_max"))
+
             scale = modify.output_scaling(
                 root_section,
-                target_min_length=self._distance_to_constraint(constraints.get("hard_limit_min")),
-                target_max_length=self._distance_to_constraint(constraints.get("hard_limit_max"))
+                target_min_length=target_min_length,
+                target_max_length=target_max_length
+            )
+
+            formatted_logger(
+                "Neurite hard limit rescaling: %s",
+                neurite_id=root_section.id,
+                neurite_type=TYPE_TO_STR[root_section.type],
+                scale=scale,
+                target_min_length=target_min_length,
+                target_max_length=target_max_length,
             )
 
             scale_section(root_section, ScaleParameters(mean=scale), recursive=True)
@@ -208,6 +221,12 @@ class SpaceContext(object):
         the neurite goes after the max hard limit, it is downscaled. And vice-versa if it is
         smaller than the min hard limit)
         """
+        formatted_logger(
+            "Neurite type and position: %s",
+            mtype=mtype,
+            position=position,
+        )
+
         self._set_current_position(position)
         params = self._correct_position_orientation_scaling(self.tmd_parameters[mtype])
 
