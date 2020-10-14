@@ -2,9 +2,11 @@ import itertools
 from copy import deepcopy
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from hashlib import md5
 
 import jsonschema
 import numpy as np
+from morphio import SectionType
 from nose.tools import assert_equal, assert_raises
 from numpy.testing import assert_array_almost_equal
 from region_grower import RegionGrowerError
@@ -187,7 +189,6 @@ def test_verify():
 
 
 def test_scale():
-    np.random.seed(0)
     mtype = "L2_TPC:A"
 
     with TemporaryDirectory() as tempdir:
@@ -196,6 +197,58 @@ def test_scale():
             Atlas.open(tempdir), DATA / "distributions.json", DATA / "parameters.json"
         )
 
+    # Test with no hard limit scaling
+    context.tmd_parameters[mtype]["context_constraints"] = {
+        "apical": {
+            "extent_to_target": {
+                "slope": 0.5,
+                "intercept": 1,
+                "layer": 1,
+                "fraction": 0.5,
+            }
+        }
+    }
+    context.verify([mtype])
+    np.random.seed(0)
+    result = context.synthesize([100, -100, 100], mtype)
+
+    expected_types = [
+        SectionType.basal_dendrite,
+        SectionType.basal_dendrite,
+        SectionType.basal_dendrite,
+        SectionType.apical_dendrite,
+        SectionType.basal_dendrite,
+        SectionType.basal_dendrite,
+        SectionType.basal_dendrite
+    ]
+    assert [i.type for i in result.neuron.root_sections] == expected_types
+
+    assert_array_almost_equal([  # Check only first and last points of neurites
+        np.around(np.array([neu.points[0], neu.points[-1]]), 6)
+        for neu in result.neuron.root_sections
+    ],
+    [
+        [[0.126557, 9.05724, 1.244288],
+         [0.249028, 10.898591, 1.370834]],
+        [[-4.150891, 7.862884, -2.131432],
+         [-7.36457, 13.100216, -3.620522]],
+        [[-9.12136, 0.345625, 0.528383],
+         [-14.683837, -0.210737, 1.082018]],
+        [[0.0, 9.143187, 0.0],
+         [-0.704811, 18.29415, -0.160817]],
+        [[-0.94584, -3.288574, 8.47871],
+         [-1.874288, -8.647104, 19.25721]],
+        [[2.139962, 4.295261, 7.782618],
+         [7.751178, 16.725683, 37.513992]],
+        [[6.060588, -4.2906, 5.334593],
+         [27.177965, -21.629234, 24.54295]]
+    ])
+
+    assert_array_almost_equal(
+        result.apical_points, np.array([[-1.54834383, 43.40647383, -1.60015317]])
+    )
+
+    # Test with hard limit scale
     context.tmd_parameters[mtype]["context_constraints"] = {
         "apical": {
             "hard_limit_min": {
@@ -215,23 +268,48 @@ def test_scale():
         }
     }
     context.verify([mtype])
+    np.random.seed(0)
     result = context.synthesize([100, -100, 100], mtype)
 
+    assert [i.type for i in result.neuron.root_sections] == expected_types
+
+    assert_array_almost_equal([  # Check only first and last points of neurites
+        np.around(np.array([neu.points[0], neu.points[-1]]), 6)
+        for neu in result.neuron.root_sections
+    ],
+    [
+        [[0.126557, 9.05724, 1.244288],
+         [0.249028, 10.898591, 1.370834]],
+        [[-4.150891, 7.862884, -2.131432],
+         [-7.36457, 13.100216, -3.620522]],
+        [[-9.12136, 0.345625, 0.528383],
+         [-14.683837, -0.210737, 1.082018]],
+        [[0.0, 9.143187, 0.0],
+         [-0.661098, 17.726599, -0.150843]],
+        [[-0.94584, -3.288574, 8.47871],
+         [-1.874288, -8.647104, 19.25721]],
+        [[2.139962, 4.295261, 7.782618],
+         [7.751178, 16.725683, 37.513992]],
+        [[6.060588, -4.2906, 5.334593],
+         [27.177965, -21.629234, 24.54295]]
+    ])
+
     assert_array_almost_equal(
-        result.apical_points, np.array([[-1.54834383, 43.40647383, -1.60015317]])
+        result.apical_points, np.array([[-1.45231407, 41.28143224, -1.50091016]])
     )
 
     # Test scale computation
     params = context.tmd_parameters[mtype]
 
-    assert params.get("apical", {}).get("modify", {}) is None
-    assert params.get("basal", {}).get("modify", {}) is None
+    assert params["apical"]["modify"] is None
+    assert params["basal"]["modify"] is None
 
     fixed_params = context._correct_position_orientation_scaling(params)
 
     expected_apical = {"target_path_distance": 76}
     expected_basal = {"reference_thickness": 314, "target_thickness": 300.0}
     assert (
-        fixed_params.get("apical", {}).get("modify", {}).get("kwargs", {}) == expected_apical
+        fixed_params["apical"]["modify"]["kwargs"] == expected_apical
     )
-    assert fixed_params.get("basal", {}).get("modify", {}).get("kwargs", {}) == expected_basal
+    assert fixed_params["basal"]["modify"]["kwargs"] == expected_basal
+    result = context.synthesize([100, -100, 100], mtype)

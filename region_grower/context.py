@@ -173,21 +173,29 @@ class SpaceContext(object):
                 params_schema = json.load(param_file)
             validate(self.tmd_parameters[mtype], params_schema)
 
-    def _post_growth_rescaling(self, neuron: morphio.Morphology, params: Dict) -> None:
+    def _post_growth_rescaling(self, grower: NeuronGrower, params: Dict) -> None:
         """Scale all neurites so that their extents are compatible with the min and
         max hard limits rules."""
 
-        for root_section in neuron.root_sections:
+        num = 0
+        for root_section in grower.neuron.root_sections:
             constraints = params.get("context_constraints", {}).get(
                 TYPE_TO_STR[root_section.type], {})
 
             scale = modify.output_scaling(
                 root_section,
-                target_min_length=self._distance_to_constraint(constraints.get("min")),
-                target_max_length=self._distance_to_constraint(constraints.get("max"))
+                target_min_length=self._distance_to_constraint(constraints.get("hard_limit_min")),
+                target_max_length=self._distance_to_constraint(constraints.get("hard_limit_max"))
             )
 
             scale_section(root_section, ScaleParameters(mean=scale), recursive=True)
+
+            # Rescale apical point
+            if root_section.type == SectionType.apical_dendrite:
+                first_point = root_section.points[0]
+                apical_point = grower.apical_points[num]
+                grower.apical_points[num] = (apical_point - first_point) * scale + first_point
+                num += 1
 
     def synthesize(self, position: Point, mtype: str) -> SynthesisResult:
         """Synthesize a cell based on the position and mtype.
@@ -227,7 +235,7 @@ class SpaceContext(object):
         )
         grower.grow()
 
-        self._post_growth_rescaling(grower.neuron, params)
+        self._post_growth_rescaling(grower, params)
         return SynthesisResult(grower.neuron, grower.apical_points or [])
 
 
