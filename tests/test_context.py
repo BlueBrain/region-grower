@@ -284,7 +284,7 @@ def test_scale():
         [[-9.12136, 0.345625, 0.528383],
          [-14.683837, -0.210737, 1.082018]],
         [[0.0, 9.143187, 0.0],
-         [-0.661098, 17.726599, -0.150843]],
+         [-0.661098, 17.726597, -0.150843]],
         [[-0.94584, -3.288574, 8.47871],
          [-1.874288, -8.647104, 19.25721]],
         [[2.139962, 4.295261, 7.782618],
@@ -388,7 +388,7 @@ def test_debug_scales():
         ]
         + [
             'Neurite hard limit rescaling: {"neurite_id": 5, "neurite_type": "apical", "scale": '
-            '0.9379790509042846, "target_min_length": 70.0, "target_max_length": 70.0}'
+            '0.9379790269315096, "target_min_length": 70.0, "target_max_length": 70.0}'
         ]
         + [
             f'Neurite hard limit rescaling: {{"neurite_id": {i}, "neurite_type": "basal", '

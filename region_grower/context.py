@@ -35,6 +35,7 @@ TYPE_TO_STR = {
     SectionType.apical_dendrite: "apical",
     SectionType.axon: "axon",
 }
+PIA_DIRECTION = [0.0, 1.0, 0.0]
 
 
 @attr.s
@@ -107,7 +108,7 @@ class SpaceContext(object):
         """Returns the looked-up orientation for the given position.
 
         If orientation is None, the direction is assumed towards the pia"""
-        return np.dot(self.current_orientations, vector)[0] if vector else np.array([0, 1, 0])
+        return np.dot(self.current_orientations, vector)[0] if vector else PIA_DIRECTION
 
     def _lookup_target_reference_depths(self) -> np.array:
         """Returns the target and the reference depth for a given neuron position.
@@ -188,6 +189,7 @@ class SpaceContext(object):
 
             scale = modify.output_scaling(
                 root_section,
+                self.current_orientations.dot(PIA_DIRECTION)[0],
                 target_min_length=target_min_length,
                 target_max_length=target_max_length
             )

@@ -1,6 +1,6 @@
 """ Use spatial properties to modify synthesis input."""
 
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 import numpy as np
 from tmd.Topology.transformations import tmd_scale
@@ -9,6 +9,10 @@ from neurom import COLS
 
 from region_grower import RegionGrowerError
 from region_grower.utils import formatted_logger
+
+# if the given variables are < these values, a hard crash will happen
+MAX_TARGET_PATH_DISTANCE = 1
+MAX_TARGET_THICKNESS = 1e-8
 
 
 def scale_default_barcode(persistent_homologies, reference_thickness, target_thickness):
@@ -67,22 +71,27 @@ def input_scaling(params: Dict,
         target_thickness: the expected thickness that the synthesized cells should live in.
         apical_target_extent: the expected extent of the apical dendrite
     """
-    if target_thickness < 1e-8:
-        raise RegionGrowerError("target_thickness too small to be able to scale the bar code")
-
     for neurite_type in params["grow_types"]:
         if (neurite_type == "apical" and apical_target_extent is not None):
             apical_constraint = params["context_constraints"]["apical"]["extent_to_target"]
             linear_fit = np.poly1d((apical_constraint["slope"], apical_constraint["intercept"]))
+            target_path_distance = linear_fit(apical_target_extent)
+            if target_path_distance < MAX_TARGET_PATH_DISTANCE:
+                raise ValueError(
+                    f"The target path distance computed from the fit is {target_path_distance}\
+                    < {MAX_TARGET_PATH_DISTANCE}!")
 
             params[neurite_type]["modify"] = {
                 "funct": scale_target_barcode,
                 "kwargs": {
-                    "target_path_distance": linear_fit(apical_target_extent),
+                    "target_path_distance": target_path_distance,
                 },
             }
 
         else:
+            if target_thickness < MAX_TARGET_THICKNESS:
+                raise RegionGrowerError(
+                    "target_thickness too small to be able to scale the bar code")
             params[neurite_type]["modify"] = {
                 "funct": scale_default_barcode,
                 "kwargs": {
@@ -92,9 +101,8 @@ def input_scaling(params: Dict,
             }
 
 
-def output_scaling(
-    root_section: Section, target_min_length: float, target_max_length: float
-) -> float:
+def output_scaling(root_section: Section, orientation: List[float], target_min_length: float,
+                   target_max_length: float) -> float:
     """Returns the scaling factor to be applied on Y axis for this neurite
 
     The scaling is chosen such that the neurite is:
@@ -103,12 +111,13 @@ def output_scaling(
 
     Args:
         root_section: the neurite for which the scale is computed
+        orientation: 3 array with y direction to project points to get the extend of the cell
         target_min_length: min length that the neurite must reach
         target_max_length: max length that the neurite can reach
 
     Returns: scale factor to apply"""
-    max_y = max(p for sec in root_section.iter() for p in sec.points[:, COLS.Y])
-    y_extent = max_y - root_section.points[0, COLS.Y]
+    max_y = max(p for sec in root_section.iter() for p in sec.points[:, COLS.XYZ].dot(orientation))
+    y_extent = max_y - root_section.points[0, COLS.XYZ].dot(orientation)
 
     if target_min_length is not None:
         min_scale = target_min_length / y_extent

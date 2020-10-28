@@ -30,7 +30,7 @@ def test_scale_target_barcode():
 
 
 def test_input_scaling():
-    params = {
+    init_params = {
         "grow_types": ["apical", "basal"],
         "context_constraints": {
             "apical": {
@@ -49,7 +49,7 @@ def test_input_scaling():
     target_thickness = 2
     apical_target_distance = 3
 
-    expected = deepcopy(params)
+    expected = deepcopy(init_params)
     expected["apical"] = {
         "modify": {
             "funct": modify.scale_target_barcode,
@@ -68,6 +68,7 @@ def test_input_scaling():
         }
     }
 
+    params = deepcopy(init_params)
     modify.input_scaling(
         params,
         reference_thickness,
@@ -84,5 +85,16 @@ def test_input_scaling():
         params,
         reference_thickness,
         0,
+        apical_target_distance,
+    )
+
+    params = deepcopy(init_params)
+    params["context_constraints"]["apical"]["extent_to_target"]["slope"] = -0.5
+    assert_raises(
+        ValueError,
+        modify.input_scaling,
+        params,
+        reference_thickness,
+        10,
         apical_target_distance,
     )
