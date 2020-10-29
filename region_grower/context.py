@@ -207,9 +207,10 @@ class SpaceContext(object):
 
             # Rescale apical point
             if root_section.type == SectionType.apical_dendrite:
-                first_point = root_section.points[0]
                 apical_point = grower.apical_points[num]
-                grower.apical_points[num] = (apical_point - first_point) * scale + first_point
+                if apical_point is not None:
+                    first_point = root_section.points[0]
+                    grower.apical_points[num] = (apical_point - first_point) * scale + first_point
                 num += 1
 
     def synthesize(self, position: Point, mtype: str) -> SynthesisResult:

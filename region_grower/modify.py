@@ -11,8 +11,8 @@ from region_grower import RegionGrowerError
 from region_grower.utils import formatted_logger
 
 # if the given variables are < these values, a hard crash will happen
-MAX_TARGET_PATH_DISTANCE = 1
-MAX_TARGET_THICKNESS = 1e-8
+MIN_TARGET_PATH_DISTANCE = 1.0
+MIN_TARGET_THICKNESS = 1.0
 
 
 def scale_default_barcode(persistent_homologies, reference_thickness, target_thickness):
@@ -76,10 +76,18 @@ def input_scaling(params: Dict,
             apical_constraint = params["context_constraints"]["apical"]["extent_to_target"]
             linear_fit = np.poly1d((apical_constraint["slope"], apical_constraint["intercept"]))
             target_path_distance = linear_fit(apical_target_extent)
-            if target_path_distance < MAX_TARGET_PATH_DISTANCE:
-                raise ValueError(
-                    f"The target path distance computed from the fit is {target_path_distance}\
-                    < {MAX_TARGET_PATH_DISTANCE}!")
+            if target_path_distance < MIN_TARGET_PATH_DISTANCE:
+                formatted_logger(
+                    "Too small target path distance: %s",
+                    fit_slope=apical_constraint["slope"],
+                    fit_intercept=apical_constraint["intercept"],
+                    apical_target_extent=apical_target_extent,
+                    target_path_distance=target_path_distance,
+                    min_target_path_distance=MIN_TARGET_PATH_DISTANCE,
+                )
+                raise RegionGrowerError(
+                    f"The target path distance computed from the fit is {target_path_distance}"
+                    f" < {MIN_TARGET_PATH_DISTANCE}!")
 
             params[neurite_type]["modify"] = {
                 "funct": scale_target_barcode,
@@ -89,9 +97,15 @@ def input_scaling(params: Dict,
             }
 
         else:
-            if target_thickness < MAX_TARGET_THICKNESS:
+            if target_thickness < MIN_TARGET_THICKNESS:
+                formatted_logger(
+                    "Too small target thickness: %s",
+                    target_thickness=target_thickness,
+                    min_target_thickness=MIN_TARGET_THICKNESS,
+                )
                 raise RegionGrowerError(
-                    "target_thickness too small to be able to scale the bar code")
+                    f"The target thickness {target_thickness} is too small to be able to scale the"
+                    f" bar code with {MIN_TARGET_THICKNESS}")
             params[neurite_type]["modify"] = {
                 "funct": scale_default_barcode,
                 "kwargs": {
