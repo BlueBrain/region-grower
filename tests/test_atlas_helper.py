@@ -23,18 +23,18 @@ def test_atlas_helper():
         helper = AtlasHelper(Atlas.open(tempdir))
         assert_equal(helper.layer_thickness(1).raw[5, 5, 5], 200)
 
-        assert_equal(helper.pia_coord.raw[5, 5, 5], 200)
+        assert_equal(helper.pia_coord.raw[5, 5, 5], 800)
 
         cortical_depths = np.cumsum([4] * 6)
 
         # test in L1
         assert_equal(
-            helper.lookup_target_reference_depths([100, -100, 100], cortical_depths),
+            helper.lookup_target_reference_depths([0, 500, 0], cortical_depths),
             (300, 8),
         )
 
         assert_equal(
-            helper.lookup_target_reference_depths([100, 0, 100], cortical_depths),
+            helper.lookup_target_reference_depths([100, 600, 100], cortical_depths),
             (200, 4),
         )
 

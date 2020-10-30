@@ -27,7 +27,8 @@ def test_context():
             Atlas.open(tempdir), DATA / "distributions.json", DATA / "parameters.json"
         )
 
-    result = context.synthesize([100, -100, 100], "L2_TPC:A")
+    # Synthesize in L2
+    result = context.synthesize([0, 500, 0], "L2_TPC:A")
 
     assert_array_almost_equal(
         result.apical_points, np.array([[9.40834, 114.985021, -25.603346]])
@@ -83,7 +84,7 @@ def test_context_external_diametrizer():
             DATA / "parameters_external_diametrizer.json",
         )
 
-    result = context.synthesize([100, -100, 100], "L2_TPC:A")
+    result = context.synthesize([0, 500, 0], "L2_TPC:A")
 
     assert_array_almost_equal(
         result.apical_points, np.array([[9.40834, 114.985021, -25.603346]])
@@ -209,7 +210,7 @@ def test_scale():
     }
     context.verify([mtype])
     np.random.seed(0)
-    result = context.synthesize([100, -100, 100], mtype)
+    result = context.synthesize([0, 500, 0], mtype)
 
     expected_types = [
         SectionType.basal_dendrite,
@@ -268,7 +269,7 @@ def test_scale():
     }
     context.verify([mtype])
     np.random.seed(0)
-    result = context.synthesize([100, -100, 100], mtype)
+    result = context.synthesize([0, 500, 0], mtype)
 
     assert [i.type for i in result.neuron.root_sections] == expected_types
 
@@ -311,7 +312,33 @@ def test_scale():
         fixed_params["apical"]["modify"]["kwargs"] == expected_apical
     )
     assert fixed_params["basal"]["modify"]["kwargs"] == expected_basal
-    result = context.synthesize([100, -100, 100], mtype)
+
+    result = context.synthesize([0, 500, 0], mtype)
+
+    assert_array_almost_equal(
+        result.apical_points, np.array([[6.3461983, 39.97901662, -2.28157932]])
+    )
+
+    assert_array_almost_equal([  # Check only first and last points of neurites
+        np.around(np.array([neu.points[0], neu.points[-1]]), 6)
+        for neu in result.neuron.root_sections
+    ],
+    [
+        [[-3.692442, 6.994462, 1.865072],
+         [-4.863886, 9.07998, 2.420243]],
+        [[-6.711138, -3.087257, -3.38594],
+         [-8.628284, -3.758522, -4.406445]],
+        [[0.106869, 7.648302, -2.743569],
+         [0.168794, 8.93822, -3.23856]],
+        [[7.051836, 3.94105, -0.880256],
+         [11.152796, 6.810006, -1.316257]],
+        [[0., 8.1262, 0.],
+         [1.903886, 20.11955, -0.986548]],
+        [[3.794402, -4.909248, 5.247564],
+         [9.407939, -11.910494, 11.469416]],
+        [[-4.378488, -2.390506, 6.414783],
+         [-21.02975, -13.127062, 33.190144]],
+    ])
 
 
 def test_debug_scales():
@@ -336,7 +363,7 @@ def test_debug_scales():
     # Test debug logger
     np.random.seed(0)
     mtype = "L2_TPC:A"
-    position = [100, -100, 100]
+    position = [0, 500, 0]
 
     with TemporaryDirectory() as tempdir:
         small_O1(tempdir)
@@ -371,7 +398,7 @@ def test_debug_scales():
 
     expected_messages = (
         [
-            'Neurite type and position: {"mtype": "L2_TPC:A", "position": [100, -100, 100]}'
+            f'Neurite type and position: {{"mtype": "L2_TPC:A", "position": {position}}}'
         ]
         + [
             'Default barcode scale: {"max_p": NaN, "reference_thickness": 314, "target_thickness":'
