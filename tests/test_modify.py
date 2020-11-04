@@ -69,6 +69,7 @@ def test_input_scaling():
     }
 
     params = deepcopy(init_params)
+    modify.MIN_TARGET_PATH_DISTANCE = 2
     modify.input_scaling(
         params,
         reference_thickness,
@@ -91,7 +92,7 @@ def test_input_scaling():
     params = deepcopy(init_params)
     params["context_constraints"]["apical"]["extent_to_target"]["slope"] = -0.5
     assert_raises(
-        ValueError,
+        RegionGrowerError,
         modify.input_scaling,
         params,
         reference_thickness,
