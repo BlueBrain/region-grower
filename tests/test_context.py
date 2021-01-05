@@ -9,6 +9,7 @@ import numpy as np
 from morphio import SectionType
 from nose.tools import assert_equal, assert_raises
 from numpy.testing import assert_array_almost_equal
+from numpy.testing import assert_array_equal
 from region_grower import RegionGrowerError
 from region_grower.context import SpaceContext
 from voxcell.nexus.voxelbrain import Atlas
@@ -30,8 +31,12 @@ def test_context():
     # Synthesize in L2
     result = context.synthesize([0, 500, 0], "L2_TPC:A")
 
+    assert_array_equal(
+        result.apical_sections, np.array([48])
+    )
     assert_array_almost_equal(
-        result.apical_points, np.array([[9.40834, 114.985021, -25.603346]])
+        [result.neuron.sections[i].points[-1] for i in result.apical_sections],
+        np.array([[9.40834045, 114.9850235, -25.60334587]])
     )
 
     # This tests that input orientations are not mutated by the synthesize() call
@@ -86,8 +91,12 @@ def test_context_external_diametrizer():
 
     result = context.synthesize([0, 500, 0], "L2_TPC:A")
 
+    assert_array_equal(
+        result.apical_sections, np.array([48])
+    )
     assert_array_almost_equal(
-        result.apical_points, np.array([[9.40834, 114.985021, -25.603346]])
+        [result.neuron.sections[i].points[-1] for i in result.apical_sections],
+        np.array([[9.40834045, 114.9850235, -25.60334587]])
     )
 
     # This tests that input orientations are not mutated by the synthesize() call
@@ -126,7 +135,7 @@ def test_context_external_diametrizer():
 
     assert_array_almost_equal(
         next(result.neuron.iter()).diameters,
-        np.array([0.983045, 0.981993, 0.981009], dtype=np.float32),
+        np.array([0.79342693, 0.79173011, 0.79014111], dtype=np.float32),
     )
 
 
@@ -244,8 +253,12 @@ def test_scale():
          [27.177965, -21.629234, 24.54295]]
     ])
 
+    assert_array_equal(
+        result.apical_sections, np.array([15])
+    )
     assert_array_almost_equal(
-        result.apical_points, np.array([[-1.54834383, 43.40647383, -1.60015317]])
+        [result.neuron.sections[i].points[-1] for i in result.apical_sections],
+        np.array([[-1.54834378, 43.40647507, -1.60015321]])
     )
 
     # Test with hard limit scale
@@ -294,8 +307,12 @@ def test_scale():
          [27.177965, -21.629234, 24.54295]]
     ])
 
+    assert_array_equal(
+        result.apical_sections, np.array([15])
+    )
     assert_array_almost_equal(
-        result.apical_points, np.array([[-1.45231407, 41.28143224, -1.50091016]])
+        [result.neuron.sections[i].points[-1] for i in result.apical_sections],
+        np.array([[-1.4523139, 41.28142929, -1.50091016]])
     )
 
     # Test scale computation
@@ -315,8 +332,12 @@ def test_scale():
 
     result = context.synthesize([0, 500, 0], mtype)
 
+    assert_array_equal(
+        result.apical_sections, np.array([23])
+    )
     assert_array_almost_equal(
-        result.apical_points, np.array([[6.3461983, 39.97901662, -2.28157932]])
+        [result.neuron.sections[i].points[-1] for i in result.apical_sections],
+        np.array([[6.34619808, 39.97901917, -2.28157949]])
     )
 
     assert_array_almost_equal([  # Check only first and last points of neurites

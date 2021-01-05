@@ -48,7 +48,7 @@ class SynthesisResult:
     neuron = attr.ib(type=morphio.mut.Morphology)  # pylint: disable=no-member
 
     #: The apical points
-    apical_points = attr.ib(type=[])
+    apical_sections = attr.ib(type=[])
 
 
 class SpaceContext(object):
@@ -179,7 +179,6 @@ class SpaceContext(object):
         """Scale all neurites so that their extents are compatible with the min and
         max hard limits rules."""
 
-        num = 0
         for root_section in grower.neuron.root_sections:
             constraints = params.get("context_constraints", {}).get(
                 TYPE_TO_STR[root_section.type], {})
@@ -204,14 +203,6 @@ class SpaceContext(object):
             )
 
             scale_section(root_section, ScaleParameters(mean=scale), recursive=True)
-
-            # Rescale apical point
-            if root_section.type == SectionType.apical_dendrite:
-                apical_point = grower.apical_points[num]
-                if apical_point is not None:
-                    first_point = root_section.points[0]
-                    grower.apical_points[num] = (apical_point - first_point) * scale + first_point
-                num += 1
 
     def synthesize(self, position: Point, mtype: str) -> SynthesisResult:
         """Synthesize a cell based on the position and mtype.
@@ -258,7 +249,7 @@ class SpaceContext(object):
         grower.grow()
 
         self._post_growth_rescaling(grower, params)
-        return SynthesisResult(grower.neuron, grower.apical_points or [])
+        return SynthesisResult(grower.neuron, grower.apical_sections or [])
 
 
 class CellHelper(object):

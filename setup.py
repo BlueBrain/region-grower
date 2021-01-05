@@ -13,10 +13,10 @@ setup(
     install_requires=[
         'attrs>=19.3.0',
         'click>=7.0',
-        'diameter-synthesis>=0.1.7',
+        'diameter-synthesis>=0.1.8',
         'morphio>=2.3.4',
         'neuroc>=0.2.3',
-        'tns>=2.2.5',
+        'tns>=2.3.0',
         'tqdm>=4.28.1',
         'voxcell>=2.6.3',
     ],
