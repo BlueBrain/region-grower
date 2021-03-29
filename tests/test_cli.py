@@ -1,10 +1,9 @@
-import shutil
-import os
-from tempfile import TemporaryDirectory
+"""Test the region_grower.cli module."""
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
-from nose.tools import assert_equal
 from click.testing import CliRunner
+from nose.tools import assert_equal
 
 from region_grower.cli import cli
 
@@ -12,6 +11,7 @@ DATA = Path(__file__).parent / "data"
 
 
 def test_cli():
+    """Test the CLI entries."""
     with TemporaryDirectory("test-report") as folder:
         folder = Path(folder)
         runner = CliRunner()

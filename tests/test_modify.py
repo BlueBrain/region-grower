@@ -1,24 +1,24 @@
+"""Test the region_grower.modify module."""
+# pylint: disable=missing-function-docstring
 from copy import deepcopy
 
 import numpy as np
 from nose.tools import assert_raises
-from numpy.testing import assert_array_equal
 from numpy.testing import assert_array_almost_equal
+from numpy.testing import assert_array_equal
 
-from region_grower import modify
 from region_grower import RegionGrowerError
+from region_grower import modify
 
 
 def test_scale_default_barcode():
     ph = [[0.1, 0.2], [0.3, 0.4]]
     reference_thickness = 1
     target_thickness = 1
-    res = modify.scale_default_barcode(
-        ph, reference_thickness, target_thickness)
+    res = modify.scale_default_barcode(ph, reference_thickness, target_thickness)
     assert_array_equal(res, ph)
 
-    res = modify.scale_default_barcode(
-        np.array(ph) * 10, reference_thickness, target_thickness)
+    res = modify.scale_default_barcode(np.array(ph) * 10, reference_thickness, target_thickness)
     assert_array_equal(res, [[0.25, 0.5], [0.75, 1.0]])
 
 
@@ -43,7 +43,7 @@ def test_input_scaling():
             }
         },
         "apical": {},
-        "basal": {}
+        "basal": {},
     }
     reference_thickness = 1
     target_thickness = 2

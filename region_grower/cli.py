@@ -1,7 +1,7 @@
 """App module that defines the command line interface."""
 import click
-import region_grower.generate as generate
 
+import region_grower.generate as generate
 
 # pylint: disable=redefined-outer-name
 
@@ -14,7 +14,9 @@ def cli():
 @cli.command(short_help="Generate the TMD parameter file")
 @click.argument("input_folder", type=str, required=True)
 @click.argument(
-    "dat_file", type=str, required=True,
+    "dat_file",
+    type=str,
+    required=True,
 )
 @click.option(
     "-dc",
@@ -45,7 +47,12 @@ def cli():
     help="extension for neuron files",
 )
 def generate_parameters(
-    input_folder, dat_file, parameter_filename, diametrizer_config, tmd_parameters, ext,
+    input_folder,
+    dat_file,
+    parameter_filename,
+    diametrizer_config,
+    tmd_parameters,
+    ext,
 ):
     """Generate JSON files containing the TMD parameters for
     each mtype in input_folder, using dat_file for mtypes
@@ -66,10 +73,14 @@ def generate_parameters(
 
 @cli.command(short_help="Create the TMD distribution file")
 @click.argument(
-    "input_folder", type=str, required=True,
+    "input_folder",
+    type=str,
+    required=True,
 )
 @click.argument(
-    "dat_file", type=str, required=True,
+    "dat_file",
+    type=str,
+    required=True,
 )
 @click.option(
     "-df",
@@ -93,7 +104,11 @@ def generate_parameters(
     help="extension for neuron files",
 )
 def generate_distributions(
-    input_folder, dat_file, distribution_filename, diametrizer_config, ext,
+    input_folder,
+    dat_file,
+    distribution_filename,
+    diametrizer_config,
+    ext,
 ):
     """Generate JSON files containing the TMD distributions for
     each mtype in input_folder, using dat_file for mtypes.

@@ -7,7 +7,6 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 
-
 L = logging.getLogger(__name__)
 
 
@@ -34,9 +33,7 @@ def create_morphologies_dict(dat_file, morph_path, ext=".asc"):
     return name_dict
 
 
-def formatted_logger(
-    msg: str, **kwargs
-) -> None:
+def formatted_logger(msg: str, **kwargs) -> None:
     """Add a logger entry if the given condition is True and dump kwargs as JSON in this
     entry.
 

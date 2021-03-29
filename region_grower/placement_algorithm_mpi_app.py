@@ -19,10 +19,10 @@ Worker nodes (MPI_RANK > 0):
 """
 import logging
 import sys
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
+from abc import abstractmethod
 
 from region_grower import SkipSynthesisError
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -123,6 +123,7 @@ def run_master(master, args, COMM):
     if COMM is None:
         import dask.bag as db
         from dask.diagnostics import ProgressBar
+
         b = db.from_sequence(master.task_ids)
         ProgressBar().register()
 
@@ -144,10 +145,7 @@ def run_master(master, args, COMM):
             COMM.send(chunk, dest=rank)
 
         LOGGER.info("Processing tasks...")
-        result = dict(
-            COMM.recv()
-            for _ in tqdm(range(len(task_ids)))
-        )
+        result = dict(COMM.recv() for _ in tqdm(range(len(task_ids))))
 
     master.finalize(result)
 
@@ -169,6 +167,7 @@ def _setup_excepthook(COMM):
         sys.stdout.flush()
         sys.stderr.flush()
         COMM.Abort(1)
+
     sys.excepthook = _mpi_excepthook
 
 
@@ -180,10 +179,12 @@ def run(App):
 
 def _run(App, args):
     """ Launch MPI-based Master / Worker application. """
+    # pylint: disable=import-error,import-outside-toplevel
     if args.no_mpi:
         run_master(App(), args, None)
     else:
-        from mpi4py import MPI  # pylint: disable=import-error,import-outside-toplevel
+        from mpi4py import MPI
+
         COMM = MPI.COMM_WORLD  # pylint: disable=c-extension-no-member
         if COMM.Get_size() < 2:
             raise RuntimeError(

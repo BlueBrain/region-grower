@@ -1,15 +1,16 @@
-import numpy as np
+"""Test the region_grower.atlas_helper.AtlasHelper module."""
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+import numpy as np
 from nose.tools import assert_equal
 from nose.tools import assert_raises
-
-from atlas_mock import small_O1
-from region_grower.atlas_helper import AtlasHelper
-from voxcell.nexus.voxelbrain import Atlas
 from voxcell.exceptions import VoxcellError
+from voxcell.nexus.voxelbrain import Atlas
 
+from region_grower.atlas_helper import AtlasHelper
+
+from .atlas_mock import small_O1
 
 DATA = Path(__file__).parent / "data"
 

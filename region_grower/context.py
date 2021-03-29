@@ -9,7 +9,11 @@ the placement_algorithm package to synthesize circuit morphologies.
 
 import json
 from copy import deepcopy
-from typing import Dict, List, Optional, Sequence, Union
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Sequence
+from typing import Union
 
 import attr
 import morphio
@@ -18,13 +22,16 @@ import pkg_resources
 from diameter_synthesis import build_diameters
 from jsonschema import validate
 from morphio import SectionType
-from neuroc.scale import ScaleParameters, scale_section
+from neuroc.scale import ScaleParameters
+from neuroc.scale import scale_section
 from tns import NeuronGrower
-from tns.validator import validate_neuron_params, validate_neuron_distribs
+from tns.validator import validate_neuron_distribs
+from tns.validator import validate_neuron_params
 from voxcell.cell_collection import CellCollection
 from voxcell.nexus.voxelbrain import Atlas
 
-from region_grower import RegionGrowerError, modify
+from region_grower import RegionGrowerError
+from region_grower import modify
 from region_grower.atlas_helper import AtlasHelper
 from region_grower.utils import formatted_logger
 
@@ -82,7 +89,7 @@ class SpaceContext(object):
         self.current_orientations = None
 
     def _set_current_position(self, position: float) -> None:
-        '''Lookup atlas informations at current neuron position.'''
+        """Lookup atlas informations at current neuron position."""
         self.position = position
         self.depths = self.atlas.get_layer_boundary_depths(position)
         self.current_depth = self.atlas.depths.lookup(position)
@@ -99,8 +106,7 @@ class SpaceContext(object):
             return None
 
         constraint_position = self._layer_fraction_to_position(
-            constraint['layer'],
-            constraint['fraction']
+            constraint["layer"], constraint["fraction"]
         )
         return self.current_depth - constraint_position
 
@@ -122,8 +128,10 @@ class SpaceContext(object):
             if self.current_depth <= depth:
                 return depth, cortical_depth
 
-        raise RegionGrowerError(f"Current depth ({self.current_depth}) for position "
-                                f"({self.position}) is outside of circuit boundaries")
+        raise RegionGrowerError(
+            f"Current depth ({self.current_depth}) for position "
+            f"({self.position}) is outside of circuit boundaries"
+        )
 
     def _layer_fraction_to_position(self, layer: int, layer_fraction: float) -> float:
         """Returns an absolute position from a layer and a fraction of the layer
@@ -151,10 +159,15 @@ class SpaceContext(object):
 
         target, reference = self._lookup_target_reference_depths()
 
-        apical_target = params.get("context_constraints", {}).get("apical", {}).get(
-            "extent_to_target")
-        modify.input_scaling(params, reference, target,
-                             apical_target_extent=self._distance_to_constraint(apical_target))
+        apical_target = (
+            params.get("context_constraints", {}).get("apical", {}).get("extent_to_target")
+        )
+        modify.input_scaling(
+            params,
+            reference,
+            target,
+            apical_target_extent=self._distance_to_constraint(apical_target),
+        )
 
         return params
 
@@ -169,8 +182,7 @@ class SpaceContext(object):
             validate_neuron_distribs(self.tmd_distributions["mtypes"][mtype])
             validate_neuron_params(self.tmd_parameters[mtype])
 
-            schema_path = pkg_resources.resource_filename(
-                'region_grower', 'parameters_schema.json')
+            schema_path = pkg_resources.resource_filename("region_grower", "parameters_schema.json")
             with open(schema_path) as param_file:
                 params_schema = json.load(param_file)
             validate(self.tmd_parameters[mtype], params_schema)
@@ -181,7 +193,8 @@ class SpaceContext(object):
 
         for root_section in grower.neuron.root_sections:
             constraints = params.get("context_constraints", {}).get(
-                TYPE_TO_STR[root_section.type], {})
+                TYPE_TO_STR[root_section.type], {}
+            )
 
             target_min_length = self._distance_to_constraint(constraints.get("hard_limit_min"))
             target_max_length = self._distance_to_constraint(constraints.get("hard_limit_max"))
@@ -190,7 +203,7 @@ class SpaceContext(object):
                 root_section,
                 self.current_orientations.dot(PIA_DIRECTION)[0],
                 target_min_length=target_min_length,
-                target_max_length=target_max_length
+                target_max_length=target_max_length,
             )
 
             formatted_logger(
@@ -233,10 +246,12 @@ class SpaceContext(object):
             params["origin"] = [0, 0, 0]
 
         if self.tmd_parameters[mtype]["diameter_params"]["method"] == "external":
+
             def external_diametrizer(neuron, model, neurite_type):
                 return build_diameters.build(
                     neuron, model, [neurite_type], self.tmd_parameters[mtype]["diameter_params"]
                 )
+
         else:
             external_diametrizer = None
 
@@ -254,14 +269,13 @@ class SpaceContext(object):
 
 class CellHelper(object):
     """Loads spatial information and provides
-       basic functionality to query spatial properties
-       required for neuronal synthesis. In addition to
-       SpatialContext also loads the cell information to be used.
+    basic functionality to query spatial properties
+    required for neuronal synthesis. In addition to
+    SpatialContext also loads the cell information to be used.
     """
 
     def __init__(self, cells_file):
-        """
-        """
+        """"""
         self.cells = CellCollection.load_mvd3(cells_file)
 
     def positions(self, mtype):
@@ -270,6 +284,4 @@ class CellHelper(object):
 
     def _filter_by_mtype(self, mtype):
         """Returns ids of cell with the given mtype"""
-        return self.cells.properties.index[
-            self.cells.properties.mtype.str.contains(mtype)
-        ]
+        return self.cells.properties.index[self.cells.properties.mtype.str.contains(mtype)]

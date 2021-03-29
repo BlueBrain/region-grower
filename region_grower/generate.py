@@ -1,25 +1,29 @@
 """Functions fo generate parameters and distributions."""
 import json
 import logging
-from functools import partial
 import multiprocessing
-import yaml
-import pkg_resources
+from functools import partial
 
+import pkg_resources
+import yaml
+from diameter_synthesis import build_models
+from tns import extract_input
 from tqdm import tqdm
 
-from tns import extract_input
-from diameter_synthesis import build_models
-from region_grower.utils import NumpyEncoder, create_morphologies_dict
+from region_grower.utils import NumpyEncoder
+from region_grower.utils import create_morphologies_dict
 
 L = logging.getLogger(__name__)
-PC_IN_TYPES_FILE = pkg_resources.resource_filename(
-    "region_grower", "data/pc_in_types.yaml"
-)
+PC_IN_TYPES_FILE = pkg_resources.resource_filename("region_grower", "data/pc_in_types.yaml")
 
 
 def generate_parameters(
-    input_folder, dat_file, parameter_filename, diametrizer_config, tmd_parameters, ext,
+    input_folder,
+    dat_file,
+    parameter_filename,
+    diametrizer_config,
+    tmd_parameters,
+    ext,
 ):
     """Generate JSON files containing the TMD parameters for
     each mtype in input_folder, using dat_file for mtypes
@@ -60,9 +64,7 @@ def generate_parameters(
             return parameters
         return tmd_parameters[mtype]
 
-    parameters = {
-        mtype: get_parameters(mtype) for mtype in tqdm(morphologies_dict.keys())
-    }
+    parameters = {mtype: get_parameters(mtype) for mtype in tqdm(morphologies_dict.keys())}
 
     with open(parameter_filename, "w") as f:
         json.dump(parameters, f, cls=NumpyEncoder, indent=4)
@@ -90,7 +92,11 @@ class Worker:
 
 
 def generate_distributions(
-    input_folder, dat_file, distribution_filename, diametrizer_config, ext,
+    input_folder,
+    dat_file,
+    distribution_filename,
+    diametrizer_config,
+    ext,
 ):
     """Generate JSON files containing the TMD distributions for
     each mtype in input_folder, using dat_file for mtypes.
@@ -117,7 +123,8 @@ def generate_distributions(
     L.info("Extracting TMD distributions for each mtype...")
 
     results = multiprocessing.Pool().imap_unordered(
-        Worker(neurite_types, diameter_model_function), morphologies_dict.items(),
+        Worker(neurite_types, diameter_model_function),
+        morphologies_dict.items(),
     )
 
     distributions = {
