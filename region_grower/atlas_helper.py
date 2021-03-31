@@ -47,4 +47,8 @@ class AtlasHelper:
         Args:
             position: the position of a neuron in the atlas
         """
-        return np.cumsum([0] + [thickness.lookup(position) for thickness in self.thicknesses])
+        pos = np.array(position, ndmin=2)
+        result = np.zeros((len(self.thicknesses) + 1, pos.shape[0]))
+        all_thicknesses = [thickness.lookup(pos) for thickness in self.thicknesses]
+        result[1:, :] = np.cumsum(all_thicknesses, axis=0)
+        return result

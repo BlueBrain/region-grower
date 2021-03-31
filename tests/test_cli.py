@@ -123,3 +123,40 @@ class TestCli:
         assert result.exit_code == 0
         assert result.exception is None
         assert Path(tmpdir / "distributions_external_diametrizer.json").exists()
+
+    def test_synthesize_morphologies(
+        self, tmpdir, runner, small_O1_path, input_cells, axon_morph_tsv
+    ):
+        # fmt: off
+        result = runner.invoke(
+            cli,
+            [
+                "synthesize-morphologies",
+                "--cells-path", str(input_cells),
+                "--tmd-parameters", str(DATA / "parameters.json"),
+                "--tmd-distributions", str(DATA / "distributions.json"),
+                "--morph-axon", str(axon_morph_tsv),
+                "--base-morph-dir", str(DATA / "input-cells"),
+                "--atlas", str(small_O1_path),
+                "--seed", 0,
+                "--out-cells-path", str(tmpdir / "test_cells.mvd3"),
+                "--out-apical", str(tmpdir / "apical.yaml"),
+                "--out-apical-nrn-sections", str(tmpdir / "apical_NRN_sections.yaml"),
+                "--out-morph-dir", str(tmpdir),
+                "--overwrite",
+                "--out-morph-ext", "h5",
+                "--out-morph-ext", "swc",
+                "--out-morph-ext", "asc",
+                "--max-drop-ratio", 0.5,
+                "--scaling-jitter-std", 0.5,
+                "--rotational-jitter-std", 10,
+                "--nb-processes", 2,
+            ],
+            catch_exceptions=False,
+        )
+        # fmt: on
+
+        assert result.exit_code == 0
+        assert result.exception is None
+        assert Path(tmpdir / "test_cells.mvd3").exists()
+        assert Path(tmpdir / "apical.yaml").exists()

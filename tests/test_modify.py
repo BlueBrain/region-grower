@@ -2,7 +2,6 @@
 # pylint: disable=missing-function-docstring
 # pylint: disable=no-self-use
 from copy import deepcopy
-from pathlib import Path
 
 import numpy as np
 import pytest
@@ -11,9 +10,6 @@ from numpy.testing import assert_array_equal
 
 from region_grower import RegionGrowerError
 from region_grower import modify
-from region_grower.context import SpaceContext
-
-DATA = Path(__file__).parent / "data"
 
 
 def test_scale_default_barcode():
@@ -108,15 +104,8 @@ class TestOutputScaling:
     """Test the modify.output_scaling() function."""
 
     @pytest.fixture(scope="class")
-    def root_sec(self, small_O1):
-        np.random.seed(0)
-
-        context = SpaceContext(small_O1, DATA / "distributions.json", DATA / "parameters.json")
-
-        # Synthesize in L2
-        result = context.synthesize([0, 500, 0], "L2_TPC:A")
-
-        yield result.neuron.root_sections[0]
+    def root_sec(self, synthesized_cell):
+        yield synthesized_cell.neuron.root_sections[0]
 
     def test_output_scaling_default(self, root_sec):
         assert modify.output_scaling(root_sec, [0, 1, 0], None, None) == 1

@@ -7,226 +7,329 @@
 - assign identity cell rotations to MVD3/sonata
 - optional axon grafting "on-the-fly"
 """
-
-import argparse
+import json
 import logging
-from typing import Dict
+import os
 from typing import Optional
+from typing import Sequence
 
-import attr
+import dask.dataframe as dd
+import dask.distributed
+import morphio
 import numpy as np
+import pandas as pd
 import yaml
-from morph_tool import transform as mt
-from morph_tool.graft import graft_axon
-from morph_tool.loader import MorphLoader
+from jsonschema import validate
 from morphio.mut import Morphology
-from neuroc.scale import RotationParameters
-from neuroc.scale import ScaleParameters
-from neuroc.scale import rotational_jitter
-from neuroc.scale import scale_morphology
-from tns import TNSError
-from voxcell import OrientationField
+from pkg_resources import resource_stream
+from tns.validator import validate_neuron_distribs
+from tns.validator import validate_neuron_params
+from voxcell.cell_collection import CellCollection
 from voxcell.nexus.voxelbrain import Atlas
 
 from region_grower import RegionGrowerError
 from region_grower import SkipSynthesisError
-from region_grower import placement_algorithm_utils as utils
+from region_grower.atlas_helper import AtlasHelper
+from region_grower.context import CellState
+from region_grower.context import ComputationParameters
 from region_grower.context import SpaceContext
-from region_grower.placement_algorithm_mpi_app import MasterApp
-from region_grower.placement_algorithm_mpi_app import WorkerApp
+from region_grower.context import SpaceWorker
+from region_grower.context import SynthesisParameters
+from region_grower.morph_io import MorphLoader
+from region_grower.morph_io import MorphWriter
+from region_grower.utils import assign_morphologies
+from region_grower.utils import check_na_morphologies
+from region_grower.utils import load_morphology_list
 
 LOGGER = logging.getLogger(__name__)
 
-
-@attr.s
-class WorkerResult:
-    """The container class for that has to be the returned type of Worker.__call__"""
-
-    #: The morphology name
-    name = attr.ib(type=str)
-
-    #: The list coordinates where the apical tufts are starting
-    apical_points = attr.ib(type=[])
-    apical_NRN_sections = attr.ib(type=[])
+morphio.set_maximum_warnings(0)  # supress MorphIO warnings on writing files
 
 
-class Master(MasterApp):
-    """ MPI application master task. """
+def _parallel_wrapper(
+    row,
+    computation_parameters,
+    cortical_depths,
+    rotational_jitter_std,
+    scaling_jitter_std,
+):
+    try:
+        current_cell = CellState(
+            position=np.array([row["x"], row["y"], row["z"]]),
+            orientation=np.array([row["orientation"]]),
+            mtype=row["mtype"],
+            depth=row["current_depth"],
+        )
+        current_space_context = SpaceContext(
+            layer_depths=row["layer_depths"],
+            cortical_depths=cortical_depths,
+        )
+        axon_scale = row.get("axon_scale", None)
+        if axon_scale is not None and np.isnan(axon_scale):
+            axon_scale = None
+        current_synthesis_parameters = SynthesisParameters(
+            tmd_distributions=row["tmd_distributions"],
+            tmd_parameters=row["tmd_parameters"],
+            axon_morph_name=row.get("axon_name", None),
+            axon_morph_scale=axon_scale,
+            rotational_jitter_std=rotational_jitter_std,
+            scaling_jitter_std=scaling_jitter_std,
+            recenter=True,
+            seed=row["seed"],
+        )
+        space_worker = SpaceWorker(
+            current_cell,
+            current_space_context,
+            current_synthesis_parameters,
+            computation_parameters,
+        )
+        new_cell = space_worker.synthesize()
+        res = space_worker.completion(new_cell)
+    except SkipSynthesisError as exc:  # pragma: no cover
+        LOGGER.error("Skip %s because of the following error: %s", row.name, exc)
+        res = {"name": None, "apical_points": None, "apical_NRN_sections": None}
+    return pd.Series(res)
 
-    def __init__(self):
-        self.cells = None  # type: Optional[CellCollection]
-        self.args = None
+
+class SynthesizeMorphologies:
+    """Synthesize morphologies.
+
+    The synthesis steps are the following:
+
+    - load CellCollection
+    - load and check TMD parameters / distributions
+    - prepare morphology output folder
+    - fetch atlas data
+    - check axon morphology list
+    - call TNS to synthesize each cell and write it to the output folder
+    - write the global results (the new CellCollection and the apical points)
+
+    Args:
+        cells_path: the path to the MVD3 file.
+        tmd_parameters: the path to the JSON file containg the TMD parameters.
+        tmd_distributions: the path to the JSON file containg the TMD distributions.
+        atlas: the path to the Atlas directory.
+        out_cells_path: the path to the MVD3 file in which the properties of the synthesized
+            cells are written.
+        out_apical: the path to the YAML file in which the apical points are written.
+        out_morph_dir: the path to the directory in which the synthesized morphologies are
+            written.
+        out_morph_ext: the file extensions used to write the synthesized morphologies.
+        morph_axon: the path to the TSV file containing the name of the morphology that
+            should be used to graft the axon on each synthesized morphology.
+        base_morph_dir: the path containing the morphologies listed in the TSV file given in
+            ``morph_axon``.
+        atlas_cache: the path to the directory used for the atlas cache.
+        seed: the starting seed to use (note that the GID of each cell is added to this seed
+            to ensure all cells has different seeds).
+        out_apical_nrn_sections: the path to the YAML file in which the apical section IDs
+            used by Neuron are written.
+        max_files_per_dir: the maximum number of file in each directory (will create
+            subdirectories if needed).
+        overwrite: if set to False, the directory given to ``out_morph_dir`` must be empty.
+        max_drop_ratio: the maximum ratio that
+        scaling_jitter_std: the std of the scaling jitter.
+        rotational_jitter_std: the std of the rotational jitter.
+        nb_processes: the number of processes when MPI is not used.
+        with_mpi: initialize and use MPI when set to True.
+    """
+
+    MAX_SYNTHESIS_ATTEMPTS_COUNT = 10
+
+    def __init__(
+        self,
+        cells_path,
+        tmd_parameters,
+        tmd_distributions,
+        atlas,
+        out_cells_path,
+        out_apical,
+        out_morph_dir="out",
+        out_morph_ext=None,
+        morph_axon=None,
+        base_morph_dir=None,
+        atlas_cache=None,
+        seed=0,
+        out_apical_nrn_sections=None,
+        max_files_per_dir=None,
+        overwrite=False,
+        max_drop_ratio=0,
+        scaling_jitter_std=None,
+        rotational_jitter_std=None,
+        nb_processes=None,
+        with_mpi=False,
+    ):  # pylint: disable=too-many-arguments, too-many-locals
+        self.seed = seed
+        self.scaling_jitter_std = scaling_jitter_std
+        self.rotational_jitter_std = rotational_jitter_std
+        self.with_NRN_sections = out_apical_nrn_sections is not None
+        self.out_apical_nrn_sections = out_apical_nrn_sections
+        self.out_cells_path = out_cells_path
+        self.out_apical = out_apical
+
+        self._init_parallel(with_mpi, nb_processes)
+
+        LOGGER.info("Loading CellCollection from %s", cells_path)
+        self.cells = CellCollection.load(cells_path)
+
+        LOGGER.info("Loading TMD parameters from %s", tmd_parameters)
+        with open(tmd_parameters, "r") as f:
+            self.tmd_parameters = json.load(f)
+
+        LOGGER.info("Loading TMD distributions from %s", tmd_distributions)
+        with open(tmd_distributions, "r") as f:
+            self.tmd_distributions = json.load(f)
+        self.cortical_depths = np.cumsum(
+            self.tmd_distributions["metadata"]["cortical_thickness"]
+        ).tolist()
+
+        LOGGER.info("Checking TMD parameters and distributions according to cells mtypes")
+        self.verify(
+            self.cells.properties["mtype"].unique(), self.tmd_distributions, self.tmd_parameters
+        )
+
+        LOGGER.info("Preparing morphology output folder in %s", out_morph_dir)
+        self.morph_writer = MorphWriter(out_morph_dir, out_morph_ext or ["swc"])
+        self.morph_writer.prepare(
+            num_files=len(self.cells.positions),
+            max_files_per_dir=max_files_per_dir,
+            overwrite=overwrite,
+        )
+
+        LOGGER.info("Fetching atlas data")
+        current_depths, layer_depths, orientations = self.atlas_lookups(
+            atlas,
+            self.cells.positions,
+            not self.cells.orientations,
+            atlas_cache,
+        )
+
+        self.cells_data = self.cells.as_dataframe()
+        self.cells_data.index -= 1  # Index must start from 0
+        self.cells_data["current_depth"] = current_depths
+        self.cells_data["layer_depths"] = layer_depths.T.tolist()
+        if not self.cells.orientations:  # pragma: no cover
+            self.cells_data["orientation"] = orientations.tolist()
+
+        if morph_axon is not None:
+            LOGGER.info("Loading axon morphologies from %s", morph_axon)
+            self.axon_morph_list = load_morphology_list(morph_axon, self.task_ids)
+            check_na_morphologies(
+                self.axon_morph_list,
+                mtypes=self.cells_data["mtype"],
+                threshold=max_drop_ratio,
+            )
+            self.cells_data[["axon_name", "axon_scale"]] = self.axon_morph_list
+            self.morph_loader = MorphLoader(base_morph_dir, file_ext="h5")
+            to_compute = self._check_axon_morphology(self.cells_data)
+            if to_compute is not None:  # pragma: no cover
+                self.cells_data = self.cells_data.loc[to_compute]
+        else:
+            self.axon_morph_list = None
+            self.morph_loader = None
+
+    def _init_parallel(self, with_mpi=False, nb_processes=None):
+        """Initialize MPI workers if required or get the number of available processes."""
+        if with_mpi:  # pragma: no cover
+            # pylint: disable=import-outside-toplevel
+            import dask_mpi
+            from mpi4py import MPI
+
+            dask_mpi.initialize()
+            comm = MPI.COMM_WORLD  # pylint: disable=c-extension-no-member
+            self.nb_processes = comm.Get_size()
+            client_kwargs = {}
+        else:
+            self.nb_processes = nb_processes or os.cpu_count()
+
+            if self.with_NRN_sections:
+                dask.config.set({"distributed.worker.daemon": False})
+            else:
+                dask.config.set({"distributed.worker.daemon": True})
+            client_kwargs = {"n_workers": self.nb_processes}
+
+        # This is needed to make dask aware of the workers
+        self._client = dask.distributed.Client(**client_kwargs)
 
     @staticmethod
-    def parse_args():
-        """ Parse command line arguments. """
-        parser = argparse.ArgumentParser(description="Choose morphologies using 'placement hints'.")
-        parser.add_argument(
-            "--mvd3", help="Deprecated! Path to input MVD3 file. Use --cells-path instead."
-        )
-        parser.add_argument("--cells-path", help="Path to a file storing cells collection")
-        parser.add_argument(
-            "--tmd-parameters", help="Path to JSON with TMD parameters", required=True
-        )
-        parser.add_argument(
-            "--tmd-distributions", help="Path to JSON with TMD distributions", required=True
-        )
-        parser.add_argument(
-            "--morph-axon", help="TSV file with axon morphology list (for grafting)", default=None
-        )
-        parser.add_argument(
-            "--base-morph-dir", help="Path to base morphology release folder", default=None
-        )
-        parser.add_argument("--atlas", help="Atlas URL", required=True)
-        parser.add_argument("--atlas-cache", help="Atlas cache folder", default=None)
-        parser.add_argument(
-            "--seed",
-            help="Random number generator seed (default: %(default)s)",
-            type=int,
-            default=0,
-        )
-        parser.add_argument(
-            "--out-mvd3", help="Deprecated! Path to output MVD3 file. Use --out-cells-path instead."
-        )
-        parser.add_argument("--out-cells-path", help="Path to output cells file.")
-        parser.add_argument(
-            "--out-apical",
-            help=(
-                "Path to output YAML apical file containing"
-                " the coordinates where apical dendrites are tufting"
-            ),
-            required=True,
-        )
-        parser.add_argument(
-            "--out-apical-NRN-sections",
-            help=(
-                "Path to output YAML apical file containing"
-                " the neuron section ids where apical dendrites"
-                " are tufting"
-            ),
-            required=False,
-            default=None,
-        )
-
-        parser.add_argument(
-            "--out-morph-dir", help="Path to output morphology folder", default="out"
-        )
-        parser.add_argument(
-            "--out-morph-ext",
-            choices=["swc", "asc", "h5"],
-            nargs="+",
-            help="Morphology export format(s)",
-            default=["swc"],
-        )
-        parser.add_argument(
-            "--max-files-per-dir",
-            help="Maximum files per level for morphology output folder",
-            type=int,
-            default=None,
-        )
-        parser.add_argument(
-            "--overwrite",
-            help="Overwrite output morphology folder (default: %(default)s)",
-            action="store_true",
-        )
-        parser.add_argument(
-            "--max-drop-ratio",
-            help="Max drop ratio for any mtype (default: %(default)s)",
-            type=float,
-            default=0.0,
-        )
-        parser.add_argument(
-            "--scaling-jitter-std",
-            type=float,
-            help=("Apply scaling jitter to all axon sections with the given std."),
-        )
-        parser.add_argument(
-            "--rotational-jitter-std",
-            type=float,
-            help=("Apply rotational jitter to all axon sections with the given std."),
-        )
-        parser.add_argument(
-            "--no-mpi",
-            help="Do not use MPI and run everything on a single core.",
-            action="store_true",
-        )
-        return parser.parse_args()
-
-    def _check_morph_list(self, filepath, max_na_ratio):
-        """ Check morphology list for N/A morphologies. """
-        morph_list = utils.load_morphology_list(filepath, check_gids=self.task_ids)
-        utils.check_na_morphologies(
-            morph_list, mtypes=self.cells.properties["mtype"], threshold=max_na_ratio
-        )
-
-    def setup(self, args):
-        """
-        Initialize master task.
-
-          - prepare morphology output folder
-          - load CellCollection
-          - check TMD parameters / distributions
-          - check axon morphology list
-          - prefetch atlas data
-        """
-        LOGGER.info("Loading CellCollection...")
-        self.cells = utils.load_cells(args.cells_path, args.mvd3)
-
-        LOGGER.info("Preparing morphology output folder...")
-        morph_writer = utils.MorphWriter(args.out_morph_dir, args.out_morph_ext)
-        morph_writer.prepare(
-            num_files=len(self.cells.positions),
-            max_files_per_dir=args.max_files_per_dir,
-            overwrite=args.overwrite,
-        )
-
-        if args.morph_axon is not None:
-            self._check_morph_list(args.morph_axon, max_na_ratio=args.max_drop_ratio)
-
-        LOGGER.info("Verifying atlas data and synthesis parameters...")
-        # Along the way, this check fetches required datasets from VoxelBrain if necessary,
-        # so that when workers need them, they can get them directly from disk
-        # without a risk of race condition for download.
-        atlas = Atlas.open(args.atlas, cache_dir=args.atlas_cache)
-        SpaceContext(
-            atlas=atlas,
-            tmd_distributions_path=args.tmd_distributions,
-            tmd_parameters_path=args.tmd_parameters,
-        ).verify(mtypes=self.cells.properties["mtype"].unique())
-
-        self.args = args
-
-        return Worker(morph_writer)
+    def atlas_lookups(atlas_path, positions, with_orientations=False, atlas_cache=None):
+        """Open an Atlas and compute depths and orientations according to the given positions."""
+        atlas = AtlasHelper(Atlas.open(atlas_path, cache_dir=atlas_cache))
+        layer_depths = atlas.get_layer_boundary_depths(positions)
+        current_depths = atlas.depths.lookup(positions)
+        if with_orientations:
+            orientations = atlas.orientations.lookup(positions)
+        else:
+            orientations = None
+        return current_depths, layer_depths, orientations
 
     @property
     def task_ids(self):
         """ Task IDs (= CellCollection IDs). """
-        return self.cells.properties.index.values
+        return self.cells_data.index.values
 
-    def finalize(self, result: Dict[int, WorkerResult]):
-        """
-        Finalize master work.
+    @staticmethod
+    def _check_axon_morphology(cells_df) -> Optional[Morphology]:
+        """Returns the name of the morphology corresponding to the given gid if found."""
+        no_axon = cells_df["axon_name"].isnull()
+        if no_axon.any():
+            gids = no_axon.loc[no_axon].index.tolist()
+            LOGGER.warning(
+                "The following gids were not found in the axon morphology list: %s", gids
+            )
+            return no_axon.loc[~no_axon].index
+        return None
+
+    def compute(self):
+        """Run synthesis for all GIDs."""
+        computation_parameters = ComputationParameters(
+            morph_writer=self.morph_writer,
+            morph_loader=self.morph_loader,
+            with_NRN_sections=self.with_NRN_sections,
+            retries=self.MAX_SYNTHESIS_ATTEMPTS_COUNT,
+        )
+        str_mtype = self.cells_data["mtype"].astype(str)
+        self.cells_data["tmd_parameters"] = str_mtype.map(self.tmd_parameters.get)
+        self.cells_data["tmd_distributions"] = str_mtype.map(self.tmd_distributions["mtypes"].get)
+        self.cells_data["seed"] = (self.seed + self.cells_data.index) % (1 << 32)
+        func_kwargs = {
+            "computation_parameters": computation_parameters,
+            "cortical_depths": self.cortical_depths,
+            "rotational_jitter_std": self.rotational_jitter_std,
+            "scaling_jitter_std": self.scaling_jitter_std,
+        }
+
+        meta = pd.DataFrame(
+            {
+                name: pd.Series(dtype="object")
+                for name in ["name", "apical_points", "apical_NRN_sections"]
+            }
+        )
+        ddf = dd.from_pandas(self.cells_data, npartitions=self.nb_processes)
+        future = ddf.apply(_parallel_wrapper, meta=meta, axis=1, **func_kwargs)
+        res = future.compute()
+        return self.cells_data.join(res)
+
+    def finalize(self, result: pd.DataFrame):
+        """Finalize master work.
 
           - assign 'morphology' property based on workers' result
           - assign 'orientation' property to identity matrix
           - dump CellCollection to MVD3/sonata
 
         Args:
-            result: A dict {gid -> WorkerResult}
+            result: A ``pandas.DataFrame``
         """
         LOGGER.info("Assigning CellCollection 'morphology' property...")
 
-        utils.assign_morphologies(
-            self.cells,
-            {gid: item.name if item is not None else None for gid, item in result.items()},
-        )
+        assign_morphologies(self.cells, result["name"])
 
         LOGGER.info("Assigning CellCollection 'orientation' property...")
         # cell orientations are imbued in synthesized morphologies
-        self.cells.orientations = np.broadcast_to(np.identity(3), (len(self.cells.positions), 3, 3))
+        self.cells.orientations = np.broadcast_to(np.identity(3), (self.cells.size(), 3, 3))
 
         LOGGER.info("Export CellCollection...")
-        utils.save_cells(self.cells, self.args.out_cells_path, mvd3_filepath=self.args.out_mvd3)
+        self.cells.save(self.out_cells_path)
 
         def first_non_None(apical_points):
             """Returns the first non None apical coordinates"""
@@ -235,199 +338,40 @@ class Master(MasterApp):
                     return coord.tolist()
             return None  # pragma: no cover
 
-        with open(self.args.out_apical, "w") as apical_file:
-            yaml.dump(
-                {
-                    item.name: first_non_None(item.apical_points)
-                    for item in result.values()
-                    if item is not None
-                },
-                apical_file,
+        with_apicals = result.loc[~result["apical_points"].isnull()]
+        with open(self.out_apical, "w") as apical_file:
+            apical_data = with_apicals[["name"]].join(
+                with_apicals["apical_points"].apply(first_non_None)
             )
+            yaml.dump(apical_data.set_index("name")["apical_points"].to_dict(), apical_file)
 
-        if self.args.out_apical_NRN_sections is not None:
-            with open(self.args.out_apical_NRN_sections, "w") as apical_file:
+        if self.out_apical_nrn_sections is not None:
+            with open(self.out_apical_nrn_sections, "w") as apical_file:
                 yaml.dump(
-                    {
-                        item.name: item.apical_NRN_sections
-                        for item in result.values()
-                        if item is not None
-                    },
+                    with_apicals[["name", "apical_NRN_sections"]]
+                    .set_index("name")["apical_NRN_sections"]
+                    .to_dict(),
                     apical_file,
                 )
 
+    def synthesize(self):
+        """Execute the complete synthesis process and export the results."""
+        res = self.compute()
+        self.finalize(res)
+        return res
 
-def _to_be_isolated(morphology_path, point):
-    """Internal function to isolate Neuron."""
-    # pylint: disable=import-outside-toplevel
-    from morph_tool import nrnhines
+    @staticmethod
+    def verify(mtypes: Sequence[str], tmd_distributions: dict, tmd_parameters: dict) -> None:
+        """Check that context has distributions / parameters for all given mtypes."""
+        for mtype in mtypes:
+            if mtype not in tmd_distributions["mtypes"]:
+                raise RegionGrowerError("Missing distributions for mtype: '%s'" % mtype)
+            if mtype not in tmd_parameters:
+                raise RegionGrowerError("Missing parameters for mtype: '%s'" % mtype)
 
-    cell = nrnhines.get_NRN_cell(morphology_path)
-    return nrnhines.point_to_section_end(cell.icell.apical, point)
+            validate_neuron_distribs(tmd_distributions["mtypes"][mtype])
+            validate_neuron_params(tmd_parameters[mtype])
 
-
-def _convert_apical_sections_to_apical_points(results):
-    """Convert apical point sections to position."""
-    return [
-        results.neuron.sections[apical_section].points[-1]
-        for apical_section in results.apical_sections
-    ]
-
-
-def _convert_apical_sections_to_NRN_sections(apical_points, morph_path):
-    """Convert apical point sections to neuron sections."""
-    # pylint: disable=import-outside-toplevel
-    from morph_tool import nrnhines
-
-    return [
-        nrnhines.isolate(_to_be_isolated)(morph_path, apical_point)
-        for apical_point in apical_points
-    ]
-
-
-class Worker(WorkerApp):
-    """ MPI application worker task. """
-
-    def __init__(self, morph_writer):
-        self.morph_writer = morph_writer
-        self.max_synthesis_attempts_count = 10
-
-    def setup(self, args):
-        """
-        Initialize worker.
-
-          - load CellCollection
-          - initialize SpaceContext
-          - load TMD parameters and distributions
-          - load axon morphology list from TSV
-        """
-        # pylint: disable=import-outside-toplevel
-        # pylint: disable=attribute-defined-outside-init
-        import morphio
-
-        morphio.set_maximum_warnings(0)  # supress MorphIO warnings on writing files
-
-        atlas = Atlas.open(args.atlas, cache_dir=args.atlas_cache)
-
-        self.cells = utils.load_cells(args.cells_path, args.mvd3)
-        self.context = SpaceContext(
-            atlas=atlas,
-            tmd_distributions_path=args.tmd_distributions,
-            tmd_parameters_path=args.tmd_parameters,
-        )
-        self.orientation = atlas.load_data("orientation", cls=OrientationField)
-        self.seed = args.seed
-        self.scaling_jitter_std = args.scaling_jitter_std
-        self.rotational_jitter_std = args.rotational_jitter_std
-        self.with_NRN_sections = args.out_apical_NRN_sections is not None
-
-        if args.morph_axon is None:
-            self.axon_morph_list = None
-        else:
-            self.axon_morph_list = utils.load_morphology_list(args.morph_axon)
-
-            # When no_mpi == True, dask is used, and it can't pickle the lru_cache
-            # so we disable it
-            cache_size = None if not args.no_mpi else 0
-            self.morph_cache = MorphLoader(
-                args.base_morph_dir, file_ext="h5", cache_size=cache_size
-            )
-
-    def _load_morphology(self, morph_list, gid, xyz) -> Optional[Morphology]:
-        """Returns the morphology corresponding to gid if found
-
-        The morphology is then scaled, rotated around Y and
-        aligned according to the orientation field
-        """
-        if morph_list is None:  # pragma: no cover
-            return None
-
-        rec = morph_list.loc[gid]
-        if rec["morphology"] is None:  # pragma: no cover
-            raise SkipSynthesisError(f"gid {gid} not found in morph_list")
-
-        name = rec["morphology"]
-        morph = self.morph_cache.get(name)
-        if morph is None:  # pragma: no cover
-            raise SkipSynthesisError(f"Unable to find the morphology {name}")
-
-        morph = morph.as_mutable()
-        transform = np.identity(4)
-        transform[:3, :3] = np.matmul(
-            self.orientation.lookup(xyz)[0], utils.random_rotation_y(n=1)[0]
-        )
-        scale = rec.get("scale")
-        if scale is not None:  # pragma: no cover
-            transform = scale * transform
-        mt.transform(morph, transform)
-
-        if self.rotational_jitter_std is not None:  # pragma: no cover
-            rotational_jitter(morph, RotationParameters(std_angle=self.rotational_jitter_std))
-        if self.scaling_jitter_std is not None:  # pragma: no cover
-            scale_morphology(morph, section_scaling=ScaleParameters(std=self.scaling_jitter_std))
-
-        return morph
-
-    def _attempt_synthesis(self, xyz, mtype):
-        for _ in range(self.max_synthesis_attempts_count):
-            try:
-                return self.context.synthesize(position=xyz, mtype=mtype)
-            except TNSError:  # pragma: no cover
-                pass
-            except RegionGrowerError:  # pragma: no cover
-                raise SkipSynthesisError("Input scaling is too small") from RegionGrowerError
-        raise SkipSynthesisError(
-            "Too many attempts at synthesizing cell with TNS"
-        )  # pragma: no cover
-
-    def __call__(self, gid):
-        """
-        Synthesize morphology for given GID.
-
-          - launch NeuronGrower to synthesize soma and dendrites
-          - load axon morphology, if needed, and do axon grafting
-          - export results to file
-          - find the NRN section ID of the apical point
-
-        Returns:
-            A WorkerResult object
-        """
-        seed = (self.seed + gid) % (1 << 32)
-        xyz = self.cells.positions[gid]
-        np.random.seed(seed)
-
-        axon_morph = self._load_morphology(self.axon_morph_list, gid, xyz)
-
-        results = self._attempt_synthesis(xyz, mtype=self.cells.properties["mtype"][gid])
-        if axon_morph is not None:
-            graft_axon(results.neuron, axon_morph)
-
-        morph_name = self.morph_writer(results.neuron, seed=seed)
-        apical_points = _convert_apical_sections_to_apical_points(results)
-
-        apical_NRN_sections = None
-        if self.with_NRN_sections:
-            # Get the first .asc or .swc path so neuron can load it
-            morph_path = next(
-                filter(lambda x: x.suffix in [".asc", ".swc"], self.morph_writer.last_paths)
-            )
-            apical_NRN_sections = _convert_apical_sections_to_NRN_sections(
-                apical_points, morph_path
-            )
-
-        return WorkerResult(
-            name=morph_name, apical_points=apical_points, apical_NRN_sections=apical_NRN_sections
-        )
-
-
-def main():  # pragma: no cover
-    """Application entry point."""
-    # pylint: disable=import-outside-toplevel
-    utils.setup_logger()
-    from region_grower.placement_algorithm_mpi_app import run
-
-    run(Master)
-
-
-if __name__ == "__main__":  # pragma: no cover
-    main()
+            with resource_stream("region_grower", "parameters_schema.json") as param_file:
+                params_schema = json.load(param_file)
+            validate(tmd_parameters[mtype], params_schema)

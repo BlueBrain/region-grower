@@ -135,7 +135,7 @@ def output_scaling(
 
     Args:
         root_section: the neurite for which the scale is computed
-        orientation: 3 array with y direction to project points to get the extend of the cell
+        orientation: 3-array with y direction to project points to get the extend of the cell
         target_min_length: min length that the neurite must reach
         target_max_length: max length that the neurite can reach
 

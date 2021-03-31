@@ -14,7 +14,7 @@ VERSION = imp.load_source("region_grower.version", "region_grower/version.py").V
 REQS = [
     "attrs>=19.3.0",
     "click>=7.0",
-    "dask[distributed,bag]>=2.15.0",
+    "dask[dataframe]>=2.15.0",
     "diameter-synthesis>=0.1.11",
     "morphio>=2.7",
     "morph-tool[nrn]>=2.4.1",
@@ -25,7 +25,9 @@ REQS = [
 ]
 
 MPI_EXTRAS = [
+    "dask_mpi",
     "mpi4py>=3.0.3",
+    "dask[distributed]>=2.15.0",
 ]
 
 DOC_EXTRAS = [
@@ -53,12 +55,7 @@ setup(
         "mpi": MPI_EXTRAS,
         "docs": DOC_EXTRAS,
     },
-    entry_points={
-        "console_scripts": [
-            "region-grower=region_grower.cli:cli",
-            "synthesize-morphologies=region_grower.synthesize_morphologies:main",
-        ]
-    },
+    entry_points={"console_scripts": ["region-grower=region_grower.cli:cli"]},
     include_package_data=True,
     classifiers=[
         "Programming Language :: Python",

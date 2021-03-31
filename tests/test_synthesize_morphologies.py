@@ -1,42 +1,23 @@
-"""
-This test is being run through mpiexec, not nosetests
-mpiexec -n 4 python test_synthesize_morphologies.py
-
-The test function should NOT have *test* in the name, or nosetests
-will run it.
-"""
+"""Test the region_grower.synthesize_morphologies module."""
 # pylint: disable=missing-function-docstring
+import logging
 import shutil
+from copy import deepcopy
+from itertools import combinations
 from pathlib import Path
 from uuid import uuid4
 
+import jsonschema
+import pandas as pd
 import pytest
 import yaml
-from mock import MagicMock
-from mock import patch
 from morph_tool.utils import iter_morphology_files
 from numpy.testing import assert_allclose
 
-import region_grower.synthesize_morphologies as tested
-from region_grower.placement_algorithm_mpi_app import MASTER_RANK
-from region_grower.placement_algorithm_mpi_app import _run
+from region_grower import RegionGrowerError
+from region_grower.synthesize_morphologies import SynthesizeMorphologies
 
-try:
-    from .atlas_mock import generate_cell_collection
-    from .atlas_mock import generate_cells_df
-    from .atlas_mock import generate_input_cells
-    from .atlas_mock import generate_small_O1
-    from .atlas_mock import input_cells_path
-except ImportError:
-    # Usefull to run the tests with mpiexec
-    from atlas_mock import generate_cell_collection
-    from atlas_mock import generate_cells_df
-    from atlas_mock import generate_input_cells
-    from atlas_mock import generate_small_O1
-    from atlas_mock import input_cells_path
-
-PATH = Path(__file__).parent
-DATA = Path(PATH, "data").resolve()
+DATA = Path(__file__).parent / "data"
 
 
 def check_yaml(ref_path, tested_path):
@@ -51,114 +32,60 @@ def check_yaml(ref_path, tested_path):
 
 
 def create_args(
-    no_mpi,
+    with_mpi,
     tmp_folder,
     input_cells,
     atlas_path,
     axon_morph_tsv,
     out_apical_NRN_sections,
 ):
-    args = MagicMock()
+    args = {}
 
     # Circuit
-    args.mvd3 = None
-    args.cells_path = input_cells
+    args["cells_path"] = input_cells
 
     # Atlas
-    args.atlas = atlas_path
+    args["atlas"] = atlas_path
 
     # Parameters
-    args.tmd_distributions = DATA / "distributions.json"
-    args.tmd_parameters = DATA / "parameters.json"
-    args.seed = 0
+    args["tmd_distributions"] = DATA / "distributions.json"
+    args["tmd_parameters"] = DATA / "parameters.json"
+    args["seed"] = 0
 
     # Internals
-    args.num_files = 12
-    args.max_files_per_dir = 256
-    args.overwrite = True
-    args.no_mpi = no_mpi
-    args.out_morph_ext = ["h5", "swc", "asc"]
-    args.out_morph_dir = tmp_folder
-    args.out_apical = tmp_folder / "apical.yaml"
-    args.out_cells_path = str(tmp_folder / "test_cells.mvd3")
-    args.out_mvd3 = None
+    args["overwrite"] = True
+    args["out_morph_ext"] = ["h5", "swc", "asc"]
+    args["out_morph_dir"] = tmp_folder
+    args["out_apical"] = tmp_folder / "apical.yaml"
+    args["out_cells_path"] = str(tmp_folder / "test_cells.mvd3")
     if out_apical_NRN_sections:
-        args.out_apical_NRN_sections = tmp_folder / out_apical_NRN_sections
+        args["out_apical_nrn_sections"] = tmp_folder / out_apical_NRN_sections
     else:
-        args.out_apical_NRN_sections = None
+        args["out_apical_nrn_sections"] = None
+    if with_mpi:
+        args["with_mpi"] = with_mpi
+    else:
+        args["nb_processes"] = 2
 
     # Axons
-    args.base_morph_dir = str(DATA / "input-cells")
-    args.morph_axon = axon_morph_tsv
-    args.max_drop_ratio = 0.5
-    args.rotational_jitter_std = 10
-    args.scaling_jitter_std = 0.5
+    args["base_morph_dir"] = str(DATA / "input-cells")
+    args["morph_axon"] = axon_morph_tsv
+    args["max_drop_ratio"] = 0.5
+    args["rotational_jitter_std"] = 10
+    args["scaling_jitter_std"] = 0.5
 
     return args
 
 
-def run_mpi():
-    # pylint: disable=import-error,import-outside-toplevel,c-extension-no-member
-    from mpi4py import MPI
-
-    tmp_folder = Path("/tmp/test-run-synthesis_" + str(uuid4()))
-
-    COMM = MPI.COMM_WORLD  # pylint: disable=c-extension-no-member
-    tmp_folder = COMM.bcast(tmp_folder, root=MASTER_RANK)
-    rank = COMM.Get_rank()
-    is_master = rank == MASTER_RANK
-
-    input_cells = input_cells_path(tmp_folder)
-    small_O1_path = str(tmp_folder / "atlas")
-
-    args = create_args(
-        False,
-        tmp_folder,
-        input_cells,
-        small_O1_path,
-        None,
-        "apical_NRN_sections.yaml",
-    )
-
-    if is_master:
-        tmp_folder.mkdir(exist_ok=True)
-        print(f"#{rank}: Create data")
-        cells_raw_data = generate_cells_df()
-        cell_collection = generate_cell_collection(cells_raw_data)
-        generate_input_cells(cell_collection, tmp_folder)
-        generate_small_O1(small_O1_path)
-
-    print(f"#{rank}: Joining all processes")
-    COMM.barrier()
-
-    if not is_master:
-        print(f"#{rank}: Running child")
-        _run(tested.Master, args)
-        print(f"#{rank}: Ending child")
-        return
-
-    try:
-        print(f"#{rank}: Running master")
-        _run(tested.Master, args)
-        print(f"#{rank}: Checking results")
-        assert len(list(iter_morphology_files(tmp_folder))) == 36
-        check_yaml(DATA / "apical.yaml", args.out_apical)
-        check_yaml(DATA / "apical_NRN_sections.yaml", args.out_apical_NRN_sections)
-        print(f"#{rank}: Ending master")
-    finally:
-        print(f"#{rank}: Cleaning")
-        shutil.rmtree(tmp_folder)
-
-
 @pytest.mark.parametrize("with_axon", [True, False])
 @pytest.mark.parametrize("with_NRN", [True, False])
-def test_run_no_mpi(
+def test_synthesize(
     tmpdir, small_O1_path, input_cells, axon_morph_tsv, with_axon, with_NRN
 ):  # pylint: disable=unused-argument
     tmp_folder = Path(tmpdir)
 
     args = create_args(
-        True,
+        False,
         tmp_folder,
         input_cells,
         small_O1_path,
@@ -166,44 +93,166 @@ def test_run_no_mpi(
         "apical_NRN_sections.yaml" if with_NRN else None,
     )
 
-    master = tested.Master()
-    worker = master.setup(args)
-    worker.setup(args)
-    result = {k: worker(k) for k in master.task_ids}
-    master.finalize(result)
-    assert len(list(iter_morphology_files(tmp_folder))) == 36
+    synthesizer = SynthesizeMorphologies(**args)
+    synthesizer.synthesize()
+
+    # Check results
     if with_axon:
-        check_yaml(DATA / "apical_with_axons.yaml", args.out_apical)
-        if with_NRN:
-            check_yaml(DATA / "apical_NRN_sections_with_axons.yaml", args.out_apical_NRN_sections)
+        expected_size = 12
     else:
-        check_yaml(DATA / "apical.yaml", args.out_apical)
-        if with_NRN:
-            check_yaml(DATA / "apical_NRN_sections.yaml", args.out_apical_NRN_sections)
+        expected_size = 36
+    assert len(list(iter_morphology_files(tmp_folder))) == expected_size
+
+    if with_axon:
+        apical_suffix = ""
+    else:
+        apical_suffix = "_no_axon"
+    check_yaml(DATA / ("apical" + apical_suffix + ".yaml"), args["out_apical"])
+    if with_NRN:
+        check_yaml(
+            DATA / ("apical_NRN_sections" + apical_suffix + ".yaml"),
+            args["out_apical_nrn_sections"],
+        )
 
 
-def test_parser():
-    master = tested.Master()
-    with patch(
-        "sys.argv",
-        [
-            "synthesize_morphologies",
-            "--tmd-parameters",
-            "test_params",
-            "--tmd-distributions",
-            "test_distributions",
-            "--atlas",
-            "test_atlas",
-            "--out-apical",
-            "test_out",
-        ],
-    ):
-        res = master.parse_args()
-        assert res.tmd_parameters == "test_params"
-        assert res.tmd_distributions == "test_distributions"
-        assert res.atlas == "test_atlas"
-        assert res.out_apical == "test_out"
+def run_with_mpi():
+    # pylint: disable=import-outside-toplevel, too-many-locals, import-error
+    from data_factories import generate_axon_morph_tsv
+    from data_factories import generate_cell_collection
+    from data_factories import generate_cells_df
+    from data_factories import generate_input_cells
+    from data_factories import generate_small_O1
+    from data_factories import input_cells_path
+    from mpi4py import MPI
+
+    from region_grower.utils import setup_logger
+
+    COMM = MPI.COMM_WORLD  # pylint: disable=c-extension-no-member
+    rank = COMM.Get_rank()
+    MASTER_RANK = 0
+    is_master = rank == MASTER_RANK
+
+    tmp_folder = Path("/tmp/test-run-synthesis_" + str(uuid4()))
+    tmp_folder = COMM.bcast(tmp_folder, root=MASTER_RANK)
+    input_cells = input_cells_path(tmp_folder)
+    small_O1_path = str(tmp_folder / "atlas")
+
+    args = create_args(
+        True,
+        tmp_folder,
+        input_cells,
+        small_O1_path,
+        tmp_folder / "axon_morphs.tsv",
+        "apical_NRN_sections.yaml",
+    )
+
+    setup_logger("info")
+
+    if is_master:
+        tmp_folder.mkdir(exist_ok=True)
+        print(f"============= #{rank}: Create data")
+        cells_raw_data = generate_cells_df()
+        cell_collection = generate_cell_collection(cells_raw_data)
+        generate_input_cells(cell_collection, tmp_folder)
+        generate_small_O1(small_O1_path)
+        generate_axon_morph_tsv(tmp_folder)
+
+    synthesizer = SynthesizeMorphologies(**args)
+    try:
+        print(f"============= #{rank}: Start synthesize")
+        synthesizer.synthesize()
+
+        # Check results
+        print(f"============= #{rank}: Checking results")
+        expected_size = 12
+        assert len(list(iter_morphology_files(tmp_folder))) == expected_size
+
+        check_yaml(DATA / ("apical.yaml"), args["out_apical"])
+        check_yaml(
+            DATA / ("apical_NRN_sections.yaml"),
+            args["out_apical_nrn_sections"],
+        )
+    finally:
+        # Clean the directory
+        print(f"============= #{rank}: Cleaning")
+        shutil.rmtree(tmp_folder)
 
 
-if __name__ == "__main__":
-    run_mpi()
+def test_verify(tmd_distributions, tmd_parameters):
+    mtype = "L2_TPC:A"
+    initial_params = deepcopy(tmd_parameters)
+
+    SynthesizeMorphologies.verify([mtype], tmd_distributions, tmd_parameters)
+    with pytest.raises(RegionGrowerError):
+        SynthesizeMorphologies.verify(["UNKNOWN_MTYPE"], tmd_distributions, tmd_parameters)
+
+    failing_params = deepcopy(initial_params)
+
+    del failing_params[mtype]
+    with pytest.raises(RegionGrowerError):
+        SynthesizeMorphologies.verify([mtype], tmd_distributions, failing_params)
+
+    failing_params = deepcopy(initial_params)
+    del failing_params[mtype]["origin"]
+    with pytest.raises(jsonschema.exceptions.ValidationError):
+        SynthesizeMorphologies.verify([mtype], tmd_distributions, failing_params)
+
+    # Fail when missing attributes
+    attributes = ["layer", "fraction", "slope", "intercept"]
+    good_params = deepcopy(initial_params)
+    good_params[mtype]["context_constraints"] = {
+        "apical": {
+            "hard_limit_min": {
+                "layer": 1,
+                "fraction": 0.1,
+            },
+            "extent_to_target": {
+                "slope": 0.5,
+                "intercept": 1,
+                "layer": 1,
+                "fraction": 0.5,
+            },
+            "hard_limit_max": {
+                "layer": 1,
+                "fraction": 0.9,
+            },
+        }
+    }
+    tmd_parameters = deepcopy(good_params)
+    SynthesizeMorphologies.verify([mtype], tmd_distributions, tmd_parameters)
+    for i in range(1, 5):
+        for missing_attributes in combinations(attributes, i):
+            failing_params = deepcopy(good_params[mtype])
+            for att in missing_attributes:
+                del failing_params["context_constraints"]["apical"]["extent_to_target"][att]
+            tmd_parameters[mtype] = failing_params
+            with pytest.raises(jsonschema.exceptions.ValidationError):
+                SynthesizeMorphologies.verify([mtype], tmd_distributions, tmd_parameters)
+
+
+def test_check_axon_morphology(caplog):
+    # pylint: disable=protected-access
+    # Test with no missing name
+    caplog.set_level(logging.WARNING)
+    caplog.clear()
+    df = pd.DataFrame({"axon_name": ["a", "b", "c"], "other_col": [1, 2, 3]})
+
+    assert SynthesizeMorphologies._check_axon_morphology(df) is None
+    assert caplog.record_tuples == []
+
+    # Test with no missing names
+    caplog.clear()
+    df = pd.DataFrame({"axon_name": ["a", None, "c"], "other_col": [1, 2, 3]})
+
+    assert SynthesizeMorphologies._check_axon_morphology(df).tolist() == [0, 2]
+    assert caplog.record_tuples == [
+        (
+            "region_grower.synthesize_morphologies",
+            30,
+            "The following gids were not found in the axon morphology list: [1]",
+        ),
+    ]
+
+
+if __name__ == "__main__":  # pragma: no cover
+    run_with_mpi()

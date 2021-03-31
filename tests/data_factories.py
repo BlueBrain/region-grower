@@ -1,5 +1,6 @@
 """Generate atlas for tests"""
 # pylint: disable=missing-function-docstring
+import json
 from itertools import cycle
 from itertools import islice
 from itertools import repeat
@@ -90,16 +91,40 @@ def generate_axon_morph_tsv(tmpdir):
                     cycle(
                         [
                             "C170797A-P1",
-                            "C280199C-P3",
-                            "C280998A-P3",
+                            "UNKNOWN",
+                            None,
                         ]
                     ),
                     DF_SIZE,
                 )
             ),
-            "scale": np.repeat([0.5, 1, 1.5], np.ceil(DF_SIZE // 3))[:DF_SIZE],
+            "scale": np.repeat([0.5, 1, None], np.ceil(DF_SIZE // 3))[:DF_SIZE],
         }
     )
     filename = tmpdir / "axon_morphs.tsv"
     df.to_csv(filename, sep="\t", na_rep="N/A")
     return filename
+
+
+def get_tmd_parameters(filename):
+    with open(filename, "r") as f:
+        tmd_parameters = json.load(f)
+    return tmd_parameters
+
+
+def get_tmd_distributions(filename):
+    with open(filename, "r") as f:
+        tmd_distributions = json.load(f)
+    return tmd_distributions
+
+
+def get_cell_position():
+    return [0, 500, 0]
+
+
+def get_cell_mtype():
+    return "L2_TPC:A"
+
+
+def get_cell_orientation():
+    return np.eye(3).reshape(1, 3, 3)

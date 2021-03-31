@@ -1,9 +1,10 @@
 """App module that defines the command line interface."""
+# pylint: disable=redefined-outer-name
 import click
 
-import region_grower.generate as generate
-
-# pylint: disable=redefined-outer-name
+from region_grower import generate
+from region_grower.synthesize_morphologies import SynthesizeMorphologies
+from region_grower.utils import setup_logger
 
 
 @click.group()
@@ -113,7 +114,7 @@ def generate_distributions(
     """Generate JSON files containing the TMD distributions for
     each mtype in input_folder, using dat_file for mtypes.
 
-     Args:
+    Args:
         input_folder: folder containing cells (required)
         dat_file: .dat file with mtype for each cell (required)
     """
@@ -121,3 +122,141 @@ def generate_distributions(
     generate.generate_distributions(
         input_folder, dat_file, distribution_filename, diametrizer_config, ext
     )
+
+
+@cli.command(
+    short_help=(
+        "Synthesize morphologies into an given atlas according to the given TMD parameters and "
+        "distributions."
+    )
+)
+@click.option("--cells-path", help="Path to a file storing cells collection", required=True)
+@click.option("--tmd-parameters", help="Path to JSON with TMD parameters", required=True)
+@click.option("--tmd-distributions", help="Path to JSON with TMD distributions", required=True)
+@click.option("--morph-axon", help="TSV file with axon morphology list (for grafting)")
+@click.option("--base-morph-dir", help="Path to base morphology release folder")
+@click.option("--atlas", help="Atlas URL", required=True)
+@click.option("--atlas-cache", help="Atlas cache folder")
+@click.option("--seed", help="Random number generator seed (default: 0)", type=int, default=0)
+@click.option("--out-cells-path", help="Path to output cells file.", required=True)
+@click.option(
+    "--out-apical",
+    help=(
+        "Path to output YAML apical file containing"
+        " the coordinates where apical dendrites are tufting"
+    ),
+    required=True,
+)
+@click.option(
+    "--out-apical-nrn-sections",
+    help=(
+        "Path to output YAML apical file containing"
+        " the neuron section ids where apical dendrites"
+        " are tufting"
+    ),
+    required=False,
+)
+@click.option("--out-morph-dir", help="Path to output morphology folder", default="out")
+@click.option(
+    "--out-morph-ext",
+    help="Morphology export format(s)",
+    type=click.Choice(["swc", "asc", "h5"]),
+    multiple=True,
+    default=["swc"],
+)
+@click.option(
+    "--max-files-per-dir",
+    help="Maximum files per level for morphology output folder",
+    type=int,
+)
+@click.option(
+    "--overwrite",
+    help="Overwrite output morphology folder (default: False)",
+    is_flag=True,
+    default=False,
+)
+@click.option(
+    "--max-drop-ratio",
+    help="Max drop ratio for any mtype (default: 0)",
+    type=float,
+    default=0.0,
+)
+@click.option(
+    "--scaling-jitter-std",
+    help="Apply scaling jitter to all axon sections with the given std.",
+    type=float,
+)
+@click.option(
+    "--rotational-jitter-std",
+    help="Apply rotational jitter to all axon sections with the given std.",
+    type=float,
+)
+@click.option(
+    "--nb-processes",
+    help="Number of processes when MPI is not used.",
+    type=int,
+)
+@click.option(
+    "--with-mpi",
+    help="Use MPI for parallel computation.",
+    is_flag=True,
+    default=False,
+)
+@click.option(
+    "--log-level",
+    help="The logger level.",
+    type=click.Choice(["debug", "info", "warning", "error", "critical"]),
+    default="info",
+)
+def synthesize_morphologies(
+    cells_path,
+    tmd_parameters,
+    tmd_distributions,
+    morph_axon,
+    base_morph_dir,
+    atlas,
+    atlas_cache,
+    seed,
+    out_cells_path,
+    out_apical,
+    out_apical_nrn_sections,
+    out_morph_dir,
+    out_morph_ext,
+    max_files_per_dir,
+    overwrite,
+    max_drop_ratio,
+    scaling_jitter_std,
+    rotational_jitter_std,
+    nb_processes,
+    with_mpi,
+    log_level,
+):  # pylint: disable=too-many-arguments, too-many-locals
+    """Synthesize morphologies."""
+    setup_logger(log_level)
+
+    SynthesizeMorphologies(
+        cells_path=cells_path,
+        tmd_parameters=tmd_parameters,
+        tmd_distributions=tmd_distributions,
+        morph_axon=morph_axon,
+        base_morph_dir=base_morph_dir,
+        atlas=atlas,
+        atlas_cache=atlas_cache,
+        seed=seed,
+        out_cells_path=out_cells_path,
+        out_apical=out_apical,
+        out_apical_nrn_sections=out_apical_nrn_sections,
+        out_morph_dir=out_morph_dir,
+        out_morph_ext=out_morph_ext,
+        max_files_per_dir=max_files_per_dir,
+        overwrite=overwrite,
+        max_drop_ratio=max_drop_ratio,
+        scaling_jitter_std=scaling_jitter_std,
+        rotational_jitter_std=rotational_jitter_std,
+        nb_processes=nb_processes,
+        with_mpi=with_mpi,
+    ).synthesize()
+
+
+if __name__ == "__main__":  # pragma: no cover
+    cli()
