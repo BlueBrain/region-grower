@@ -21,7 +21,7 @@ class NumpyEncoder(json.JSONEncoder):
             return float(o)
         if isinstance(o, np.integer):
             return int(o)
-        return json.JSONEncoder.default(self, o)
+        return json.JSONEncoder.default(self, o)  # pragma: no cover
 
 
 def create_morphologies_dict(dat_file, morph_path, ext=".asc"):

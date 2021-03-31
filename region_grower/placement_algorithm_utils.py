@@ -1,7 +1,6 @@
 """
 Miscellaneous utilities.
 """
-import json
 import logging
 import os
 import random
@@ -16,7 +15,7 @@ from voxcell import CellCollection
 LOGGER = logging.getLogger(__name__)
 
 
-def setup_logger():
+def setup_logger():  # pragma: no cover
     """ Setup application logger. """
     logging.basicConfig(
         format="%(asctime)s;%(levelname)s;%(message)s",
@@ -24,12 +23,6 @@ def setup_logger():
         level=logging.ERROR,
     )
     LOGGER.setLevel(logging.INFO)
-
-
-def load_json(filepath):
-    """ Load JSON file. """
-    with open(filepath) as f:
-        return json.load(f)
 
 
 def load_cells(filepath, mvd3_filepath=None):
@@ -42,10 +35,10 @@ def load_cells(filepath, mvd3_filepath=None):
     Returns:
         CellCollection: cells
     """
-    if mvd3_filepath is not None:
+    if mvd3_filepath is not None:  # pragma: no cover
         LOGGER.warning("--mvd3 option is deprecated. Use --cells_path instead.")
         return CellCollection.load_mvd3(mvd3_filepath)
-    if filepath is None:
+    if filepath is None:  # pragma: no cover
         raise ValueError("`--cells-path` option is required")
     return CellCollection.load(filepath)
 
@@ -58,16 +51,16 @@ def save_cells(cells, filepath, mvd3_filepath=None):
         filepath (str): cells file
         mvd3_filepath (str): MVD3 cells file. Temporary for backward compatibility.
     """
-    if mvd3_filepath:
+    if mvd3_filepath:  # pragma: no cover
         LOGGER.warning("--out-mvd3 option is deprecated. Use --out-cells-path instead.")
         cells.save_mvd3(mvd3_filepath)
-    elif filepath is None:
+    elif filepath is None:  # pragma: no cover
         raise ValueError("`--out-cells-path` option is required")
     else:
         cells.save(filepath)
 
 
-def random_rotation_y(n):
+def random_rotation_y(n):  # pragma: no cover
     """
     Random rotation around Y-axis.
 
@@ -87,37 +80,7 @@ def random_rotation_y(n):
     return angles_to_matrices(angles, axis="y")
 
 
-def multiply_matrices(A, B):
-    """
-    Vectorized matrix multiplication.
-
-    Args:
-        A: NumPy array of shape n x A x B
-        B: NumPy array of shape n x B x C
-
-    Returns:
-        [np.dot(A[i], B[i]) for i in 0..n-1]
-    """
-    return np.einsum("...ij,...jk->...ik", A, B)
-
-
-def get_layer_profile(xyz, atlas, layer_names):
-    """ Get layer profile for given position. """
-    result = {}
-    result["y"] = atlas.load_data("[PH]y").lookup(xyz)
-    for layer in layer_names:
-        y0, y1 = atlas.load_data("[PH]%s" % layer).lookup(xyz)
-        result["%s_0" % layer] = y0
-        result["%s_1" % layer] = y1
-    return result
-
-
-def dump_morphology_list(morph_list, output_path):
-    """ Dump morphology list to tab-separated file. """
-    morph_list.to_csv(output_path, sep="\t", na_rep="N/A")
-
-
-def load_morphology_list(filepath, check_gids=None):
+def load_morphology_list(filepath, check_gids=None):  # pragma: no cover
     """ Read morphology list from tab-separated file. """
     result = pd.read_csv(
         filepath, sep=r"\s+", index_col=0, dtype={"morphology": object, "scale": float}
@@ -129,7 +92,7 @@ def load_morphology_list(filepath, check_gids=None):
     return result
 
 
-def _failure_ratio_by_mtype(mtypes, na_mask):
+def _failure_ratio_by_mtype(mtypes, na_mask):  # pragma: no cover
     """ Calculate ratio of N/A occurences per mtype. """
     failed = mtypes[na_mask].value_counts()
     overall = mtypes.value_counts()
@@ -148,7 +111,7 @@ def _failure_ratio_by_mtype(mtypes, na_mask):
     return result
 
 
-def check_na_morphologies(morph_list, mtypes, threshold=None):
+def check_na_morphologies(morph_list, mtypes, threshold=None):  # pragma: no cover
     """ Check `N/A` ratio per mtype. """
     na_mask = morph_list.isnull().any(axis=1)
     if na_mask.any():
@@ -174,7 +137,7 @@ class MorphWriter(object):
         self.last_paths = None
 
     @staticmethod
-    def _calc_dir_depth(num_files, max_files_per_dir=None):
+    def _calc_dir_depth(num_files, max_files_per_dir=None):  # pragma: no cover
         """ Directory depth required to have no more than given number of files per folder. """
         if (max_files_per_dir is None) or (num_files < max_files_per_dir):
             return None
@@ -197,7 +160,7 @@ class MorphWriter(object):
         return result
 
     @staticmethod
-    def _make_subdirs(dirpath, depth):
+    def _make_subdirs(dirpath, depth):  # pragma: no cover
         if not os.path.exists(dirpath):
             os.mkdir(dirpath)
         if depth <= 0:
@@ -216,18 +179,18 @@ class MorphWriter(object):
             num_files * len(self.file_ext), max_files_per_dir
         )
         if os.path.exists(self.output_dir):
-            if not overwrite and os.listdir(self.output_dir):
+            if not overwrite and os.listdir(self.output_dir):  # pragma: no cover
                 raise RuntimeError("Non-empty morphology output folder '%s'" % self.output_dir)
-        else:
+        else:  # pragma: no cover
             os.makedirs(self.output_dir)
-        if self._dir_depth is not None:
+        if self._dir_depth is not None:  # pragma: no cover
             MorphWriter._make_subdirs(os.path.join(self.output_dir, "hashed"), self._dir_depth)
 
     def _generate_name(self, seed):
         morph_name = uuid.UUID(int=random.Random(seed).getrandbits(128)).hex
         if self._dir_depth is None:
             subdirs = ""
-        else:
+        else:  # pragma: no cover
             subdirs = "hashed"
             assert len(morph_name) >= 2 * self._dir_depth
             for k in range(self._dir_depth):
@@ -266,7 +229,7 @@ def assign_morphologies(cells, morphologies):
     """
     cells.properties["morphology"] = pd.Series(morphologies)
     na_mask = cells.properties["morphology"].isnull()
-    if na_mask.any():
+    if na_mask.any():  # pragma: no cover
         LOGGER.info(
             "Dropping %d cells with no morphologies assigned; reindexing", np.count_nonzero(na_mask)
         )

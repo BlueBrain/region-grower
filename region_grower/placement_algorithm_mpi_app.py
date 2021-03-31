@@ -82,7 +82,7 @@ class WorkerApp(metaclass=ABCMeta):
         """
 
 
-def _wrap_worker(_id, worker):
+def _wrap_worker(_id, worker):  # pragma: no cover
     """
     Wrap the worker job and catch exceptions that must be caught.
 
@@ -102,7 +102,7 @@ def _wrap_worker(_id, worker):
         raise e
 
 
-def run_master(master, args, COMM):
+def run_master(master, args, COMM):  # pragma: no cover
     """To-be-executed on master node (MPI_RANK == 0).
 
     Args:
@@ -152,7 +152,7 @@ def run_master(master, args, COMM):
     LOGGER.info("Done!")
 
 
-def run_worker(args, COMM):
+def run_worker(args, COMM):  # pragma: no cover
     """ To-be-executed on worker nodes (MPI_RANK > 0). """
     worker = COMM.bcast(None, root=MASTER_RANK)
     worker.setup(args)
@@ -161,7 +161,7 @@ def run_worker(args, COMM):
         COMM.send(_wrap_worker(_id, worker), dest=MASTER_RANK)
 
 
-def _setup_excepthook(COMM):
+def _setup_excepthook(COMM):  # pragma: no cover
     def _mpi_excepthook(*args, **kwargs):
         sys.__excepthook__(*args, **kwargs)
         sys.stdout.flush()
@@ -171,13 +171,13 @@ def _setup_excepthook(COMM):
     sys.excepthook = _mpi_excepthook
 
 
-def run(App):
+def run(App):  # pragma: no cover
     """ Launch MPI-based Master / Worker application. """
     args = App.parse_args()
     _run(App, args)
 
 
-def _run(App, args):
+def _run(App, args):  # pragma: no cover
     """ Launch MPI-based Master / Worker application. """
     # pylint: disable=import-error,import-outside-toplevel
     if args.no_mpi:

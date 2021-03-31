@@ -1,36 +1,32 @@
 """Test the region_grower.context module."""
 # pylint: disable=missing-function-docstring
+# pylint: disable=no-self-use
+# pylint: disable=protected-access
 import itertools
 import logging
 from copy import deepcopy
 from pathlib import Path
-from tempfile import TemporaryDirectory
 
 import jsonschema
 import numpy as np
+import pytest
 from morphio import SectionType
-from nose.tools import assert_equal
-from nose.tools import assert_raises
 from numpy.testing import assert_array_almost_equal
 from numpy.testing import assert_array_equal
-from voxcell.nexus.voxelbrain import Atlas
 
 from region_grower import RegionGrowerError
 from region_grower.context import SpaceContext
 
-from .atlas_mock import small_O1
-
 DATA = Path(__file__).parent / "data"
 
 
-def test_context():
+@pytest.mark.parametrize("recenter", [True, False])
+def test_context(small_O1, recenter):
     np.random.seed(0)
 
-    with TemporaryDirectory() as tempdir:
-        small_O1(tempdir)
-        context = SpaceContext(
-            Atlas.open(tempdir), DATA / "distributions.json", DATA / "parameters.json"
-        )
+    context = SpaceContext(
+        small_O1, DATA / "distributions.json", DATA / "parameters.json", recenter=recenter
+    )
 
     # Synthesize in L2
     result = context.synthesize([0, 500, 0], "L2_TPC:A")
@@ -62,7 +58,7 @@ def test_context():
         ),
     )
 
-    assert_equal(len(result.neuron.root_sections), 7)
+    assert len(result.neuron.root_sections) == 7
     assert_array_almost_equal(
         next(result.neuron.iter()).points,
         np.array(
@@ -80,16 +76,14 @@ def test_context():
     )
 
 
-def test_context_external_diametrizer():
+def test_context_external_diametrizer(small_O1):
     np.random.seed(0)
 
-    with TemporaryDirectory() as tempdir:
-        small_O1(tempdir)
-        context = SpaceContext(
-            Atlas.open(tempdir),
-            DATA / "distributions_external_diametrizer.json",
-            DATA / "parameters_external_diametrizer.json",
-        )
+    context = SpaceContext(
+        small_O1,
+        DATA / "distributions_external_diametrizer.json",
+        DATA / "parameters_external_diametrizer.json",
+    )
 
     result = context.synthesize([0, 500, 0], "L2_TPC:A")
 
@@ -120,7 +114,7 @@ def test_context_external_diametrizer():
         ),
     )
 
-    assert_equal(len(result.neuron.root_sections), 7)
+    assert len(result.neuron.root_sections) == 7
     assert_array_almost_equal(
         next(result.neuron.iter()).points,
         np.array(
@@ -139,27 +133,26 @@ def test_context_external_diametrizer():
     )
 
 
-def test_verify():
-    with TemporaryDirectory() as tempdir:
-        small_O1(tempdir)
-        context = SpaceContext(
-            Atlas.open(tempdir), DATA / "distributions.json", DATA / "parameters.json"
-        )
+def test_verify(small_O1):
+    context = SpaceContext(small_O1, DATA / "distributions.json", DATA / "parameters.json")
 
     mtype = "L2_TPC:A"
     initial_params = deepcopy(context.tmd_parameters)
 
     context.verify([mtype])
-    assert_raises(RegionGrowerError, context.verify, ["UNKNOWN_MTYPE"])
+    with pytest.raises(RegionGrowerError):
+        context.verify(["UNKNOWN_MTYPE"])
 
     good_params = deepcopy(initial_params)
 
     del context.tmd_parameters[mtype]
-    assert_raises(RegionGrowerError, context.verify, [mtype])
+    with pytest.raises(RegionGrowerError):
+        context.verify([mtype])
 
     context.tmd_parameters = good_params
     del context.tmd_parameters[mtype]["origin"]
-    assert_raises(jsonschema.exceptions.ValidationError, context.verify, [mtype])
+    with pytest.raises(jsonschema.exceptions.ValidationError):
+        context.verify([mtype])
 
     # Fail when missing attributes
     attributes = ["layer", "fraction", "slope", "intercept"]
@@ -190,21 +183,14 @@ def test_verify():
             for att in missing_attributes:
                 del failing_params["context_constraints"]["apical"]["extent_to_target"][att]
             context.tmd_parameters[mtype] = failing_params
-            assert_raises(
-                jsonschema.exceptions.ValidationError,
-                context.verify,
-                [mtype],
-            )
+            with pytest.raises(jsonschema.exceptions.ValidationError):
+                context.verify([mtype])
 
 
-def test_scale():
+def test_scale(small_O1):
     mtype = "L2_TPC:A"
 
-    with TemporaryDirectory() as tempdir:
-        small_O1(tempdir)
-        context = SpaceContext(
-            Atlas.open(tempdir), DATA / "distributions.json", DATA / "parameters.json"
-        )
+    context = SpaceContext(small_O1, DATA / "distributions.json", DATA / "parameters.json")
 
     # Test with no hard limit scaling
     context.tmd_parameters[mtype]["context_constraints"] = {
@@ -340,62 +326,41 @@ def test_scale():
     )
 
 
-def test_debug_scales():
-    def capture_logging(names=None):
-        # Capture logger entries
-        records = []
-
-        class CaptureHandler(logging.Handler):
-            """Class to capture logging records."""
-
-            def emit(self, record):
-                if names is None or record.name == names or record.name in names:
-                    records.append(record)
-
-            def __enter__(self):
-                logging.getLogger().addHandler(self)
-                return records
-
-            def __exit__(self, exc_type, exc_val, exc_tb):
-                logging.getLogger().removeHandler(self)
-
-        return CaptureHandler()
-
+def test_debug_scales(small_O1, caplog):
     # Test debug logger
     np.random.seed(0)
     mtype = "L2_TPC:A"
     position = [0, 500, 0]
 
-    with TemporaryDirectory() as tempdir:
-        small_O1(tempdir)
-        context = SpaceContext(
-            Atlas.open(tempdir),
-            DATA / "distributions.json",
-            DATA / "parameters.json",
-        )
+    context = SpaceContext(
+        small_O1,
+        DATA / "distributions.json",
+        DATA / "parameters.json",
+    )
 
-        # Test with hard limit scale
-        context.tmd_parameters[mtype]["context_constraints"] = {
-            "apical": {
-                "hard_limit_min": {
-                    "layer": 1,
-                    "fraction": 0.1,
-                },
-                "extent_to_target": {
-                    "slope": 0.5,
-                    "intercept": 1,
-                    "layer": 1,
-                    "fraction": 0.5,
-                },
-                "hard_limit_max": {
-                    "layer": 1,
-                    "fraction": 0.1,  # Set max < target to ensure a rescaling is processed
-                },
-            }
+    # Test with hard limit scale
+    context.tmd_parameters[mtype]["context_constraints"] = {
+        "apical": {
+            "hard_limit_min": {
+                "layer": 1,
+                "fraction": 0.1,
+            },
+            "extent_to_target": {
+                "slope": 0.5,
+                "intercept": 1,
+                "layer": 1,
+                "fraction": 0.5,
+            },
+            "hard_limit_max": {
+                "layer": 1,
+                "fraction": 0.1,  # Set max < target to ensure a rescaling is processed
+            },
         }
+    }
 
-        with capture_logging(names="region_grower.utils") as log:
-            context.synthesize(position, mtype)
+    caplog.clear()
+    caplog.set_level(logging.DEBUG)
+    context.synthesize(position, mtype)
 
     expected_messages = (
         [f'Neurite type and position: {{"mtype": "L2_TPC:A", "position": {position}}}']
@@ -424,4 +389,25 @@ def test_debug_scales():
         ]
     )
 
-    assert [i.msg % i.args for i in log] == expected_messages
+    assert [
+        msg for module, level, msg in caplog.record_tuples if module == "region_grower.utils"
+    ] == expected_messages
+
+
+class TestContextInternals:
+    """Test private functions of the SpaceContext class."""
+
+    @pytest.fixture
+    def small_context(self, small_O1):
+        np.random.seed(0)
+
+        return SpaceContext(small_O1, DATA / "distributions.json", DATA / "parameters.json")
+
+    def test_lookup_target_reference_depths(self, small_context):
+        position = [0, 500, 0]
+        small_context._set_current_position(position)
+        assert small_context._lookup_target_reference_depths() == (300, 314)
+
+        small_context.current_depth = 9999
+        with pytest.raises(RegionGrowerError):
+            small_context._lookup_target_reference_depths()

@@ -1,14 +1,19 @@
 """Test the region_grower.modify module."""
 # pylint: disable=missing-function-docstring
+# pylint: disable=no-self-use
 from copy import deepcopy
+from pathlib import Path
 
 import numpy as np
-from nose.tools import assert_raises
+import pytest
 from numpy.testing import assert_array_almost_equal
 from numpy.testing import assert_array_equal
 
 from region_grower import RegionGrowerError
 from region_grower import modify
+from region_grower.context import SpaceContext
+
+DATA = Path(__file__).parent / "data"
 
 
 def test_scale_default_barcode():
@@ -80,22 +85,59 @@ def test_input_scaling():
     assert params.get("apical", {}) == expected["apical"]
     assert params.get("basal", {}) == expected["basal"]
 
-    assert_raises(
-        RegionGrowerError,
-        modify.input_scaling,
-        params,
-        reference_thickness,
-        0,
-        apical_target_distance,
-    )
+    with pytest.raises(RegionGrowerError):
+        modify.input_scaling(
+            params,
+            reference_thickness,
+            0,
+            apical_target_distance,
+        )
 
     params = deepcopy(init_params)
     params["context_constraints"]["apical"]["extent_to_target"]["slope"] = -0.5
-    assert_raises(
-        RegionGrowerError,
-        modify.input_scaling,
-        params,
-        reference_thickness,
-        10,
-        apical_target_distance,
-    )
+    with pytest.raises(RegionGrowerError):
+        modify.input_scaling(
+            params,
+            reference_thickness,
+            10,
+            apical_target_distance,
+        )
+
+
+class TestOutputScaling:
+    """Test the modify.output_scaling() function."""
+
+    @pytest.fixture(scope="class")
+    def root_sec(self, small_O1):
+        np.random.seed(0)
+
+        context = SpaceContext(small_O1, DATA / "distributions.json", DATA / "parameters.json")
+
+        # Synthesize in L2
+        result = context.synthesize([0, 500, 0], "L2_TPC:A")
+
+        yield result.neuron.root_sections[0]
+
+    def test_output_scaling_default(self, root_sec):
+        assert modify.output_scaling(root_sec, [0, 1, 0], None, None) == 1
+
+    def test_output_scaling_useless_min(self, root_sec):
+        assert modify.output_scaling(root_sec, [0, 1, 0], 100, None) == 1
+
+    def test_output_scaling_min(self, root_sec):
+        assert modify.output_scaling(root_sec, [0, 1, 0], 134.617, None) == pytest.approx(1.2)
+
+    def test_output_scaling_useless_max(self, root_sec):
+        assert modify.output_scaling(root_sec, [0, 1, 0], None, 200) == 1
+
+    def test_output_scaling_max(self, root_sec):
+        assert modify.output_scaling(root_sec, [0, 1, 0], None, 89.7447) == pytest.approx(0.8)
+
+    def test_output_scaling_useless_min_useless_max(self, root_sec):
+        assert modify.output_scaling(root_sec, [0, 1, 0], 100, 200) == 1
+
+    def test_output_scaling_useless_min_max(self, root_sec):
+        assert modify.output_scaling(root_sec, [0, 1, 0], 100, 89.7447) == pytest.approx(0.8)
+
+    def test_output_scaling_min_max(self, root_sec):
+        assert modify.output_scaling(root_sec, [0, 1, 0], 134.617, 89.7447) == pytest.approx(1.2)

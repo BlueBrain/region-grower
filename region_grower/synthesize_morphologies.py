@@ -231,9 +231,9 @@ class Master(MasterApp):
         def first_non_None(apical_points):
             """Returns the first non None apical coordinates"""
             for coord in apical_points:
-                if coord is not None:
+                if coord is not None:  # pragma: no cover
                     return coord.tolist()
-            return None
+            return None  # pragma: no cover
 
         with open(self.args.out_apical, "w") as apical_file:
             yaml.dump(
@@ -339,16 +339,16 @@ class Worker(WorkerApp):
         The morphology is then scaled, rotated around Y and
         aligned according to the orientation field
         """
-        if morph_list is None:
+        if morph_list is None:  # pragma: no cover
             return None
 
         rec = morph_list.loc[gid]
-        if rec["morphology"] is None:
+        if rec["morphology"] is None:  # pragma: no cover
             raise SkipSynthesisError(f"gid {gid} not found in morph_list")
 
         name = rec["morphology"]
         morph = self.morph_cache.get(name)
-        if morph is None:
+        if morph is None:  # pragma: no cover
             raise SkipSynthesisError(f"Unable to find the morphology {name}")
 
         morph = morph.as_mutable()
@@ -357,13 +357,13 @@ class Worker(WorkerApp):
             self.orientation.lookup(xyz)[0], utils.random_rotation_y(n=1)[0]
         )
         scale = rec.get("scale")
-        if scale is not None:
+        if scale is not None:  # pragma: no cover
             transform = scale * transform
         mt.transform(morph, transform)
 
-        if self.rotational_jitter_std is not None:
+        if self.rotational_jitter_std is not None:  # pragma: no cover
             rotational_jitter(morph, RotationParameters(std_angle=self.rotational_jitter_std))
-        if self.scaling_jitter_std is not None:
+        if self.scaling_jitter_std is not None:  # pragma: no cover
             scale_morphology(morph, section_scaling=ScaleParameters(std=self.scaling_jitter_std))
 
         return morph
@@ -372,11 +372,13 @@ class Worker(WorkerApp):
         for _ in range(self.max_synthesis_attempts_count):
             try:
                 return self.context.synthesize(position=xyz, mtype=mtype)
-            except TNSError:
+            except TNSError:  # pragma: no cover
                 pass
-            except RegionGrowerError:
+            except RegionGrowerError:  # pragma: no cover
                 raise SkipSynthesisError("Input scaling is too small") from RegionGrowerError
-        raise SkipSynthesisError("Too many attempts at synthesizing cell with TNS")
+        raise SkipSynthesisError(
+            "Too many attempts at synthesizing cell with TNS"
+        )  # pragma: no cover
 
     def __call__(self, gid):
         """
@@ -418,7 +420,7 @@ class Worker(WorkerApp):
         )
 
 
-def main():
+def main():  # pragma: no cover
     """Application entry point."""
     # pylint: disable=import-outside-toplevel
     utils.setup_logger()
@@ -427,5 +429,5 @@ def main():
     run(Master)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()

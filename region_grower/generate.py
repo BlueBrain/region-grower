@@ -53,10 +53,10 @@ def generate_parameters(
                 neurite_types=neurite_types[mtype],
                 diameter_parameters=diametrizer_config,
             )
-        if tmd_parameters is not None and diametrizer_config is not None:
+        if diametrizer_config is not None:
             try:
                 parameters = tmd_parameters[mtype]
-            except KeyError:
+            except KeyError:  # pragma: no cover
                 L.error("%s is not in the given tmd_parameter.json", mtype)
                 parameters = {}
             parameters["diameter_params"] = diametrizer_config
@@ -122,10 +122,13 @@ def generate_distributions(
 
     L.info("Extracting TMD distributions for each mtype...")
 
-    results = multiprocessing.Pool().imap_unordered(
+    pool = multiprocessing.Pool()
+    results = pool.imap_unordered(
         Worker(neurite_types, diameter_model_function),
         morphologies_dict.items(),
     )
+    pool.close()
+    pool.join()
 
     distributions = {
         "mtypes": dict(tqdm(results, total=len(morphologies_dict))),

@@ -267,7 +267,7 @@ class SpaceContext(object):
         return SynthesisResult(grower.neuron, grower.apical_sections or [])
 
 
-class CellHelper(object):
+class CellHelper(object):  # pragma: no cover
     """Loads spatial information and provides
     basic functionality to query spatial properties
     required for neuronal synthesis. In addition to

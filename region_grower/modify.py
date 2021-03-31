@@ -124,8 +124,8 @@ def input_scaling(
 def output_scaling(
     root_section: Section,
     orientation: List[float],
-    target_min_length: float,
-    target_max_length: float,
+    target_min_length: Optional[float],
+    target_max_length: Optional[float],
 ) -> float:
     """Returns the scaling factor to be applied on Y axis for this neurite
 
