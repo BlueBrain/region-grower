@@ -130,7 +130,14 @@ def generate_distributions(
         "distributions."
     )
 )
-@click.option("--cells-path", help="Path to a file storing cells collection", required=True)
+@click.option(
+    "--input-cells",
+    help=(
+        "Path to a MVD3 file storing cells collection whose positions are used as new soma "
+        "locations"
+    ),
+    required=True,
+)
 @click.option("--tmd-parameters", help="Path to JSON with TMD parameters", required=True)
 @click.option("--tmd-distributions", help="Path to JSON with TMD distributions", required=True)
 @click.option("--morph-axon", help="TSV file with axon morphology list (for grafting)")
@@ -138,12 +145,12 @@ def generate_distributions(
 @click.option("--atlas", help="Atlas URL", required=True)
 @click.option("--atlas-cache", help="Atlas cache folder")
 @click.option("--seed", help="Random number generator seed (default: 0)", type=int, default=0)
-@click.option("--out-cells-path", help="Path to output cells file.", required=True)
+@click.option("--out-cells", help="Path to output cells file.", required=True)
 @click.option(
     "--out-apical",
     help=(
-        "Path to output YAML apical file containing"
-        " the coordinates where apical dendrites are tufting"
+        "Path to output YAML apical file containing "
+        "the coordinates where apical dendrites are tufting"
     ),
     required=True,
 )
@@ -192,6 +199,11 @@ def generate_distributions(
     type=float,
 )
 @click.option(
+    "--out-debug-data",
+    help="Export the debug data of each cell to this file.",
+    type=str,
+)
+@click.option(
     "--nb-processes",
     help="Number of processes when MPI is not used.",
     type=int,
@@ -208,54 +220,11 @@ def generate_distributions(
     type=click.Choice(["debug", "info", "warning", "error", "critical"]),
     default="info",
 )
-def synthesize_morphologies(
-    cells_path,
-    tmd_parameters,
-    tmd_distributions,
-    morph_axon,
-    base_morph_dir,
-    atlas,
-    atlas_cache,
-    seed,
-    out_cells_path,
-    out_apical,
-    out_apical_nrn_sections,
-    out_morph_dir,
-    out_morph_ext,
-    max_files_per_dir,
-    overwrite,
-    max_drop_ratio,
-    scaling_jitter_std,
-    rotational_jitter_std,
-    nb_processes,
-    with_mpi,
-    log_level,
-):  # pylint: disable=too-many-arguments, too-many-locals
+def synthesize_morphologies(**kwargs):  # pylint: disable=too-many-arguments, too-many-locals
     """Synthesize morphologies."""
-    setup_logger(log_level)
+    setup_logger(kwargs.pop("log_level", "info"))
 
-    SynthesizeMorphologies(
-        cells_path=cells_path,
-        tmd_parameters=tmd_parameters,
-        tmd_distributions=tmd_distributions,
-        morph_axon=morph_axon,
-        base_morph_dir=base_morph_dir,
-        atlas=atlas,
-        atlas_cache=atlas_cache,
-        seed=seed,
-        out_cells_path=out_cells_path,
-        out_apical=out_apical,
-        out_apical_nrn_sections=out_apical_nrn_sections,
-        out_morph_dir=out_morph_dir,
-        out_morph_ext=out_morph_ext,
-        max_files_per_dir=max_files_per_dir,
-        overwrite=overwrite,
-        max_drop_ratio=max_drop_ratio,
-        scaling_jitter_std=scaling_jitter_std,
-        rotational_jitter_std=rotational_jitter_std,
-        nb_processes=nb_processes,
-        with_mpi=with_mpi,
-    ).synthesize()
+    SynthesizeMorphologies(**kwargs).synthesize()
 
 
 if __name__ == "__main__":  # pragma: no cover

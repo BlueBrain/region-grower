@@ -10,14 +10,19 @@ from neurom import COLS
 from tmd.Topology.transformations import tmd_scale
 
 from region_grower import RegionGrowerError
-from region_grower.utils import formatted_logger
 
 # if the given variables are < these values, a hard crash will happen
 MIN_TARGET_PATH_DISTANCE = 1.0
 MIN_TARGET_THICKNESS = 1.0
 
 
-def scale_default_barcode(persistent_homologies, reference_thickness, target_thickness):
+def scale_default_barcode(
+    persistent_homologies: List[float],
+    context,
+    reference_thickness: float,
+    target_thickness: float,
+    with_debug_info: bool = False,
+):
     """Modifies the barcode according to the reference and target thicknesses.
     Reference thickness defines the property of input data.
     Target thickness defines the property of space, which should be used by synthesis.
@@ -30,30 +35,39 @@ def scale_default_barcode(persistent_homologies, reference_thickness, target_thi
 
     scaling_ratio = scaling_reference * target_thickness / reference_thickness
 
-    formatted_logger(
-        "Default barcode scale: %s",
-        max_p=max_p,
-        reference_thickness=reference_thickness,
-        target_thickness=target_thickness,
-        scaling_ratio=scaling_ratio,
-    )
+    if with_debug_info:
+        context["debug_data"]["default_func"]["scaling"].append(
+            {
+                "max_p": max_p,
+                "reference_thickness": reference_thickness,
+                "target_thickness": target_thickness,
+                "scaling_ratio": scaling_ratio,
+            }
+        )
 
     return tmd_scale(persistent_homologies, scaling_ratio)
 
 
-def scale_target_barcode(persistent_homologies, target_path_distance):
+def scale_target_barcode(
+    persistent_homologies: List[float],
+    context,
+    target_path_distance: float,
+    with_debug_info: bool = False,
+):
     """Modifies the barcode according to the target thicknesses.
     Target thickness defines the total extend at which the cell can grow.
     """
     max_ph = np.nanmax([i[0] for i in persistent_homologies])
     scaling_ratio = target_path_distance / max_ph
 
-    formatted_logger(
-        "Target barcode scale: %s",
-        max_ph=max_ph,
-        target_path_distance=target_path_distance,
-        scaling_ratio=scaling_ratio,
-    )
+    if with_debug_info:
+        context["debug_data"]["target_func"]["scaling"].append(
+            {
+                "max_ph": max_ph,
+                "target_path_distance": target_path_distance,
+                "scaling_ratio": scaling_ratio,
+            }
+        )
 
     return tmd_scale(persistent_homologies, scaling_ratio)
 
@@ -63,6 +77,7 @@ def input_scaling(
     reference_thickness: float,
     target_thickness: float,
     apical_target_extent: Optional[float],
+    debug_info: Optional[Dict] = None,
 ):
     """Modifies the input parameters so that grown cells fit into the volume
 
@@ -80,15 +95,22 @@ def input_scaling(
             apical_constraint = params["context_constraints"]["apical"]["extent_to_target"]
             linear_fit = np.poly1d((apical_constraint["slope"], apical_constraint["intercept"]))
             target_path_distance = linear_fit(apical_target_extent)
-            if target_path_distance < MIN_TARGET_PATH_DISTANCE:
-                formatted_logger(
-                    "Too small target path distance: %s",
-                    fit_slope=apical_constraint["slope"],
-                    fit_intercept=apical_constraint["intercept"],
-                    apical_target_extent=apical_target_extent,
-                    target_path_distance=target_path_distance,
-                    min_target_path_distance=MIN_TARGET_PATH_DISTANCE,
+            if debug_info is not None:
+                debug_info.update(
+                    {
+                        "target_func": {
+                            "inputs": {
+                                "fit_slope": apical_constraint["slope"],
+                                "fit_intercept": apical_constraint["intercept"],
+                                "apical_target_extent": apical_target_extent,
+                                "target_path_distance": target_path_distance,
+                                "min_target_path_distance": MIN_TARGET_PATH_DISTANCE,
+                            },
+                            "scaling": [],
+                        }
+                    }
                 )
+            if target_path_distance < MIN_TARGET_PATH_DISTANCE:
                 raise RegionGrowerError(
                     f"The target path distance computed from the fit is {target_path_distance}"
                     f" < {MIN_TARGET_PATH_DISTANCE}!"
@@ -98,16 +120,25 @@ def input_scaling(
                 "funct": scale_target_barcode,
                 "kwargs": {
                     "target_path_distance": target_path_distance,
+                    "with_debug_info": debug_info is not None,
                 },
             }
 
         else:
-            if target_thickness < MIN_TARGET_THICKNESS:
-                formatted_logger(
-                    "Too small target thickness: %s",
-                    target_thickness=target_thickness,
-                    min_target_thickness=MIN_TARGET_THICKNESS,
+            if debug_info is not None:
+                debug_info.update(
+                    {
+                        "default_func": {
+                            "inputs": {
+                                "target_thickness": target_thickness,
+                                "reference_thickness": reference_thickness,
+                                "min_target_thickness": MIN_TARGET_THICKNESS,
+                            },
+                            "scaling": [],
+                        }
+                    }
                 )
+            if target_thickness < MIN_TARGET_THICKNESS:
                 raise RegionGrowerError(
                     f"The target thickness {target_thickness} is too small to be able to scale the"
                     f" bar code with {MIN_TARGET_THICKNESS}"
@@ -117,6 +148,7 @@ def input_scaling(
                 "kwargs": {
                     "target_thickness": target_thickness,
                     "reference_thickness": reference_thickness,
+                    "with_debug_info": debug_info is not None,
                 },
             }
 
@@ -124,8 +156,8 @@ def input_scaling(
 def output_scaling(
     root_section: Section,
     orientation: List[float],
-    target_min_length: Optional[float],
-    target_max_length: Optional[float],
+    target_min_length: Optional[float] = None,
+    target_max_length: Optional[float] = None,
 ) -> float:
     """Returns the scaling factor to be applied on Y axis for this neurite
 

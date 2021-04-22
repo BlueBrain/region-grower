@@ -50,24 +50,6 @@ def create_morphologies_dict(dat_file, morph_path, ext=".asc"):
     return name_dict
 
 
-def formatted_logger(msg: str, **kwargs) -> None:
-    """Add a L entry if the given condition is True and dump kwargs as JSON in this
-    entry.
-
-    Args:
-        msg: the message to log (must contain a `%s` to dump the JSON)
-        kwargs: entries dumped in JSON format
-    """
-    if L.isEnabledFor(logging.DEBUG):  # Explicit check to avoid json.dump() when possible
-        L.debug(
-            msg,
-            json.dumps(
-                kwargs,
-                cls=NumpyEncoder,
-            ),
-        )
-
-
 def random_rotation_y(n):
     """Random rotation around Y-axis.
 

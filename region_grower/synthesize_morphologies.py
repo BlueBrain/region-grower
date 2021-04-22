@@ -85,9 +85,17 @@ def _parallel_wrapper(
         )
         new_cell = space_worker.synthesize()
         res = space_worker.completion(new_cell)
+
+        res["debug_infos"] = space_worker.debug_infos
     except SkipSynthesisError as exc:  # pragma: no cover
         LOGGER.error("Skip %s because of the following error: %s", row.name, exc)
-        res = {"name": None, "apical_points": None, "apical_NRN_sections": None}
+        res = {
+            "name": None,
+            "apical_points": None,
+            "apical_sections": None,
+            "apical_NRN_sections": None,
+            "debug_infos": None,
+        }
     return pd.Series(res)
 
 
@@ -105,11 +113,11 @@ class SynthesizeMorphologies:
     - write the global results (the new CellCollection and the apical points)
 
     Args:
-        cells_path: the path to the MVD3 file.
+        input_cells: the path to the MVD3 file.
         tmd_parameters: the path to the JSON file containg the TMD parameters.
         tmd_distributions: the path to the JSON file containg the TMD distributions.
         atlas: the path to the Atlas directory.
-        out_cells_path: the path to the MVD3 file in which the properties of the synthesized
+        out_cells: the path to the MVD3 file in which the properties of the synthesized
             cells are written.
         out_apical: the path to the YAML file in which the apical points are written.
         out_morph_dir: the path to the directory in which the synthesized morphologies are
@@ -138,11 +146,11 @@ class SynthesizeMorphologies:
 
     def __init__(
         self,
-        cells_path,
+        input_cells,
         tmd_parameters,
         tmd_distributions,
         atlas,
-        out_cells_path,
+        out_cells,
         out_apical,
         out_morph_dir="out",
         out_morph_ext=None,
@@ -156,6 +164,7 @@ class SynthesizeMorphologies:
         max_drop_ratio=0,
         scaling_jitter_std=None,
         rotational_jitter_std=None,
+        out_debug_data=None,
         nb_processes=None,
         with_mpi=False,
     ):  # pylint: disable=too-many-arguments, too-many-locals
@@ -164,13 +173,14 @@ class SynthesizeMorphologies:
         self.rotational_jitter_std = rotational_jitter_std
         self.with_NRN_sections = out_apical_nrn_sections is not None
         self.out_apical_nrn_sections = out_apical_nrn_sections
-        self.out_cells_path = out_cells_path
+        self.out_cells = out_cells
         self.out_apical = out_apical
+        self.out_debug_data = out_debug_data
 
         self._init_parallel(with_mpi, nb_processes)
 
-        LOGGER.info("Loading CellCollection from %s", cells_path)
-        self.cells = CellCollection.load(cells_path)
+        LOGGER.info("Loading CellCollection from %s", input_cells)
+        self.cells = CellCollection.load(input_cells)
 
         LOGGER.info("Loading TMD parameters from %s", tmd_parameters)
         with open(tmd_parameters, "r") as f:
@@ -228,6 +238,12 @@ class SynthesizeMorphologies:
             self.axon_morph_list = None
             self.morph_loader = None
 
+    def __del__(self):
+        try:
+            self._client.close()
+        except Exception:  # pylint: disable=broad-except ; # pragma: no cover
+            pass
+
     def _init_parallel(self, with_mpi=False, nb_processes=None):
         """Initialize MPI workers if required or get the number of available processes."""
         if with_mpi:  # pragma: no cover
@@ -244,8 +260,6 @@ class SynthesizeMorphologies:
 
             if self.with_NRN_sections:
                 dask.config.set({"distributed.worker.daemon": False})
-            else:
-                dask.config.set({"distributed.worker.daemon": True})
             client_kwargs = {"n_workers": self.nb_processes}
 
         # This is needed to make dask aware of the workers
@@ -287,6 +301,7 @@ class SynthesizeMorphologies:
             morph_loader=self.morph_loader,
             with_NRN_sections=self.with_NRN_sections,
             retries=self.MAX_SYNTHESIS_ATTEMPTS_COUNT,
+            debug_data=self.out_debug_data is not None,
         )
         str_mtype = self.cells_data["mtype"].astype(str)
         self.cells_data["tmd_parameters"] = str_mtype.map(self.tmd_parameters.get)
@@ -302,7 +317,13 @@ class SynthesizeMorphologies:
         meta = pd.DataFrame(
             {
                 name: pd.Series(dtype="object")
-                for name in ["name", "apical_points", "apical_NRN_sections"]
+                for name in [
+                    "name",
+                    "apical_points",
+                    "apical_sections",
+                    "apical_NRN_sections",
+                    "debug_infos",
+                ]
             }
         )
         ddf = dd.from_pandas(self.cells_data, npartitions=self.nb_processes)
@@ -329,7 +350,7 @@ class SynthesizeMorphologies:
         self.cells.orientations = np.broadcast_to(np.identity(3), (self.cells.size(), 3, 3))
 
         LOGGER.info("Export CellCollection...")
-        self.cells.save(self.out_cells_path)
+        self.cells.save(self.out_cells)
 
         def first_non_None(apical_points):
             """Returns the first non None apical coordinates"""
@@ -353,6 +374,9 @@ class SynthesizeMorphologies:
                     .to_dict(),
                     apical_file,
                 )
+
+        if self.out_debug_data is not None:
+            result.to_csv(self.out_debug_data, index_label="gid")
 
     def synthesize(self):
         """Execute the complete synthesis process and export the results."""

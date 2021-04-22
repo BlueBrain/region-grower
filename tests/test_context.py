@@ -2,9 +2,9 @@
 # pylint: disable=missing-function-docstring
 # pylint: disable=no-self-use
 # pylint: disable=protected-access
-import logging
 from pathlib import Path
 
+import dictdiffer
 import numpy as np
 import pytest
 from morphio import SectionType
@@ -315,15 +315,19 @@ class TestSpaceWorker:
         # pylint: disable=protected-access
         fixed_params = small_context_worker._correct_position_orientation_scaling(params)
 
-        expected_apical = {"target_path_distance": 76}
-        expected_basal = {"reference_thickness": 314, "target_thickness": 300.0}
+        expected_apical = {"target_path_distance": 76, "with_debug_info": False}
+        expected_basal = {
+            "reference_thickness": 314,
+            "target_thickness": 300.0,
+            "with_debug_info": False,
+        }
         assert fixed_params["apical"]["modify"]["kwargs"] == expected_apical
         assert fixed_params["basal"]["modify"]["kwargs"] == expected_basal
 
-    def test_debug_scales(self, small_context_worker, tmd_parameters, caplog):
+    def test_debug_scales(self, small_context_worker, tmd_parameters):
         # Test debug logger
         mtype = small_context_worker.cell.mtype
-        position = small_context_worker.cell.position
+        small_context_worker.internals.debug_data = True
 
         # Test with hard limit scale
         tmd_parameters[mtype]["context_constraints"] = {
@@ -345,40 +349,90 @@ class TestSpaceWorker:
             }
         }
 
-        caplog.clear()
-        caplog.set_level(logging.DEBUG)
         small_context_worker.synthesize()
 
-        expected_messages = (
-            [f'Neurite type and position: {{"mtype": "L2_TPC:A", "position": {position}}}']
-            + [
-                'Default barcode scale: {"max_p": NaN, "reference_thickness": 314, '
-                '"target_thickness": 300.0, "scaling_ratio": 0.9554140127388535}'
-            ]
-            * 6
-            + [
-                'Target barcode scale: {"max_ph": 255.45843100194077, "target_path_distance": 76.0,'
-                ' "scaling_ratio": 0.2975043716581138}'
-            ]
-            + [
-                f'Neurite hard limit rescaling: {{"neurite_id": {i}, "neurite_type": "basal", '
-                '"scale": 1.0, "target_min_length": null, "target_max_length": null}'
-                for i in [0, 1, 2]
-            ]
-            + [
-                'Neurite hard limit rescaling: {"neurite_id": 5, "neurite_type": "apical", "scale":'
-                ' 0.9379790269315096, "target_min_length": 70.0, "target_max_length": 70.0}'
-            ]
-            + [
-                f'Neurite hard limit rescaling: {{"neurite_id": {i}, "neurite_type": "basal", '
-                '"scale": 1.0, "target_min_length": null, "target_max_length": null}'
-                for i in [6, 14, 16]
-            ]
-        )
+        expected_debug_infos = {
+            "input_scaling": {
+                "default_func": {
+                    "inputs": {
+                        "min_target_thickness": 1.0,
+                        "reference_thickness": 314,
+                        "target_thickness": 300.0,
+                    },
+                    "scaling": [
+                        {
+                            "max_p": np.nan,
+                            "reference_thickness": 314,
+                            "scaling_ratio": 0.9554140127388535,
+                            "target_thickness": 300.0,
+                        },
+                        {
+                            "max_p": np.nan,
+                            "reference_thickness": 314,
+                            "scaling_ratio": 0.9554140127388535,
+                            "target_thickness": 300.0,
+                        },
+                        {
+                            "max_p": np.nan,
+                            "reference_thickness": 314,
+                            "scaling_ratio": 0.9554140127388535,
+                            "target_thickness": 300.0,
+                        },
+                        {
+                            "max_p": np.nan,
+                            "reference_thickness": 314,
+                            "scaling_ratio": 0.9554140127388535,
+                            "target_thickness": 300.0,
+                        },
+                        {
+                            "max_p": np.nan,
+                            "reference_thickness": 314,
+                            "scaling_ratio": 0.9554140127388535,
+                            "target_thickness": 300.0,
+                        },
+                        {
+                            "max_p": np.nan,
+                            "reference_thickness": 314,
+                            "scaling_ratio": 0.9554140127388535,
+                            "target_thickness": 300.0,
+                        },
+                    ],
+                },
+                "target_func": {
+                    "inputs": {
+                        "apical_target_extent": 150.0,
+                        "fit_intercept": 1,
+                        "fit_slope": 0.5,
+                        "min_target_path_distance": 1.0,
+                        "target_path_distance": 76.0,
+                    },
+                    "scaling": [
+                        {
+                            "max_ph": 255.45843100194077,
+                            "target_path_distance": 76.0,
+                            "scaling_ratio": 0.2975043716581138,
+                        }
+                    ],
+                },
+            },
+            "neurite_hard_limit_rescaling": {
+                5: {
+                    "neurite_type": "apical",
+                    "scale": 0.9379790269315096,
+                    "target_max_length": 70.0,
+                    "target_min_length": 70.0,
+                },
+            },
+        }
 
-        assert [
-            msg for module, level, msg in caplog.record_tuples if module == "region_grower.utils"
-        ] == expected_messages
+        assert (
+            list(
+                dictdiffer.diff(
+                    small_context_worker.debug_infos, expected_debug_infos, tolerance=1e-6
+                )
+            )
+            == []
+        )
 
     def test_load_morphology(self, small_context_worker, morph_loader):
         small_context_worker.internals.morph_loader = morph_loader

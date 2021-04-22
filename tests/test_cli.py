@@ -3,6 +3,7 @@
 # pylint: disable=no-self-use
 from pathlib import Path
 
+import pandas as pd
 import pytest
 from click.testing import CliRunner
 
@@ -132,17 +133,18 @@ class TestCli:
             cli,
             [
                 "synthesize-morphologies",
-                "--cells-path", str(input_cells),
+                "--input-cells", str(input_cells),
                 "--tmd-parameters", str(DATA / "parameters.json"),
                 "--tmd-distributions", str(DATA / "distributions.json"),
                 "--morph-axon", str(axon_morph_tsv),
                 "--base-morph-dir", str(DATA / "input-cells"),
                 "--atlas", str(small_O1_path),
                 "--seed", 0,
-                "--out-cells-path", str(tmpdir / "test_cells.mvd3"),
+                "--out-cells", str(tmpdir / "test_cells.mvd3"),
                 "--out-apical", str(tmpdir / "apical.yaml"),
                 "--out-apical-nrn-sections", str(tmpdir / "apical_NRN_sections.yaml"),
                 "--out-morph-dir", str(tmpdir),
+                "--out-debug-data", str(tmpdir / "debug_data.csv"),
                 "--overwrite",
                 "--out-morph-ext", "h5",
                 "--out-morph-ext", "swc",
@@ -160,3 +162,8 @@ class TestCli:
         assert result.exception is None
         assert Path(tmpdir / "test_cells.mvd3").exists()
         assert Path(tmpdir / "apical.yaml").exists()
+        assert Path(tmpdir / "debug_data.csv").exists()
+
+        expected_debug_data = pd.read_csv(DATA / "debug_data.csv")
+        debug_data = pd.read_csv(tmpdir / "debug_data.csv")
+        pd.testing.assert_frame_equal(debug_data, expected_debug_data, check_exact=False)

@@ -19,7 +19,7 @@ REQS = [
     "morphio>=2.7",
     "morph-tool[nrn]>=2.4.1",
     "neuroc>=0.2.3",
-    "tns>=2.3.0",
+    "tns>=2.4.0",
     "tqdm>=4.28.1",
     "voxcell>=2.7",
 ]

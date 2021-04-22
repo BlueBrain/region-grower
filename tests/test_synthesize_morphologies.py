@@ -42,7 +42,7 @@ def create_args(
     args = {}
 
     # Circuit
-    args["cells_path"] = input_cells
+    args["input_cells"] = input_cells
 
     # Atlas
     args["atlas"] = atlas_path
@@ -57,7 +57,7 @@ def create_args(
     args["out_morph_ext"] = ["h5", "swc", "asc"]
     args["out_morph_dir"] = tmp_folder
     args["out_apical"] = tmp_folder / "apical.yaml"
-    args["out_cells_path"] = str(tmp_folder / "test_cells.mvd3")
+    args["out_cells"] = str(tmp_folder / "test_cells.mvd3")
     if out_apical_NRN_sections:
         args["out_apical_nrn_sections"] = tmp_folder / out_apical_NRN_sections
     else:
@@ -80,7 +80,12 @@ def create_args(
 @pytest.mark.parametrize("with_axon", [True, False])
 @pytest.mark.parametrize("with_NRN", [True, False])
 def test_synthesize(
-    tmpdir, small_O1_path, input_cells, axon_morph_tsv, with_axon, with_NRN
+    tmpdir,
+    small_O1_path,
+    input_cells,
+    axon_morph_tsv,
+    with_axon,
+    with_NRN,
 ):  # pylint: disable=unused-argument
     tmp_folder = Path(tmpdir)
 

@@ -6,7 +6,7 @@ synthesis tools (here TNS) and the circuit building pipeline.
 TLDR: SpaceContext.synthesized() is being called by
 the placement_algorithm package to synthesize circuit morphologies.
 """
-
+from collections import defaultdict
 from copy import deepcopy
 from typing import Dict
 from typing import List
@@ -36,7 +36,6 @@ from region_grower import SkipSynthesisError
 from region_grower import modify
 from region_grower.morph_io import MorphLoader
 from region_grower.morph_io import MorphWriter
-from region_grower.utils import formatted_logger
 from region_grower.utils import random_rotation_y
 
 Point = Union[List[float], np.array]
@@ -152,9 +151,10 @@ class ComputationParameters:
     morph_loader: Optional[MorphLoader] = None
     with_NRN_sections: bool = False
     retries: int = 1
+    debug_data: bool = False
 
 
-def _to_be_isolated(morphology_path, point):
+def _to_be_isolated(morphology_path, point):  # pragma: no cover
     """Internal function to isolate Neuron."""
     cell = nrnhines.get_NRN_cell(morphology_path)
     return nrnhines.point_to_section_end(cell.icell.apical, point)
@@ -175,6 +175,7 @@ class SpaceWorker:
         self.context = space_context
         self.params = synthesis_parameters
         self.internals = computation_parameters
+        self.debug_infos = defaultdict(dict)
 
     def _correct_position_orientation_scaling(self, params_orig: Dict) -> Dict:
         """Return a copy of the parameter with the correct orientation and scaling."""
@@ -199,6 +200,7 @@ class SpaceWorker:
             apical_target_extent=self.context.distance_to_constraint(
                 self.cell.depth, apical_target
             ),
+            debug_info=self.debug_infos["input_scaling"] if self.internals.debug_data else None,
         )
 
         return params
@@ -226,14 +228,17 @@ class SpaceWorker:
                 target_max_length=target_max_length,
             )
 
-            formatted_logger(
-                "Neurite hard limit rescaling: %s",
-                neurite_id=root_section.id,
-                neurite_type=TYPE_TO_STR[root_section.type],
-                scale=scale,
-                target_min_length=target_min_length,
-                target_max_length=target_max_length,
-            )
+            if self.internals.debug_data and scale != 1:
+                self.debug_infos["neurite_hard_limit_rescaling"].update(
+                    {
+                        root_section.id: {
+                            "neurite_type": TYPE_TO_STR[root_section.type],
+                            "scale": scale,
+                            "target_min_length": target_min_length,
+                            "target_max_length": target_max_length,
+                        }
+                    }
+                )
 
             scale_section(root_section, ScaleParameters(mean=scale), recursive=True)
 
@@ -278,16 +283,12 @@ class SpaceWorker:
         return {
             "name": morph_name,
             "apical_points": synthesized.apical_points,
+            "apical_sections": synthesized.apical_sections,
             "apical_NRN_sections": apical_NRN_sections,
         }
 
     def _synthesize_once(self) -> SynthesisResult:
         """One try to synthesize the cell."""
-        formatted_logger(
-            "Neurite type and position: %s",
-            mtype=self.cell.mtype,
-            position=self.cell.position,
-        )
 
         params = self._correct_position_orientation_scaling(self.params.tmd_parameters)
 
@@ -319,6 +320,7 @@ class SpaceWorker:
             input_distributions=self.params.tmd_distributions,
             external_diametrizer=external_diametrizer,
             skip_validation=True,
+            context={"debug_data": self.debug_infos["input_scaling"]},
         )
         grower.grow()
 

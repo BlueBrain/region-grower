@@ -16,17 +16,19 @@ def test_scale_default_barcode():
     ph = [[0.1, 0.2], [0.3, 0.4]]
     reference_thickness = 1
     target_thickness = 1
-    res = modify.scale_default_barcode(ph, reference_thickness, target_thickness)
+    res = modify.scale_default_barcode(ph, None, reference_thickness, target_thickness)
     assert_array_equal(res, ph)
 
-    res = modify.scale_default_barcode(np.array(ph) * 10, reference_thickness, target_thickness)
+    res = modify.scale_default_barcode(
+        np.array(ph) * 10, None, reference_thickness, target_thickness
+    )
     assert_array_equal(res, [[0.25, 0.5], [0.75, 1.0]])
 
 
 def test_scale_target_barcode():
     ph = [[0.1, 0.2], [0.3, 0.4]]
     target_path_distance = 1
-    res = modify.scale_target_barcode(ph, target_path_distance)
+    res = modify.scale_target_barcode(ph, None, target_path_distance)
     assert_array_almost_equal(res, [[1 / 3, 2 / 3], [1, 4 / 3]])
 
 
@@ -56,6 +58,7 @@ def test_input_scaling():
             "funct": modify.scale_target_barcode,
             "kwargs": {
                 "target_path_distance": 2.5,
+                "with_debug_info": False,
             },
         }
     }
@@ -65,6 +68,7 @@ def test_input_scaling():
             "kwargs": {
                 "target_thickness": target_thickness,
                 "reference_thickness": reference_thickness,
+                "with_debug_info": False,
             },
         }
     }

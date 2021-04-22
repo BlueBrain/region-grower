@@ -122,7 +122,7 @@ def generate_distributions(
 
     L.info("Extracting TMD distributions for each mtype...")
 
-    pool = multiprocessing.Pool()
+    pool = multiprocessing.Pool()  # pylint: disable=consider-using-with
     results = pool.imap_unordered(
         Worker(neurite_types, diameter_model_function),
         morphologies_dict.items(),
