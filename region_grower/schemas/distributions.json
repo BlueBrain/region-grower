@@ -1,0 +1,30 @@
+{
+    "additionalProperties": true,
+    "description": "The TMD distributions used to synthesize the cells",
+    "patternProperties": {
+        ".*": {
+            "description": "The mtype properties given to TNS",
+            "type": "object"
+        }
+    },
+    "properties": {
+        "metadata": {
+            "additionalProperties": true,
+            "description": "The metadata of the given distributions",
+            "properties": {
+                "cortical_thickness": {
+                    "description": "Specific constraints for apicals",
+                    "items": {
+                        "minimum": 0,
+                        "type": "number"
+                    },
+                    "type": "array"
+                }
+            },
+            "required": ["cortical_thickness"],
+            "type": "object"
+        }
+    },
+    "title": "TMD distributions",
+    "type": "object"
+}

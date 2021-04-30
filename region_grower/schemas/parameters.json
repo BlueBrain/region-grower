@@ -1,0 +1,147 @@
+{
+    "definitions": {
+        "fraction": {
+            "description": "The relative position in a layer (0 for the bottom and 1 for the top)",
+            "title": "Fraction",
+            "type": "number"
+        },
+        "layer": {
+            "description": "The index of a layer",
+            "maximum": 6,
+            "minimum": 1,
+            "title": "Layer",
+            "type": "integer"
+        },
+        "limit": {
+            "additionalProperties": false,
+            "description": "Properties of a specific limit",
+            "properties": {
+                "fraction": {
+                    "$ref": "#/definitions/fraction"
+                },
+                "layer": {
+                    "$ref": "#/definitions/layer"
+                }
+            },
+            "required": [
+                "layer",
+                "fraction"
+            ],
+            "title": "Limit properties",
+            "type": "object"
+        },
+        "limits": {
+            "additionalProperties": false,
+            "description": "Min and max of a hard limit",
+            "properties": {
+                "hard_limit_max": {
+                    "$ref": "#/definitions/limit",
+                    "description": "The max of the hard limit"
+                },
+                "hard_limit_min": {
+                    "$ref": "#/definitions/limit",
+                    "description": "The min of the hard limit"
+                }
+            },
+            "title": "Hard limit",
+            "type": "object"
+        }
+    },
+    "description": "The TMD parameters used to synthesize the cells",
+    "patternProperties": {
+        ".*": {
+            "additionalProperties": true,
+            "description": "The TMD parameters used to synthesize the cells of the given mtype",
+            "properties": {
+                "context_constraints": {
+                    "additionalProperties": false,
+                    "description": "The constraints to obey in the given context",
+                    "properties": {
+                        "apical": {
+                            "additionalProperties": false,
+                            "description": "Specific constraints for apicals",
+                            "properties": {
+                                "extent_to_target": {
+                                    "additionalProperties": false,
+                                    "description": "The target depth given as a fraction of a layer and the properties of the fit of the Y extent relative to the path length",
+                                    "properties": {
+                                        "fraction": {
+                                            "$ref": "#/definitions/fraction"
+                                        },
+                                        "intercept": {
+                                            "type": "number"
+                                        },
+                                        "layer": {
+                                            "$ref": "#/definitions/layer"
+                                        },
+                                        "slope": {
+                                            "type": "number"
+                                        }
+                                    },
+                                    "required": [
+                                        "layer",
+                                        "fraction",
+                                        "intercept",
+                                        "slope"
+                                    ],
+                                    "type": "object"
+                                },
+                                "hard_limit_max": {
+                                    "$ref": "#/definitions/limit",
+                                    "description": "The max of the hard limit"
+                                },
+                                "hard_limit_min": {
+                                    "$ref": "#/definitions/limit",
+                                    "description": "The min of the hard limit"
+                                }
+                            },
+                            "type": "object"
+                        },
+                        "axon": {
+                            "$ref": "#/definitions/limits",
+                            "description": "Specific constraints for axons"
+                        },
+                        "basal": {
+                            "$ref": "#/definitions/limits",
+                            "description": "Specific constraints for basals"
+                        }
+                    },
+                    "title": "Context constraints",
+                    "type": "object"
+                },
+                "diameter_params": {
+                    "additionalProperties": true,
+                    "properties": {
+                        "method": {
+                            "type": "string"
+                        }
+                    },
+                    "required": ["method"],
+                    "type": "object"
+                },
+                "grow_types": {
+                    "items": {
+                        "enum": [
+                            "basal",
+                            "apical",
+                            "axon"
+                        ],
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "orientation": {
+                    "items": {
+                        "type": "number"
+                    },
+                    "type": "array"
+                }
+            },
+            "required": [
+                "grow_types"
+            ]
+        }
+    },
+    "title": "TMD parameters",
+    "type": "object"
+}

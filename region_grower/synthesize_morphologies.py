@@ -19,6 +19,7 @@ import morphio
 import numpy as np
 import pandas as pd
 import yaml
+from diameter_synthesis.validators import validate_model_params
 from jsonschema import validate
 from morphio.mut import Morphology
 from pkg_resources import resource_stream
@@ -279,7 +280,7 @@ class SynthesizeMorphologies:
 
     @property
     def task_ids(self):
-        """ Task IDs (= CellCollection IDs). """
+        """Task IDs (= CellCollection IDs)."""
         return self.cells_data.index.values
 
     @staticmethod
@@ -387,6 +388,14 @@ class SynthesizeMorphologies:
     @staticmethod
     def verify(mtypes: Sequence[str], tmd_distributions: dict, tmd_parameters: dict) -> None:
         """Check that context has distributions / parameters for all given mtypes."""
+        with resource_stream("region_grower", "schemas/distributions.json") as distr_file:
+            distributions_schema = json.load(distr_file)
+        validate(tmd_distributions, distributions_schema)
+
+        with resource_stream("region_grower", "schemas/parameters.json") as param_file:
+            parameters_schema = json.load(param_file)
+        validate(tmd_parameters, parameters_schema)
+
         for mtype in mtypes:
             if mtype not in tmd_distributions["mtypes"]:
                 raise RegionGrowerError("Missing distributions for mtype: '%s'" % mtype)
@@ -396,6 +405,4 @@ class SynthesizeMorphologies:
             validate_neuron_distribs(tmd_distributions["mtypes"][mtype])
             validate_neuron_params(tmd_parameters[mtype])
 
-            with resource_stream("region_grower", "parameters_schema.json") as param_file:
-                params_schema = json.load(param_file)
-            validate(tmd_parameters[mtype], params_schema)
+            validate_model_params(tmd_parameters[mtype]["diameter_params"])

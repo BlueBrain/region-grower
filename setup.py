@@ -14,11 +14,12 @@ VERSION = imp.load_source("region_grower.version", "region_grower/version.py").V
 REQS = [
     "attrs>=19.3.0",
     "click>=7.0",
-    "dask[dataframe]>=2.15.0",
-    "diameter-synthesis>=0.1.11",
+    "dask[dataframe, distributed]>=2.15.0",
+    "diameter-synthesis>=0.2.3",
     "morphio>=2.7",
     "morph-tool[nrn]>=2.4.1",
     "neuroc>=0.2.3",
+    "neurom>=2,<3",
     "tns>=2.4.0",
     "tqdm>=4.28.1",
     "voxcell>=2.7",
@@ -27,11 +28,12 @@ REQS = [
 MPI_EXTRAS = [
     "dask_mpi",
     "mpi4py>=3.0.3",
-    "dask[distributed]>=2.15.0",
 ]
 
 DOC_EXTRAS = [
+    "sphinx",
     "sphinx-bluebrain-theme",
+    "sphinx-jsonschema",
 ]
 
 setup(

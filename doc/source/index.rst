@@ -7,4 +7,5 @@
 
    Home <self>
    methodology
+   parameters
    changelog

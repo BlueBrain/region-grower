@@ -390,7 +390,7 @@ class CellHelper(object):  # pragma: no cover
     """
 
     def __init__(self, cells_file):
-        """"""
+        """ """
         self.cells = CellCollection.load_mvd3(cells_file)
 
     def positions(self, mtype):
