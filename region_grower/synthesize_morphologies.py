@@ -141,6 +141,7 @@ class SynthesizeMorphologies:
         rotational_jitter_std: the std of the rotational jitter.
         nb_processes: the number of processes when MPI is not used.
         with_mpi: initialize and use MPI when set to True.
+        min_depth: minimum depth from atlas computation
     """
 
     MAX_SYNTHESIS_ATTEMPTS_COUNT = 10
@@ -168,6 +169,7 @@ class SynthesizeMorphologies:
         out_debug_data=None,
         nb_processes=None,
         with_mpi=False,
+        min_depth=25,
     ):  # pylint: disable=too-many-arguments, too-many-locals
         self.seed = seed
         self.scaling_jitter_std = scaling_jitter_std
@@ -208,11 +210,13 @@ class SynthesizeMorphologies:
         )
 
         LOGGER.info("Fetching atlas data")
+        self.min_depth = min_depth
         current_depths, layer_depths, orientations = self.atlas_lookups(
             atlas,
             self.cells.positions,
             not self.cells.orientations,
             atlas_cache,
+            self.min_depth,
         )
 
         self.cells_data = self.cells.as_dataframe()
@@ -267,11 +271,13 @@ class SynthesizeMorphologies:
         self._client = dask.distributed.Client(**client_kwargs)
 
     @staticmethod
-    def atlas_lookups(atlas_path, positions, with_orientations=False, atlas_cache=None):
+    def atlas_lookups(
+        atlas_path, positions, with_orientations=False, atlas_cache=None, min_depth=25
+    ):
         """Open an Atlas and compute depths and orientations according to the given positions."""
         atlas = AtlasHelper(Atlas.open(atlas_path, cache_dir=atlas_cache))
         layer_depths = atlas.get_layer_boundary_depths(positions)
-        current_depths = atlas.depths.lookup(positions)
+        current_depths = np.clip(atlas.depths.lookup(positions), min_depth, None)
         if with_orientations:
             orientations = atlas.orientations.lookup(positions)
         else:

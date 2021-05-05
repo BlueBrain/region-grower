@@ -220,6 +220,12 @@ def generate_distributions(
     type=click.Choice(["debug", "info", "warning", "error", "critical"]),
     default="info",
 )
+@click.option(
+    "--min-depth",
+    help="Minimum depth to use",
+    type=float,
+    default=25,
+)
 def synthesize_morphologies(**kwargs):  # pylint: disable=too-many-arguments, too-many-locals
     """Synthesize morphologies."""
     setup_logger(kwargs.pop("log_level", "info"))

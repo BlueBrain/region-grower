@@ -12,6 +12,7 @@ import pandas as pd
 import pytest
 import yaml
 from morph_tool.utils import iter_morphology_files
+from morphio import Morphology
 from numpy.testing import assert_allclose
 
 from region_grower import RegionGrowerError
@@ -38,6 +39,7 @@ def create_args(
     atlas_path,
     axon_morph_tsv,
     out_apical_NRN_sections,
+    min_depth,
 ):
     args = {}
 
@@ -51,6 +53,7 @@ def create_args(
     args["tmd_distributions"] = DATA / "distributions.json"
     args["tmd_parameters"] = DATA / "parameters.json"
     args["seed"] = 0
+    args["min_depth"] = min_depth
 
     # Internals
     args["overwrite"] = True
@@ -77,6 +80,7 @@ def create_args(
     return args
 
 
+@pytest.mark.parametrize("min_depth", [25, 800])
 @pytest.mark.parametrize("with_axon", [True, False])
 @pytest.mark.parametrize("with_NRN", [True, False])
 def test_synthesize(
@@ -86,7 +90,8 @@ def test_synthesize(
     axon_morph_tsv,
     with_axon,
     with_NRN,
-):  # pylint: disable=unused-argument
+    min_depth,
+):  # pylint: disable=unused-argument,
     tmp_folder = Path(tmpdir)
 
     args = create_args(
@@ -96,6 +101,7 @@ def test_synthesize(
         small_O1_path,
         axon_morph_tsv if with_axon else None,
         "apical_NRN_sections.yaml" if with_NRN else None,
+        min_depth,
     )
 
     synthesizer = SynthesizeMorphologies(**args)
@@ -112,12 +118,21 @@ def test_synthesize(
         apical_suffix = ""
     else:
         apical_suffix = "_no_axon"
-    check_yaml(DATA / ("apical" + apical_suffix + ".yaml"), args["out_apical"])
-    if with_NRN:
-        check_yaml(
-            DATA / ("apical_NRN_sections" + apical_suffix + ".yaml"),
-            args["out_apical_nrn_sections"],
-        )
+
+    # pylint: disable=unsubscriptable-object
+    max_y = Morphology(sorted(iter_morphology_files(tmp_folder))[0]).points[:, 1].max()
+    if min_depth == 25:
+        check_yaml(DATA / ("apical" + apical_suffix + ".yaml"), args["out_apical"])
+        if with_NRN:
+            check_yaml(
+                DATA / ("apical_NRN_sections" + apical_suffix + ".yaml"),
+                args["out_apical_nrn_sections"],
+            )
+        if with_NRN and with_axon:
+            assert_allclose(max_y, 156.4934)
+    else:
+        if with_NRN and with_axon:
+            assert_allclose(max_y, 137.86134)
 
 
 def run_with_mpi():
@@ -149,6 +164,7 @@ def run_with_mpi():
         small_O1_path,
         tmp_folder / "axon_morphs.tsv",
         "apical_NRN_sections.yaml",
+        min_depth=25,
     )
 
     setup_logger("info")
