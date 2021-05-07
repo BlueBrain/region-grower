@@ -13,10 +13,7 @@ Point = Union[List[float], np.array]
 
 
 class AtlasHelper:
-    """Atlas helper provides two lookup functions for region grower:
-    - lookup_target_reference_depths
-    - lookup_orientation
-    """
+    """Atlas helper for region grower."""
 
     def __init__(self, atlas: Atlas):
         """AtlasHelper constructor

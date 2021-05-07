@@ -335,8 +335,8 @@ class SynthesizeMorphologies:
         )
         ddf = dd.from_pandas(self.cells_data, npartitions=self.nb_processes)
         future = ddf.apply(_parallel_wrapper, meta=meta, axis=1, **func_kwargs)
-        res = future.compute()
-        return self.cells_data.join(res)
+        dask.distributed.progress(future)
+        return self.cells_data.join(future.compute())
 
     def finalize(self, result: pd.DataFrame):
         """Finalize master work.

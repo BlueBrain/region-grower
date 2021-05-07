@@ -113,12 +113,6 @@ The command ``region-grower synthesize-morphologies`` will create the following 
 * a ``YAML`` file containing the Neuron IDs of the sections containing the apical points (see ``--out-apical-nrn-sections`` parameter).
 
 
-Acknowledgments
----------------
-
-region-grower is a generalization of the approach originally proposed by `Michael Reimann <mailto:michael.reimann@epfl.ch>`_ and `Eilif Muller <mailto:eilif.mueller@epfl.ch>`_ for hexagonal mosaic circuits.
-
-
 Reporting issues
 ----------------
 

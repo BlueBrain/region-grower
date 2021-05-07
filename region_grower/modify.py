@@ -175,6 +175,10 @@ def output_scaling(
     max_y = max(p for sec in root_section.iter() for p in sec.points[:, COLS.XYZ].dot(orientation))
     y_extent = max_y - root_section.points[0, COLS.XYZ].dot(orientation)
 
+    # in case the neurite goes to -y direction
+    if y_extent == 0.0:
+        return 1.0
+
     if target_min_length is not None:
         min_scale = target_min_length / y_extent
         if min_scale > 1:

@@ -20,7 +20,6 @@ from diameter_synthesis import build_diameters
 from morph_tool import nrnhines
 from morph_tool import transform as mt
 from morph_tool.graft import graft_axon
-from morphio import SectionType
 from morphio.mut import Morphology
 from neuroc.scale import RotationParameters
 from neuroc.scale import ScaleParameters
@@ -29,6 +28,7 @@ from neuroc.scale import scale_morphology
 from neuroc.scale import scale_section
 from tns import NeuronGrower
 from tns import TNSError
+from tns.morphio_utils import TYPE_TO_STR
 from voxcell.cell_collection import CellCollection
 
 from region_grower import RegionGrowerError
@@ -41,11 +41,6 @@ from region_grower.utils import random_rotation_y
 Point = Union[List[float], np.array]
 Matrix = Union[List[List[float]], np.array]
 
-TYPE_TO_STR = {
-    SectionType.basal_dendrite: "basal",
-    SectionType.apical_dendrite: "apical",
-    SectionType.axon: "axon",
-}
 PIA_DIRECTION = [0.0, 1.0, 0.0]
 
 
@@ -301,10 +296,13 @@ class SpaceWorker:
             params["origin"] = [0, 0, 0]
 
         if self.params.tmd_parameters["diameter_params"]["method"] == "external":
-
-            def external_diametrizer(neuron, model, neurite_type):
+            # pylint: disable=unused-argument
+            def external_diametrizer(neuron, neurite_type, model_all, random_generator):
                 return build_diameters.build(
-                    neuron, model, [neurite_type], self.params.tmd_parameters["diameter_params"]
+                    neuron,
+                    model_all,
+                    [TYPE_TO_STR[neurite_type]],
+                    self.params.tmd_parameters["diameter_params"],
                 )
 
         else:
