@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 0.2.1
+-------------
+
+- Minor fix to use diameter-synthesis
+
 Version 0.2.0
 -------------
 
