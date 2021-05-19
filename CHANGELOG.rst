@@ -4,6 +4,7 @@ Changelog
 Version 0.2.2
 -------------
 
+- Add skip_write option to not write synthesized morphologies
 - Use random number generator and use pickle to save debug infos
 
 Version 0.2.1

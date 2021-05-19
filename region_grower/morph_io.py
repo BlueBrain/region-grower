@@ -37,10 +37,11 @@ class MorphLoader:
 class MorphWriter:
     """Helper class for writing morphologies."""
 
-    def __init__(self, output_dir, file_exts):
+    def __init__(self, output_dir, file_exts, skip_write=False):
         self.output_dir = os.path.realpath(output_dir)
         self.file_exts = file_exts
         self._dir_depth = None
+        self.skip_write = skip_write
 
     @staticmethod
     def _calc_dir_depth(num_files, max_files_per_dir=None):
@@ -72,6 +73,8 @@ class MorphWriter:
         - ensure it either does not exist, or is empty
         - if it does not exist, create an empty one
         """
+        if self.skip_write:
+            return
         self._dir_depth = MorphWriter._calc_dir_depth(
             num_files * len(self.file_exts), max_files_per_dir
         )
@@ -83,7 +86,8 @@ class MorphWriter:
         if self._dir_depth is not None:
             MorphWriter._make_subdirs(os.path.join(self.output_dir, "hashed"), self._dir_depth)
 
-    def _generate_name(self, seed):
+    def generate_name(self, seed):
+        """Create the name and folder of a morphology with hash from seed."""
         morph_name = uuid.UUID(int=random.Random(seed).getrandbits(128)).hex
         if self._dir_depth is None:
             subdirs = ""
@@ -104,11 +108,12 @@ class MorphWriter:
         morph = morphio.mut.Morphology(  # pylint: disable=no-member
             morph, options=morphio.Option.nrn_order
         )
-        morph_name, subdirs = self._generate_name(seed)
+        morph_name, subdirs = self.generate_name(seed)
 
         full_stem = Path(subdirs, morph_name)
         ext_paths = self.filepaths(full_stem)
 
-        for path in ext_paths:
-            morph.write(path)
+        if not self.skip_write:
+            for path in ext_paths:
+                morph.write(path)
         return str(full_stem), ext_paths

@@ -226,6 +226,18 @@ def generate_distributions(
     type=float,
     default=25,
 )
+@click.option(
+    "--skip-write",
+    help="Skip writing of morphologies",
+    is_flag=True,
+    default=False,
+)
+@click.option(
+    "--min-hard-scale",
+    help="Minimum hard limit scale below which neurite is deleted",
+    type=float,
+    default=0.2,
+)
 def synthesize_morphologies(**kwargs):  # pylint: disable=too-many-arguments, too-many-locals
     """Synthesize morphologies."""
     setup_logger(kwargs.pop("log_level", "info"))

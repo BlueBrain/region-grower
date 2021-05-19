@@ -21,6 +21,7 @@ import pandas as pd
 import yaml
 from diameter_synthesis.validators import validate_model_params
 from jsonschema import validate
+from morph_tool.exceptions import NoDendriteException
 from morphio.mut import Morphology
 from pkg_resources import resource_stream
 from tns.validator import validate_neuron_distribs
@@ -53,6 +54,7 @@ def _parallel_wrapper(
     cortical_depths,
     rotational_jitter_std,
     scaling_jitter_std,
+    min_hard_scale,
 ):
     try:
         current_cell = CellState(
@@ -77,6 +79,7 @@ def _parallel_wrapper(
             scaling_jitter_std=scaling_jitter_std,
             recenter=True,
             seed=row["seed"],
+            min_hard_scale=min_hard_scale,
         )
         space_worker = SpaceWorker(
             current_cell,
@@ -88,7 +91,7 @@ def _parallel_wrapper(
         res = space_worker.completion(new_cell)
 
         res["debug_infos"] = dict(space_worker.debug_infos)
-    except SkipSynthesisError as exc:  # pragma: no cover
+    except (SkipSynthesisError, RegionGrowerError, NoDendriteException) as exc:  # pragma: no cover
         LOGGER.error("Skip %s because of the following error: %s", row.name, exc)
         res = {
             "name": None,
@@ -142,6 +145,9 @@ class SynthesizeMorphologies:
         nb_processes: the number of processes when MPI is not used.
         with_mpi: initialize and use MPI when set to True.
         min_depth: minimum depth from atlas computation
+        max_depth: maximum depth from atlas computation
+        skip_write: set to True to bypass writing to disk for debuging/testing
+        min_hard_scale: the scale value below which a neurite is removed
     """
 
     MAX_SYNTHESIS_ATTEMPTS_COUNT = 10
@@ -170,6 +176,9 @@ class SynthesizeMorphologies:
         nb_processes=None,
         with_mpi=False,
         min_depth=25,
+        max_depth=5000,
+        skip_write=False,
+        min_hard_scale=0.2,
     ):  # pylint: disable=too-many-arguments, too-many-locals
         self.seed = seed
         self.scaling_jitter_std = scaling_jitter_std
@@ -179,6 +188,7 @@ class SynthesizeMorphologies:
         self.out_cells = out_cells
         self.out_apical = out_apical
         self.out_debug_data = out_debug_data
+        self.min_hard_scale = min_hard_scale
 
         self._init_parallel(with_mpi, nb_processes)
 
@@ -202,7 +212,7 @@ class SynthesizeMorphologies:
         )
 
         LOGGER.info("Preparing morphology output folder in %s", out_morph_dir)
-        self.morph_writer = MorphWriter(out_morph_dir, out_morph_ext or ["swc"])
+        self.morph_writer = MorphWriter(out_morph_dir, out_morph_ext or ["swc"], skip_write)
         self.morph_writer.prepare(
             num_files=len(self.cells.positions),
             max_files_per_dir=max_files_per_dir,
@@ -210,13 +220,13 @@ class SynthesizeMorphologies:
         )
 
         LOGGER.info("Fetching atlas data")
-        self.min_depth = min_depth
         current_depths, layer_depths, orientations = self.atlas_lookups(
             atlas,
             self.cells.positions,
             not self.cells.orientations,
             atlas_cache,
-            self.min_depth,
+            min_depth,
+            max_depth,
         )
 
         self.cells_data = self.cells.as_dataframe()
@@ -272,12 +282,17 @@ class SynthesizeMorphologies:
 
     @staticmethod
     def atlas_lookups(
-        atlas_path, positions, with_orientations=False, atlas_cache=None, min_depth=25
+        atlas_path,
+        positions,
+        with_orientations=False,
+        atlas_cache=None,
+        min_depth=25,
+        max_depth=5000,
     ):
         """Open an Atlas and compute depths and orientations according to the given positions."""
         atlas = AtlasHelper(Atlas.open(atlas_path, cache_dir=atlas_cache))
         layer_depths = atlas.get_layer_boundary_depths(positions)
-        current_depths = np.clip(atlas.depths.lookup(positions), min_depth, None)
+        current_depths = np.clip(atlas.depths.lookup(positions), min_depth, max_depth)
         if with_orientations:
             orientations = atlas.orientations.lookup(positions)
         else:
@@ -319,6 +334,7 @@ class SynthesizeMorphologies:
             "cortical_depths": self.cortical_depths,
             "rotational_jitter_std": self.rotational_jitter_std,
             "scaling_jitter_std": self.scaling_jitter_std,
+            "min_hard_scale": self.min_hard_scale,
         }
 
         meta = pd.DataFrame(
@@ -335,6 +351,7 @@ class SynthesizeMorphologies:
         )
         ddf = dd.from_pandas(self.cells_data, npartitions=self.nb_processes)
         future = ddf.apply(_parallel_wrapper, meta=meta, axis=1, **func_kwargs)
+        future = future.persist()
         dask.distributed.progress(future)
         res = self.cells_data.drop(columns=["tmd_parameters", "tmd_distributions"]).join(
             future.compute()

@@ -75,10 +75,10 @@ class TestMorphWriter:
         assert morph_writer.filepaths(Path("", "morph_name")) == [Path("/test/morph_name.h5")]
 
     def test_generate_name(self, morph_writer):
-        assert morph_writer._generate_name(0) == ("e3e70682c2094cac629f6fbed82c07cd", "")
+        assert morph_writer.generate_name(0) == ("e3e70682c2094cac629f6fbed82c07cd", "")
 
         morph_writer._dir_depth = 2
-        assert morph_writer._generate_name(42) == (
+        assert morph_writer.generate_name(42) == (
             "bdd640fb06671ad11c80317fa3b1799d",
             "hashed/bd/d6",
         )

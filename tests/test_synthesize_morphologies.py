@@ -136,6 +136,67 @@ def test_synthesize(
             assert_allclose(max_y, 150.24948)
 
 
+def test_synthesize_skip_write(
+    tmpdir,
+    small_O1_path,
+    input_cells,
+    axon_morph_tsv,
+):  # pylint: disable=unused-argument,
+    with_axon = True
+    with_NRN = True
+    min_depth = 25
+    tmp_folder = Path(tmpdir)
+
+    args = create_args(
+        False,
+        tmp_folder,
+        input_cells,
+        small_O1_path,
+        axon_morph_tsv if with_axon else None,
+        "apical_NRN_sections.yaml" if with_NRN else None,
+        min_depth,
+    )
+    args["skip_write"] = True
+
+    synthesizer = SynthesizeMorphologies(**args)
+    res = synthesizer.synthesize()
+
+    assert (res["x"] == 200).all()
+    assert (res["y"] == 200).all()
+    assert (res["z"] == 200).all()
+    assert res["name"].tolist() == [
+        "e3e70682c2094cac629f6fbed82c07cd",
+        None,
+        "216363698b529b4a97b750923ceb3ffd",
+        None,
+        "14a03569d26b949692e5dfe8cb1855fe",
+        None,
+        "4462ebfc5f915ef09cfbac6e7687a66e",
+        None,
+    ]
+    assert [[i[0].tolist()] if i else i for i in res["apical_points"].tolist()] == [
+        [[-69.30585479736328, 128.98513793945312, -27.75257110595703]],
+        None,
+        [[2.202280044555664, 116.80427551269531, 1.3548266887664795]],
+        None,
+        [[0.020046308636665344, 115.19947814941406, 5.582374572753906]],
+        None,
+        [[-0.5829713344573975, 91.27519226074219, -7.5925679206848145]],
+        None,
+    ]
+
+    # Check that the morphologies were not written
+    res_files = tmpdir.listdir()
+    assert len(res_files) == 5
+    assert sorted(i.basename for i in res_files) == [
+        "apical.yaml",
+        "apical_NRN_sections.yaml",
+        "axon_morphs.tsv",
+        "input_cells.mvd3",
+        "test_cells.mvd3",
+    ]
+
+
 def run_with_mpi():
     # pylint: disable=import-outside-toplevel, too-many-locals, import-error
     from data_factories import generate_axon_morph_tsv

@@ -103,7 +103,8 @@ class SpaceContext:
         Second one is the equivalent value for the same layer but in the cortical column.
         """
         for layer_depth, cortical_depth in zip(self.layer_depths[1:], self.cortical_depths):
-            if depth <= layer_depth:
+            # we round to avoid being outside due to numerical precision
+            if np.round(depth, 3) <= np.round(layer_depth, 3):
                 return layer_depth, cortical_depth
 
         raise RegionGrowerError(f"Current depth ({depth}) is outside of circuit boundaries")
@@ -136,6 +137,7 @@ class SynthesisParameters:
     scaling_jitter_std: float = None
     recenter: bool = True
     seed: int = 0
+    min_hard_scale: float = 0
 
 
 @attr.s(auto_attribs=True)
@@ -223,7 +225,17 @@ class SpaceWorker:
                 target_max_length=target_max_length,
             )
 
-            if self.internals.debug_data and scale != 1:
+            if scale > self.params.min_hard_scale:
+                scale_section(root_section, ScaleParameters(mean=scale), recursive=True)
+                is_deleted = False
+            else:
+                if TYPE_TO_STR[root_section.type] == "apical":
+                    raise RegionGrowerError(f"Apical is removed because rescale = {scale}")
+
+                grower.neuron.delete_section(root_section, recursive=True)
+                is_deleted = True
+
+            if self.internals.debug_data and scale != 1.0:
                 self.debug_infos["neurite_hard_limit_rescaling"].update(
                     {
                         root_section.id: {
@@ -231,11 +243,10 @@ class SpaceWorker:
                             "scale": scale,
                             "target_min_length": target_min_length,
                             "target_max_length": target_max_length,
+                            "deleted": is_deleted,
                         }
                     }
                 )
-
-            scale_section(root_section, ScaleParameters(mean=scale), recursive=True)
 
     def synthesize(self) -> SynthesisResult:
         """Synthesize a cell based on the position and mtype.
@@ -253,8 +264,6 @@ class SpaceWorker:
                 return self._synthesize_once()
             except TNSError:  # pragma: no cover
                 pass
-            except RegionGrowerError:  # pragma: no cover
-                raise SkipSynthesisError("Input scaling is too small") from RegionGrowerError
 
         raise SkipSynthesisError(
             "Too many attempts at synthesizing cell with TNS"
@@ -267,7 +276,7 @@ class SpaceWorker:
         )
 
         apical_NRN_sections = None
-        if self.internals.with_NRN_sections:
+        if self.internals.with_NRN_sections and not self.internals.morph_writer.skip_write:
             # Get the first .asc or .swc path so neuron can load it
             morph_path = next(filter(lambda x: x.suffix in [".asc", ".swc"], ext_paths))
             apical_NRN_sections = self._convert_apical_sections_to_NRN_sections(
@@ -333,6 +342,7 @@ class SpaceWorker:
             )
             graft_axon(grower.neuron, axon_morph, rng=rng)
 
+        apical_points = None
         apical_points = self._convert_apical_sections_to_apical_points(
             grower.neuron, grower.apical_sections
         )

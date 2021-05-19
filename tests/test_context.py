@@ -357,6 +357,47 @@ class TestSpaceWorker:
         assert fixed_params["apical"]["modify"]["kwargs"] == expected_apical
         assert fixed_params["basal"]["modify"]["kwargs"] == expected_basal
 
+        # Test with hard limit scale and min_hard_scale on apical
+        tmd_parameters[mtype]["context_constraints"] = {
+            "apical": {
+                "hard_limit_min": {
+                    "layer": 1,
+                    "fraction": 0.1,
+                },
+                "extent_to_target": {
+                    "slope": 0.5,
+                    "intercept": 1,
+                    "layer": 1,
+                    "fraction": 0.5,
+                },
+                "hard_limit_max": {
+                    "layer": 2,
+                    "fraction": 0.6,  # Set max < target to ensure a rescaling is processed
+                },
+            }
+        }
+        SynthesizeMorphologies.verify([mtype], tmd_distributions, tmd_parameters)
+        with pytest.raises(RegionGrowerError):
+            result = small_context_worker.synthesize()
+
+        # Test with hard limit scale and min_hard_scale on basal
+        tmd_parameters[mtype]["grow_types"] = ["basal"]
+        tmd_parameters[mtype]["context_constraints"] = {
+            "basal": {
+                "hard_limit_min": {
+                    "layer": 1,
+                    "fraction": 0.1,
+                },
+                "hard_limit_max": {
+                    "layer": 2,
+                    "fraction": 0.6,  # Set max < target to ensure a rescaling is processed
+                },
+            }
+        }
+        SynthesizeMorphologies.verify([mtype], tmd_distributions, tmd_parameters)
+        result = small_context_worker.synthesize()
+        assert [i.type for i in result.neuron.root_sections] == [expected_types[-1]]
+
     def test_debug_scales(self, small_context_worker, tmd_parameters):
         # Test debug logger
         mtype = small_context_worker.cell.mtype
@@ -436,6 +477,7 @@ class TestSpaceWorker:
                     "scale": 0.9676248059345621,
                     "target_min_length": 70.0,
                     "target_max_length": 70.0,
+                    "deleted": False,
                 }
             },
         }

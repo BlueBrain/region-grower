@@ -124,6 +124,7 @@ def synthesis_parameters(cell_mtype, tmd_distributions, tmd_parameters):
     return SynthesisParameters(
         tmd_distributions=tmd_distributions["mtypes"][cell_mtype],
         tmd_parameters=tmd_parameters[cell_mtype],
+        min_hard_scale=0.2,
     )
 
 
@@ -134,12 +135,7 @@ def computation_parameters():
 
 @pytest.fixture(scope="function")
 def small_context_worker(cell_state, space_context, synthesis_parameters, computation_parameters):
-    return SpaceWorker(
-        cell_state,
-        space_context,
-        synthesis_parameters,
-        computation_parameters,
-    )
+    return SpaceWorker(cell_state, space_context, synthesis_parameters, computation_parameters)
 
 
 @pytest.fixture(scope="session")
@@ -171,6 +167,7 @@ def synthesized_cell(small_O1_path):
     synthesis_parameters = SynthesisParameters(
         tmd_distributions=tmd_distributions["mtypes"][cell_mtype],
         tmd_parameters=tmd_parameters[cell_mtype],
+        min_hard_scale=0.2,
     )
     computation_parameters = ComputationParameters()
     small_context_worker = SpaceWorker(
