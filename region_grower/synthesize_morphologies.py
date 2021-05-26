@@ -87,7 +87,7 @@ def _parallel_wrapper(
         new_cell = space_worker.synthesize()
         res = space_worker.completion(new_cell)
 
-        res["debug_infos"] = space_worker.debug_infos
+        res["debug_infos"] = dict(space_worker.debug_infos)
     except SkipSynthesisError as exc:  # pragma: no cover
         LOGGER.error("Skip %s because of the following error: %s", row.name, exc)
         res = {
@@ -336,7 +336,10 @@ class SynthesizeMorphologies:
         ddf = dd.from_pandas(self.cells_data, npartitions=self.nb_processes)
         future = ddf.apply(_parallel_wrapper, meta=meta, axis=1, **func_kwargs)
         dask.distributed.progress(future)
-        return self.cells_data.join(future.compute())
+        res = self.cells_data.drop(columns=["tmd_parameters", "tmd_distributions"]).join(
+            future.compute()
+        )
+        return res
 
     def finalize(self, result: pd.DataFrame):
         """Finalize master work.
@@ -383,7 +386,7 @@ class SynthesizeMorphologies:
                 )
 
         if self.out_debug_data is not None:
-            result.to_csv(self.out_debug_data, index_label="gid")
+            result.to_pickle(self.out_debug_data)
 
     def synthesize(self):
         """Execute the complete synthesis process and export the results."""

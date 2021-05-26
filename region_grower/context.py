@@ -248,7 +248,6 @@ class SpaceWorker:
         the neurite goes after the max hard limit, it is downscaled. And vice-versa if it is
         smaller than the min hard limit)
         """
-        np.random.seed(self.params.seed)
         for _ in range(self.internals.retries):
             try:
                 return self._synthesize_once()
@@ -303,6 +302,7 @@ class SpaceWorker:
                     model_all,
                     [TYPE_TO_STR[neurite_type]],
                     self.params.tmd_parameters["diameter_params"],
+                    random_generator,
                 )
 
         else:
@@ -313,12 +313,15 @@ class SpaceWorker:
         else:
             axon_morph = None
 
+        rng = np.random.default_rng(self.params.seed)
+
         grower = NeuronGrower(
             input_parameters=params,
             input_distributions=self.params.tmd_distributions,
             external_diametrizer=external_diametrizer,
             skip_validation=True,
             context={"debug_data": self.debug_infos["input_scaling"]},
+            rng_or_seed=rng,
         )
         grower.grow()
 
@@ -326,11 +329,9 @@ class SpaceWorker:
 
         if axon_morph is not None:
             self.transform_morphology(
-                axon_morph,
-                self.cell.orientation,
-                self.params.axon_morph_scale,
+                axon_morph, self.cell.orientation, self.params.axon_morph_scale, rng=rng
             )
-            graft_axon(grower.neuron, axon_morph)
+            graft_axon(grower.neuron, axon_morph, rng=rng)
 
         apical_points = self._convert_apical_sections_to_apical_points(
             grower.neuron, grower.apical_sections
@@ -345,25 +346,25 @@ class SpaceWorker:
             raise SkipSynthesisError(f"Unable to find the morphology {name}")
         return morph
 
-    def transform_morphology(self, morph, orientation, scale=None) -> None:
+    def transform_morphology(self, morph, orientation, scale=None, rng=np.random) -> None:
         """Transform the morphology.
 
         The morphology is scaled, rotated around Y and aligned according to the orientation field.
         If jitter parameters are provided, jitter process is also applied to the morphology.
         """
         transform = np.identity(4)
-        transform[:3, :3] = np.matmul(orientation[0], random_rotation_y(n=1)[0])
+        transform[:3, :3] = np.matmul(orientation[0], random_rotation_y(n=1, rng=rng)[0])
         if scale is not None:
             transform = scale * transform
         mt.transform(morph, transform)
 
         if self.params.rotational_jitter_std is not None:
             rotational_jitter(
-                morph, RotationParameters(std_angle=self.params.rotational_jitter_std)
+                morph, RotationParameters(std_angle=self.params.rotational_jitter_std), rng=rng
             )
         if self.params.scaling_jitter_std is not None:
             scale_morphology(
-                morph, section_scaling=ScaleParameters(std=self.params.scaling_jitter_std)
+                morph, section_scaling=ScaleParameters(std=self.params.scaling_jitter_std), rng=rng
             )
 
     @staticmethod

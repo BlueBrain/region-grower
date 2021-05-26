@@ -115,22 +115,22 @@ class TestOutputScaling:
         assert modify.output_scaling(root_sec, [0, 1, 0], None, None) == 1
 
     def test_output_scaling_useless_min(self, root_sec):
-        assert modify.output_scaling(root_sec, [0, 1, 0], 100, None) == 1
+        assert modify.output_scaling(root_sec, [0, 1, 0], 1, None) == 1
 
     def test_output_scaling_min(self, root_sec):
-        assert modify.output_scaling(root_sec, [0, 1, 0], 134.617, None) == pytest.approx(1.2)
+        assert modify.output_scaling(root_sec, [0, 1, 0], 9.76777, None) == pytest.approx(1.2)
 
     def test_output_scaling_useless_max(self, root_sec):
-        assert modify.output_scaling(root_sec, [0, 1, 0], None, 200) == 1
+        assert modify.output_scaling(root_sec, [0, 1, 0], None, 10) == 1
 
     def test_output_scaling_max(self, root_sec):
-        assert modify.output_scaling(root_sec, [0, 1, 0], None, 89.7447) == pytest.approx(0.8)
+        assert modify.output_scaling(root_sec, [0, 1, 0], None, 6.51185) == pytest.approx(0.8)
 
     def test_output_scaling_useless_min_useless_max(self, root_sec):
-        assert modify.output_scaling(root_sec, [0, 1, 0], 100, 200) == 1
+        assert modify.output_scaling(root_sec, [0, 1, 0], 1, 10) == 1
 
     def test_output_scaling_useless_min_max(self, root_sec):
-        assert modify.output_scaling(root_sec, [0, 1, 0], 100, 89.7447) == pytest.approx(0.8)
+        assert modify.output_scaling(root_sec, [0, 1, 0], 1, 6.51185) == pytest.approx(0.8)
 
     def test_output_scaling_min_max(self, root_sec):
-        assert modify.output_scaling(root_sec, [0, 1, 0], 134.617, 89.7447) == pytest.approx(1.2)
+        assert modify.output_scaling(root_sec, [0, 1, 0], 9.76777, 6.51185) == pytest.approx(1.2)

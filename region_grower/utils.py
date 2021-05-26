@@ -50,7 +50,7 @@ def create_morphologies_dict(dat_file, morph_path, ext=".asc"):
     return name_dict
 
 
-def random_rotation_y(n):
+def random_rotation_y(n, rng=np.random):
     """Random rotation around Y-axis.
 
     Args:
@@ -62,7 +62,7 @@ def random_rotation_y(n):
     # copied from `brainbuilder.cell_orientations` to avoid a heavy dependency
     # consider reusing `brainbuilder` methods if we need something more general
     # (like user-defined distributions for rotation angles)
-    angles = np.random.uniform(-np.pi, np.pi, size=n)
+    angles = rng.uniform(-np.pi, np.pi, size=n)
     return angles_to_matrices(angles, axis="y")
 
 

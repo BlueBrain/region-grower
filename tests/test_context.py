@@ -97,10 +97,10 @@ class TestSpaceWorker:
         # Synthesize in L2
         result = context_worker.synthesize()
 
-        assert_array_equal(result.apical_sections, np.array([48]))
+        assert_array_equal(result.apical_sections, np.array([98]))
         assert_array_almost_equal(
             result.apical_points,
-            np.array([[9.40834045, 114.9850235, -25.60334587]]),
+            np.array([[19.62138748, 353.8174438, 12.29593754]]),
         )
 
         # This tests that input orientations are not mutated by the synthesize() call
@@ -112,33 +112,37 @@ class TestSpaceWorker:
             result.neuron.soma.points,
             np.array(
                 [
-                    [-9.1213598, 0.34562492, 0.0],
-                    [4.6709661, -7.8600206, 0.0],
-                    [9.1049757, -0.83503044, 0.0],
-                    [0.12655652, 9.0572395, 0.0],
-                    [0.0, 9.1431866, 0.0],
-                    [-4.1508913, 7.8628845, 0.0],
-                    [-9.0374002, 1.3868117, 0.0],
+                    [-5.785500526428223, 4.9841227531433105, 0.0],
+                    [-7.5740227699279785, -0.9734848141670227, 0.0],
+                    [-1.966903805732727, -7.378671169281006, 0.0],
+                    [3.565324068069458, -6.752922534942627, 0.0],
+                    [7.266839027404785, -2.346604108810425, 0.0],
+                    [7.384983062744141, 1.059786081314087, 0.0],
+                    [6.818241119384766, 3.4387624263763428, 0.0],
+                    [4.675901919111924e-16, 7.636327266693115, 0.0],
                 ],
                 dtype=np.float32,
             ),
         )
 
-        assert len(result.neuron.root_sections) == 7
+        assert len(result.neuron.root_sections) == 4
         assert_array_almost_equal(
             next(result.neuron.iter()).points,
             np.array(
                 [
-                    [0.126557, 9.05724, 1.244288],
-                    [0.13983, 10.007194, 1.374793],
-                    [0.249028, 10.898591, 1.370834],
+                    [-1.8836766481399536, -3.8763949871063232, 6.303873538970947],
+                    [-2.067920684814453, -4.255548477172852, 6.9204607009887695],
+                    [-2.2532284259796143, -4.607762813568115, 7.632429122924805],
+                    [-2.4301564693450928, -5.421814441680908, 8.747697830200195],
+                    [-2.7331888675689697, -6.2535481452941895, 9.650066375732422],
+                    [-2.960197925567627, -6.994901657104492, 10.466719627380371],
                 ],
                 dtype=np.float32,
             ),
         )
         assert_array_almost_equal(
             next(result.neuron.iter()).diameters,
-            np.array([0.6, 0.6, 0.6], dtype=np.float32),
+            np.array([0.6, 0.6, 0.6, 0.6, 0.6, 0.6], dtype=np.float32),
         )
 
     def test_context_external_diametrizer(
@@ -165,10 +169,10 @@ class TestSpaceWorker:
 
         result = context_worker.synthesize()
 
-        assert_array_equal(result.apical_sections, np.array([48]))
+        assert_array_equal(result.apical_sections, np.array([98]))
         assert_array_almost_equal(
             result.apical_points,
-            np.array([[9.40834045, 114.9850235, -25.60334587]]),
+            np.array([[19.62138748, 353.8174438, 12.29593754]]),
         )
 
         # This tests that input orientations are not mutated by the synthesize() call
@@ -180,26 +184,30 @@ class TestSpaceWorker:
             result.neuron.soma.points,
             np.array(
                 [
-                    [-9.1213598, 0.34562492, 0.0],
-                    [4.6709661, -7.8600206, 0.0],
-                    [9.1049757, -0.83503044, 0.0],
-                    [0.12655652, 9.0572395, 0.0],
-                    [0.0, 9.1431866, 0.0],
-                    [-4.1508913, 7.8628845, 0.0],
-                    [-9.0374002, 1.3868117, 0.0],
+                    [-5.785500526428223, 4.9841227531433105, 0.0],
+                    [-7.5740227699279785, -0.9734848141670227, 0.0],
+                    [-1.966903805732727, -7.378671169281006, 0.0],
+                    [3.565324068069458, -6.752922534942627, 0.0],
+                    [7.266839027404785, -2.346604108810425, 0.0],
+                    [7.384983062744141, 1.059786081314087, 0.0],
+                    [6.818241119384766, 3.4387624263763428, 0.0],
+                    [4.675901919111924e-16, 7.636327266693115, 0.0],
                 ],
                 dtype=np.float32,
             ),
         )
 
-        assert len(result.neuron.root_sections) == 7
+        assert len(result.neuron.root_sections) == 4
         assert_array_almost_equal(
             next(result.neuron.iter()).points,
             np.array(
                 [
-                    [0.126557, 9.05724, 1.244288],
-                    [0.13983, 10.007194, 1.374793],
-                    [0.249028, 10.898591, 1.370834],
+                    [-1.8836766481399536, -3.8763949871063232, 6.303873538970947],
+                    [-2.067920684814453, -4.255548477172852, 6.9204607009887695],
+                    [-2.2532284259796143, -4.607762813568115, 7.632429122924805],
+                    [-2.4301564693450928, -5.421814441680908, 8.747697830200195],
+                    [-2.7331888675689697, -6.2535481452941895, 9.650066375732422],
+                    [-2.960197925567627, -6.994901657104492, 10.466719627380371],
                 ],
                 dtype=np.float32,
             ),
@@ -207,7 +215,17 @@ class TestSpaceWorker:
 
         assert_array_almost_equal(
             next(result.neuron.iter()).diameters,
-            np.array([0.79342693, 0.79173011, 0.79014111], dtype=np.float32),
+            np.array(
+                [
+                    0.8767099380493164,
+                    0.8752812147140503,
+                    0.8737207651138306,
+                    0.8710576295852661,
+                    0.868639349937439,
+                    0.8664852380752563,
+                ],
+                dtype=np.float32,
+            ),
         )
 
     def test_scale(self, small_context_worker, tmd_parameters, tmd_distributions):
@@ -228,9 +246,6 @@ class TestSpaceWorker:
         result = small_context_worker.synthesize()
 
         expected_types = [
-            SectionType.basal_dendrite,
-            SectionType.basal_dendrite,
-            SectionType.basal_dendrite,
             SectionType.apical_dendrite,
             SectionType.basal_dendrite,
             SectionType.basal_dendrite,
@@ -244,20 +259,29 @@ class TestSpaceWorker:
                 for neu in result.neuron.root_sections
             ],
             [
-                [[0.126557, 9.05724, 1.244288], [0.249028, 10.898591, 1.370834]],
-                [[-4.150891, 7.862884, -2.131432], [-7.36457, 13.100216, -3.620522]],
-                [[-9.12136, 0.345625, 0.528383], [-14.683837, -0.210737, 1.082018]],
-                [[0.0, 9.143187, 0.0], [-0.704811, 18.29415, -0.160817]],
-                [[-0.94584, -3.288574, 8.47871], [-1.874288, -8.647104, 19.25721]],
-                [[2.139962, 4.295261, 7.782618], [7.751178, 16.725683, 37.513992]],
-                [[6.060588, -4.2906, 5.334593], [27.177965, -21.629234, 24.54295]],
+                [
+                    [0.0, 7.636328220367432, 0.0],
+                    [-0.05446799844503403, 9.565113067626953, -0.004176999907940626],
+                ],
+                [
+                    [-1.8836770057678223, -3.8763949871063232, 6.3038740158081055],
+                    [-2.8858020305633545, -6.487758159637451, 10.838364601135254],
+                ],
+                [
+                    [7.384983062744141, 1.0597859621047974, 1.6286120414733887],
+                    [18.221834182739258, 0.030551999807357788, 2.9156060218811035],
+                ],
+                [
+                    [-3.335297107696533, 4.92931604385376, 4.784468173980713],
+                    [-21.92222785949707, 27.993545532226562, 22.405996322631836],
+                ],
             ],
         )
 
-        assert_array_equal(result.apical_sections, np.array([15]))
+        assert_array_equal(result.apical_sections, np.array([72]))
         assert_array_almost_equal(
             result.apical_points,
-            np.array([[-1.54834378, 43.40647507, -1.60015321]]),
+            np.array([[6.208977699279785, 59.538753509521484, -5.052260875701904]]),
         )
 
         # Test with hard limit scale
@@ -290,20 +314,29 @@ class TestSpaceWorker:
                 for neu in result.neuron.root_sections
             ],
             [
-                [[0.126557, 9.05724, 1.244288], [0.249028, 10.898591, 1.370834]],
-                [[-4.150891, 7.862884, -2.131432], [-7.36457, 13.100216, -3.620522]],
-                [[-9.12136, 0.345625, 0.528383], [-14.683837, -0.210737, 1.082018]],
-                [[0.0, 9.143187, 0.0], [-0.661098, 17.726597, -0.150843]],
-                [[-0.94584, -3.288574, 8.47871], [-1.874288, -8.647104, 19.25721]],
-                [[2.139962, 4.295261, 7.782618], [7.751178, 16.725683, 37.513992]],
-                [[6.060588, -4.2906, 5.334593], [27.177965, -21.629234, 24.54295]],
+                [
+                    [0.0, 7.636328220367432, 0.0],
+                    [-0.05270500108599663, 9.502668380737305, -0.0040420000441372395],
+                ],
+                [
+                    [-1.8836770057678223, -3.8763949871063232, 6.3038740158081055],
+                    [-2.8858020305633545, -6.487758159637451, 10.838364601135254],
+                ],
+                [
+                    [7.384983062744141, 1.0597859621047974, 1.6286120414733887],
+                    [18.221834182739258, 0.030551999807357788, 2.9156060218811035],
+                ],
+                [
+                    [-3.335297107696533, 4.92931604385376, 4.784468173980713],
+                    [-21.92222785949707, 27.993545532226562, 22.405996322631836],
+                ],
             ],
         )
 
-        assert_array_equal(result.apical_sections, np.array([15]))
+        assert_array_equal(result.apical_sections, np.array([72]))
         assert_array_almost_equal(
             result.apical_points,
-            np.array([[-1.4523139, 41.28142929, -1.50091016]]),
+            np.array([[6.007961273193359, 57.8583984375, -4.888692855834961]]),
         )
 
         # Test scale computation
@@ -355,73 +388,55 @@ class TestSpaceWorker:
             "input_scaling": {
                 "default_func": {
                     "inputs": {
-                        "min_target_thickness": 1.0,
-                        "reference_thickness": 314,
                         "target_thickness": 300.0,
+                        "reference_thickness": 314,
+                        "min_target_thickness": 1.0,
                     },
                     "scaling": [
                         {
                             "max_p": np.nan,
                             "reference_thickness": 314,
-                            "scaling_ratio": 0.9554140127388535,
                             "target_thickness": 300.0,
+                            "scaling_ratio": 0.9554140127388535,
                         },
                         {
                             "max_p": np.nan,
                             "reference_thickness": 314,
-                            "scaling_ratio": 0.9554140127388535,
                             "target_thickness": 300.0,
+                            "scaling_ratio": 0.9554140127388535,
                         },
                         {
                             "max_p": np.nan,
                             "reference_thickness": 314,
-                            "scaling_ratio": 0.9554140127388535,
                             "target_thickness": 300.0,
-                        },
-                        {
-                            "max_p": np.nan,
-                            "reference_thickness": 314,
                             "scaling_ratio": 0.9554140127388535,
-                            "target_thickness": 300.0,
-                        },
-                        {
-                            "max_p": np.nan,
-                            "reference_thickness": 314,
-                            "scaling_ratio": 0.9554140127388535,
-                            "target_thickness": 300.0,
-                        },
-                        {
-                            "max_p": np.nan,
-                            "reference_thickness": 314,
-                            "scaling_ratio": 0.9554140127388535,
-                            "target_thickness": 300.0,
                         },
                     ],
                 },
                 "target_func": {
                     "inputs": {
-                        "apical_target_extent": 150.0,
-                        "fit_intercept": 1,
                         "fit_slope": 0.5,
-                        "min_target_path_distance": 1.0,
+                        "fit_intercept": 1,
+                        "apical_target_extent": 150.0,
                         "target_path_distance": 76.0,
+                        "min_target_path_distance": 1.0,
                     },
                     "scaling": [
                         {
-                            "max_ph": 255.45843100194077,
+                            "max_ph": 420.70512274498446,
                             "target_path_distance": 76.0,
-                            "scaling_ratio": 0.2975043716581138,
+                            "scaling_ratio": 0.18064909574697127,
                         }
                     ],
                 },
             },
             "neurite_hard_limit_rescaling": {
-                5: {
+                0: {
                     "neurite_type": "apical",
-                    "scale": 0.9379790269315096,
-                    "target_max_length": 70.0,
+                    "scale": 0.9676248059345621,
                     "target_min_length": 70.0,
-                },
+                    "target_max_length": 70.0,
+                }
             },
         }
 

@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 0.2.2
+-------------
+
+- Use random number generator and use pickle to save debug infos
+
 Version 0.2.1
 -------------
 

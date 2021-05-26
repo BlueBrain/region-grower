@@ -22,6 +22,7 @@ DATA = Path(__file__).parent / "data"
 
 
 def check_yaml(ref_path, tested_path):
+    print(f"Check YAML:\n\tref:{ref_path}\n\ttested: {tested_path}")
     assert ref_path.exists()
     assert tested_path.exists()
     with open(ref_path) as ref_file, open(tested_path) as tested_file:
@@ -129,10 +130,10 @@ def test_synthesize(
                 args["out_apical_nrn_sections"],
             )
         if with_NRN and with_axon:
-            assert_allclose(max_y, 156.4934)
+            assert_allclose(max_y, 167.88646)
     else:
         if with_NRN and with_axon:
-            assert_allclose(max_y, 137.86134)
+            assert_allclose(max_y, 150.24948)
 
 
 def run_with_mpi():

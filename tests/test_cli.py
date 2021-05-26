@@ -3,6 +3,7 @@
 # pylint: disable=no-self-use
 from pathlib import Path
 
+import dictdiffer
 import pandas as pd
 import pytest
 from click.testing import CliRunner
@@ -144,7 +145,7 @@ class TestCli:
                 "--out-apical", str(tmpdir / "apical.yaml"),
                 "--out-apical-nrn-sections", str(tmpdir / "apical_NRN_sections.yaml"),
                 "--out-morph-dir", str(tmpdir),
-                "--out-debug-data", str(tmpdir / "debug_data.csv"),
+                "--out-debug-data", str(tmpdir / "debug_data.pkl"),
                 "--overwrite",
                 "--out-morph-ext", "h5",
                 "--out-morph-ext", "swc",
@@ -162,8 +163,45 @@ class TestCli:
         assert result.exception is None
         assert Path(tmpdir / "test_cells.mvd3").exists()
         assert Path(tmpdir / "apical.yaml").exists()
-        assert Path(tmpdir / "debug_data.csv").exists()
+        assert Path(tmpdir / "debug_data.pkl").exists()
 
-        expected_debug_data = pd.read_csv(DATA / "debug_data.csv")
-        debug_data = pd.read_csv(tmpdir / "debug_data.csv")
+        expected_debug_data = pd.read_pickle(DATA / "debug_data.pkl")
+        debug_data = pd.read_pickle(tmpdir / "debug_data.pkl")
+
+        equal_infos = (
+            expected_debug_data["debug_infos"]
+            .to_frame()
+            .join(debug_data["debug_infos"], lsuffix="_a", rsuffix="_b")
+            .apply(
+                lambda row: not list(dictdiffer.diff(row["debug_infos_a"], row["debug_infos_b"])),
+                axis=1,
+            )
+        )
+        assert equal_infos.all()
+
+        assert debug_data["apical_sections"].tolist() == [
+            [98],
+            None,
+            [33],
+            None,
+            [53],
+            None,
+            [51],
+            None,
+        ]
+        assert debug_data["apical_NRN_sections"].tolist() == [
+            [62],
+            None,
+            [5],
+            None,
+            [13],
+            None,
+            [22],
+            None,
+        ]
+
+        cols = ["apical_sections", "apical_NRN_sections", "apical_points", "debug_infos"]
+        debug_data.drop(columns=cols, inplace=True)
+        expected_debug_data.drop(columns=cols, inplace=True)
+
         pd.testing.assert_frame_equal(debug_data, expected_debug_data, check_exact=False)
