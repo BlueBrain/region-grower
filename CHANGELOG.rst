@@ -4,6 +4,8 @@ Changelog
 Version 0.2.2
 -------------
 
+- Fix computation of max_ph in scale_default_barcode
+- Remove duplicates in debug_infos
 - Add skip_write option to not write synthesized morphologies
 - Use random number generator and use pickle to save debug infos
 
