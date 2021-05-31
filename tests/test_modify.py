@@ -22,7 +22,7 @@ def test_scale_default_barcode():
     res = modify.scale_default_barcode(
         np.array(ph) * 10, None, reference_thickness, target_thickness
     )
-    assert_array_equal(res, [[0.25, 0.5], [0.75, 1.0]])
+    assert_array_equal(res, [[1 / 3, 2 / 3], [1, 4 / 3]])
 
 
 def test_scale_target_barcode():
@@ -118,19 +118,21 @@ class TestOutputScaling:
         assert modify.output_scaling(root_sec, [0, 1, 0], 1, None) == 1
 
     def test_output_scaling_min(self, root_sec):
-        assert modify.output_scaling(root_sec, [0, 1, 0], 9.76777, None) == pytest.approx(1.2)
+        assert modify.output_scaling(root_sec, [0, 1, 0], 39.789311, None) == pytest.approx(1.2)
 
     def test_output_scaling_useless_max(self, root_sec):
-        assert modify.output_scaling(root_sec, [0, 1, 0], None, 10) == 1
+        assert modify.output_scaling(root_sec, [0, 1, 0], None, 1000) == 1
 
     def test_output_scaling_max(self, root_sec):
-        assert modify.output_scaling(root_sec, [0, 1, 0], None, 6.51185) == pytest.approx(0.8)
+        assert modify.output_scaling(root_sec, [0, 1, 0], None, 26.5262075) == pytest.approx(0.8)
 
     def test_output_scaling_useless_min_useless_max(self, root_sec):
-        assert modify.output_scaling(root_sec, [0, 1, 0], 1, 10) == 1
+        assert modify.output_scaling(root_sec, [0, 1, 0], 1, 1000) == 1
 
     def test_output_scaling_useless_min_max(self, root_sec):
-        assert modify.output_scaling(root_sec, [0, 1, 0], 1, 6.51185) == pytest.approx(0.8)
+        assert modify.output_scaling(root_sec, [0, 1, 0], 1, 26.5262075) == pytest.approx(0.8)
 
     def test_output_scaling_min_max(self, root_sec):
-        assert modify.output_scaling(root_sec, [0, 1, 0], 9.76777, 6.51185) == pytest.approx(1.2)
+        assert modify.output_scaling(root_sec, [0, 1, 0], 39.789311, 26.5262075) == pytest.approx(
+            1.2
+        )

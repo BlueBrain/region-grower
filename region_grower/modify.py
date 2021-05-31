@@ -27,11 +27,10 @@ def scale_default_barcode(
     Reference thickness defines the property of input data.
     Target thickness defines the property of space, which should be used by synthesis.
     """
-    max_ph = np.max(persistent_homologies)
-    scaling_reference = np.nan_to_num(reference_thickness / max_ph, nan=np.inf)
+    max_ph = np.nanmax([i[0] for i in persistent_homologies])
     # If cell is larger than the reference thickness it should be scaled down
     # This ensures that the cell will not grow more than the target thickness
-    scaling_reference = min(scaling_reference, 1.0)
+    scaling_reference = min(reference_thickness / max_ph, 1.0)
 
     scaling_ratio = scaling_reference * target_thickness / reference_thickness
 

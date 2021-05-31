@@ -97,10 +97,10 @@ class TestSpaceWorker:
         # Synthesize in L2
         result = context_worker.synthesize()
 
-        assert_array_equal(result.apical_sections, np.array([98]))
+        assert_array_equal(result.apical_sections, np.array([97]))
         assert_array_almost_equal(
             result.apical_points,
-            np.array([[19.62138748, 353.8174438, 12.29593754]]),
+            np.array([[-7.19463158, 266.21151733, 12.50336075]]),
         )
 
         # This tests that input orientations are not mutated by the synthesize() call
@@ -169,10 +169,10 @@ class TestSpaceWorker:
 
         result = context_worker.synthesize()
 
-        assert_array_equal(result.apical_sections, np.array([98]))
+        assert_array_equal(result.apical_sections, np.array([97]))
         assert_array_almost_equal(
             result.apical_points,
-            np.array([[19.62138748, 353.8174438, 12.29593754]]),
+            np.array([[-7.19463158, 266.21151733, 12.50336075]]),
         )
 
         # This tests that input orientations are not mutated by the synthesize() call
@@ -216,14 +216,7 @@ class TestSpaceWorker:
         assert_array_almost_equal(
             next(result.neuron.iter()).diameters,
             np.array(
-                [
-                    0.8767099380493164,
-                    0.8752812147140503,
-                    0.8737207651138306,
-                    0.8710576295852661,
-                    0.868639349937439,
-                    0.8664852380752563,
-                ],
+                [0.774056, 0.773625, 0.773154, 0.772351, 0.771622, 0.770973],
                 dtype=np.float32,
             ),
         )
@@ -435,15 +428,15 @@ class TestSpaceWorker:
                     },
                     "scaling": [
                         {
-                            "max_ph": np.nan,
+                            "max_ph": 126.96580088057513,
                             "scaling_ratio": 0.9554140127388535,
                         },
                         {
-                            "max_ph": np.nan,
+                            "max_ph": 139.93140451880743,
                             "scaling_ratio": 0.9554140127388535,
                         },
                         {
-                            "max_ph": np.nan,
+                            "max_ph": 143.28779114733433,
                             "scaling_ratio": 0.9554140127388535,
                         },
                     ],
