@@ -18,17 +18,17 @@ MIN_TARGET_THICKNESS = 1.0
 
 def scale_default_barcode(
     persistent_homologies: List[float],
-    context,
+    context: Dict,
     reference_thickness: float,
     target_thickness: float,
     with_debug_info: bool = False,
-):
+) -> List[float]:
     """Modifies the barcode according to the reference and target thicknesses.
     Reference thickness defines the property of input data.
     Target thickness defines the property of space, which should be used by synthesis.
     """
-    max_p = np.max(persistent_homologies)
-    scaling_reference = np.nan_to_num(reference_thickness / max_p, nan=np.inf)
+    max_ph = np.max(persistent_homologies)
+    scaling_reference = np.nan_to_num(reference_thickness / max_ph, nan=np.inf)
     # If cell is larger than the reference thickness it should be scaled down
     # This ensures that the cell will not grow more than the target thickness
     scaling_reference = min(scaling_reference, 1.0)
@@ -38,9 +38,7 @@ def scale_default_barcode(
     if with_debug_info:
         context["debug_data"]["default_func"]["scaling"].append(
             {
-                "max_p": max_p,
-                "reference_thickness": reference_thickness,
-                "target_thickness": target_thickness,
+                "max_ph": max_ph,
                 "scaling_ratio": scaling_ratio,
             }
         )
@@ -50,10 +48,10 @@ def scale_default_barcode(
 
 def scale_target_barcode(
     persistent_homologies: List[float],
-    context,
+    context: Dict,
     target_path_distance: float,
     with_debug_info: bool = False,
-):
+) -> List[float]:
     """Modifies the barcode according to the target thicknesses.
     Target thickness defines the total extend at which the cell can grow.
     """
@@ -64,7 +62,6 @@ def scale_target_barcode(
         context["debug_data"]["target_func"]["scaling"].append(
             {
                 "max_ph": max_ph,
-                "target_path_distance": target_path_distance,
                 "scaling_ratio": scaling_ratio,
             }
         )

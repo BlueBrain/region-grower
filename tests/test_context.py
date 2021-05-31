@@ -435,21 +435,15 @@ class TestSpaceWorker:
                     },
                     "scaling": [
                         {
-                            "max_p": np.nan,
-                            "reference_thickness": 314,
-                            "target_thickness": 300.0,
+                            "max_ph": np.nan,
                             "scaling_ratio": 0.9554140127388535,
                         },
                         {
-                            "max_p": np.nan,
-                            "reference_thickness": 314,
-                            "target_thickness": 300.0,
+                            "max_ph": np.nan,
                             "scaling_ratio": 0.9554140127388535,
                         },
                         {
-                            "max_p": np.nan,
-                            "reference_thickness": 314,
-                            "target_thickness": 300.0,
+                            "max_ph": np.nan,
                             "scaling_ratio": 0.9554140127388535,
                         },
                     ],
@@ -465,7 +459,6 @@ class TestSpaceWorker:
                     "scaling": [
                         {
                             "max_ph": 420.70512274498446,
-                            "target_path_distance": 76.0,
                             "scaling_ratio": 0.18064909574697127,
                         }
                     ],
