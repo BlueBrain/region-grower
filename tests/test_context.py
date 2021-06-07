@@ -1,7 +1,7 @@
 """Test the region_grower.context module."""
 # pylint: disable=missing-function-docstring
 # pylint: disable=no-self-use
-# pylint: disable=protected-access
+
 from pathlib import Path
 
 import dictdiffer
@@ -12,7 +12,6 @@ from numpy.testing import assert_array_almost_equal
 from numpy.testing import assert_array_equal
 
 from region_grower import RegionGrowerError
-from region_grower import SkipSynthesisError
 from region_grower.context import PIA_DIRECTION
 from region_grower.context import SpaceWorker
 from region_grower.context import SynthesisParameters
@@ -476,16 +475,6 @@ class TestSpaceWorker:
             )
             == []
         )
-
-    def test_load_morphology(self, small_context_worker, morph_loader):
-        small_context_worker.internals.morph_loader = morph_loader
-
-        with pytest.raises(SkipSynthesisError):
-            small_context_worker.load_morphology("UNKNOWN")
-
-        res = small_context_worker.load_morphology("C170797A-P1")
-        assert len(res.root_sections) == 8
-        assert len(res.sections) == 52
 
     def test_transform_morphology(self, small_context_worker, morph_loader, cell_orientation):
         np.random.seed(0)

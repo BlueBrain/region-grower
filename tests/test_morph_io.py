@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from region_grower import SkipSynthesisError
 from region_grower.morph_io import MorphLoader
 from region_grower.morph_io import MorphWriter
 
@@ -20,7 +21,8 @@ class TestMorphLoader:
         assert MorphLoader("test_dir", file_ext=".h5").file_ext == ".h5"
 
     def test_get(self, morph_loader):
-        assert morph_loader.get("UNKNOWN") is None
+        with pytest.raises(SkipSynthesisError):
+            morph_loader.get("UNKNOWN")
 
         res = morph_loader.get("C170797A-P1")
         assert len(res.root_sections) == 8

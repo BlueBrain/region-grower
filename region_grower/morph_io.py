@@ -6,6 +6,8 @@ from pathlib import Path
 
 import morphio
 
+from region_grower import SkipSynthesisError
+
 
 class MorphLoader:
     """Morphology loader.
@@ -27,9 +29,9 @@ class MorphLoader:
 
     def get(self, name, options=None):
         """Load a morphology given its name."""
-        filepath = (Path(self.base_dir) / name).with_suffix(self.file_ext)
+        filepath = Path(self.base_dir) / (name + self.file_ext)
         if not filepath.exists():
-            return None
+            raise SkipSynthesisError(f"Unable to find the morphology {name} in {filepath}")
         kwargs = {"options": options} if options is not None else {}
         return morphio.mut.Morphology(str(filepath), **kwargs)  # pylint: disable=no-member
 

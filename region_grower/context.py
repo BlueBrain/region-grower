@@ -20,7 +20,6 @@ from diameter_synthesis import build_diameters
 from morph_tool import nrnhines
 from morph_tool import transform as mt
 from morph_tool.graft import graft_axon
-from morphio.mut import Morphology
 from neuroc.scale import RotationParameters
 from neuroc.scale import ScaleParameters
 from neuroc.scale import rotational_jitter
@@ -318,7 +317,7 @@ class SpaceWorker:
             external_diametrizer = None
 
         if self.params.axon_morph_name is not None:
-            axon_morph = self.load_morphology(self.params.axon_morph_name)
+            axon_morph = self.internals.morph_loader.get(self.params.axon_morph_name)
         else:
             axon_morph = None
 
@@ -348,13 +347,6 @@ class SpaceWorker:
         )
 
         return SynthesisResult(grower.neuron, grower.apical_sections or [], apical_points)
-
-    def load_morphology(self, name) -> Optional[Morphology]:
-        """Returns the morphology corresponding to gid if found."""
-        morph = self.internals.morph_loader.get(name)
-        if morph is None:
-            raise SkipSynthesisError(f"Unable to find the morphology {name}")
-        return morph
 
     def transform_morphology(self, morph, orientation, scale=None, rng=np.random) -> None:
         """Transform the morphology.
