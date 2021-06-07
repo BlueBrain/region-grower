@@ -1,6 +1,10 @@
 Changelog
 =========
 
+Version 0.2.3
+-------------
+- Fix bug in morpho_io for filenames with dots
+
 Version 0.2.2
 -------------
 
