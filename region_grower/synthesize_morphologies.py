@@ -219,7 +219,7 @@ class SynthesizeMorphologies:
             overwrite=overwrite,
         )
 
-        LOGGER.info("Fetching atlas data")
+        LOGGER.info("Fetching atlas data from %s", atlas)
         current_depths, layer_depths, orientations = self.atlas_lookups(
             atlas,
             self.cells.positions,
@@ -376,7 +376,7 @@ class SynthesizeMorphologies:
         # cell orientations are imbued in synthesized morphologies
         self.cells.orientations = np.broadcast_to(np.identity(3), (self.cells.size(), 3, 3))
 
-        LOGGER.info("Export CellCollection...")
+        LOGGER.info("Export CellCollection to %s...", self.out_cells)
         self.cells.save(self.out_cells)
 
         def first_non_None(apical_points):
@@ -387,6 +387,7 @@ class SynthesizeMorphologies:
             return None  # pragma: no cover
 
         with_apicals = result.loc[~result["apical_points"].isnull()]
+        LOGGER.info("Export apical points to %s...", self.out_apical)
         with open(self.out_apical, "w") as apical_file:
             apical_data = with_apicals[["name"]].join(
                 with_apicals["apical_points"].apply(first_non_None)
@@ -394,6 +395,7 @@ class SynthesizeMorphologies:
             yaml.dump(apical_data.set_index("name")["apical_points"].to_dict(), apical_file)
 
         if self.out_apical_nrn_sections is not None:
+            LOGGER.info("Export apical Neuron sections to %s...", self.out_apical_nrn_sections)
             with open(self.out_apical_nrn_sections, "w") as apical_file:
                 yaml.dump(
                     with_apicals[["name", "apical_NRN_sections"]]
@@ -403,6 +405,7 @@ class SynthesizeMorphologies:
                 )
 
         if self.out_debug_data is not None:
+            LOGGER.info("Export debug data to %s...", self.out_debug_data)
             result.to_pickle(self.out_debug_data)
 
     def synthesize(self):
