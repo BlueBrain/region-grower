@@ -230,6 +230,7 @@ def run_with_mpi():
     )
 
     setup_logger("info")
+    logging.getLogger("distributed").setLevel(logging.ERROR)
 
     if is_master:
         tmp_folder.mkdir(exist_ok=True)

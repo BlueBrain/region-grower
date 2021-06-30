@@ -47,7 +47,7 @@ setup(
     url="https://bbpteam.epfl.ch/documentation/projects/region-grower",
     project_urls={
         "Tracker": "https://bbpteam.epfl.ch/project/issues/projects/CELLS/issues",
-        "Source": "ssh://bbpcode.epfl.ch/molecularsystems/region-grower",
+        "Source": "https://bbpgitlab.epfl.ch/neuromath/region-grower",
     },
     license="BBP-internal-confidential",
     packages=find_packages(exclude=["tests"]),
