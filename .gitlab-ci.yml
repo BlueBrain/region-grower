@@ -30,4 +30,4 @@ py37-MPI:
   variables:
     TOXENV: py37-MPI
     bb5_ntasks: 5
-    bb5_constraint: uc3
+    bb5_constraint: cpu
