@@ -10,8 +10,11 @@ import pytest
 from morphio import SectionType
 from numpy.testing import assert_array_almost_equal
 from numpy.testing import assert_array_equal
+from tns import TNSError
 
+import region_grower
 from region_grower import RegionGrowerError
+from region_grower import SkipSynthesisError
 from region_grower.context import PIA_DIRECTION
 from region_grower.context import SpaceWorker
 from region_grower.context import SynthesisParameters
@@ -491,4 +494,41 @@ class TestSpaceWorker:
         assert_array_almost_equal(
             morph.root_sections[0].points[-1],
             [10.902711, -129.37207, 7.340509],
+        )
+
+    def test_retry(
+        self,
+        cell_state,
+        space_context,
+        synthesis_parameters,
+        computation_parameters,
+        mocker,
+    ):
+        context_worker = SpaceWorker(
+            cell_state,
+            space_context,
+            synthesis_parameters,
+            computation_parameters,
+        )
+
+        mock = mocker.patch.object(
+            region_grower.context.modify,
+            "output_scaling",
+            side_effect=[TNSError, mocker.DEFAULT],
+            return_value=1.0,
+        )
+
+        # Synthesize once
+        with pytest.raises(SkipSynthesisError):
+            result = context_worker.synthesize()
+
+        # Synthesize 3 times
+        mock.side_effect = [TNSError] * 2 + [mocker.DEFAULT] * 4
+        context_worker.internals.retries = 3
+        result = context_worker.synthesize()
+
+        assert_array_equal(result.apical_sections, np.array([44]))
+        assert_array_almost_equal(
+            result.apical_points,
+            [[5.773976, 201.404648, -1.283983]],
         )

@@ -258,10 +258,12 @@ class SpaceWorker:
         the neurite goes after the max hard limit, it is downscaled. And vice-versa if it is
         smaller than the min hard limit)
         """
+        rng = np.random.default_rng(self.params.seed)
+
         for _ in range(self.internals.retries):
             try:
-                return self._synthesize_once()
-            except TNSError:  # pragma: no cover
+                return self._synthesize_once(rng)
+            except TNSError:
                 pass
 
         raise SkipSynthesisError(
@@ -289,7 +291,7 @@ class SpaceWorker:
             "apical_NRN_sections": apical_NRN_sections,
         }
 
-    def _synthesize_once(self) -> SynthesisResult:
+    def _synthesize_once(self, rng) -> SynthesisResult:
         """One try to synthesize the cell."""
 
         params = self._correct_position_orientation_scaling(self.params.tmd_parameters)
@@ -320,8 +322,6 @@ class SpaceWorker:
             axon_morph = self.internals.morph_loader.get(self.params.axon_morph_name)
         else:
             axon_morph = None
-
-        rng = np.random.default_rng(self.params.seed)
 
         grower = NeuronGrower(
             input_parameters=params,
