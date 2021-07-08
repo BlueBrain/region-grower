@@ -31,6 +31,7 @@ MPI_EXTRAS = [
 ]
 
 DOC_EXTRAS = [
+    "m2r2",
     "sphinx",
     "sphinx-bluebrain-theme",
     "sphinx-jsonschema",
