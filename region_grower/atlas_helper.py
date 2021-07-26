@@ -1,5 +1,7 @@
-"""An atlas helper to lookup the depths and orientations from an atlas
-without have to reason in term of [PH][1-6] and [PH]y"""
+"""An atlas helper to lookup the depths and orientations from an atlas.
+
+This helper allows simple lookups without having to reason in term of [PH][1-6] and [PH]y.
+"""
 import operator
 from typing import List
 from typing import Union
@@ -16,7 +18,7 @@ class AtlasHelper:
     """Atlas helper for region grower."""
 
     def __init__(self, atlas: Atlas):
-        """AtlasHelper constructor
+        """The AtlasHelper constructor.
 
         Args:
             atlas: the atlas
@@ -28,13 +30,13 @@ class AtlasHelper:
         self.orientations = atlas.load_data("orientation", cls=OrientationField)
 
     def layer_thickness(self, layer: int) -> Atlas:
-        """Returns an atlas of the layer thickness"""
+        """Returns an atlas of the layer thickness."""
         layer_bounds = self.atlas.load_data(f"[PH]{layer}")
         return layer_bounds.with_data(layer_bounds.raw[..., 1] - layer_bounds.raw[..., 0])
 
     @property
     def pia_coord(self) -> Atlas:
-        """Returns an atlas of the pia coordinate along the principal axis"""
+        """Returns an atlas of the pia coordinate along the principal axis."""
         layer_1 = self.atlas.load_data("[PH]1")
         return layer_1.with_data(layer_1.raw[..., 1])
 

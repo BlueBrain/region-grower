@@ -1,4 +1,4 @@
-"""Generate atlas for tests"""
+"""Generate atlas for tests."""
 # pylint: disable=missing-function-docstring
 import json
 from itertools import cycle
@@ -15,7 +15,7 @@ DF_SIZE = 12
 
 
 def generate_small_O1(directory):
-    """Dump a small O1 atlas in folder path"""
+    """Dump a small O1 atlas in folder path."""
     # fmt: off
     with open(devnull, "w") as f:
         call(
@@ -73,6 +73,7 @@ def generate_cell_collection(cells_df):
 
 
 def input_cells_path(tmpdir):
+    """The path to the MVD3 file containing the cell collection."""
     return tmpdir / "input_cells.mvd3"
 
 
@@ -84,6 +85,7 @@ def generate_input_cells(cell_collection, tmpdir):
 
 
 def generate_axon_morph_tsv(tmpdir):
+    """The path to the TSV file containing the axon morphologies."""
     df = pd.DataFrame(
         {
             "morphology": list(
@@ -107,24 +109,29 @@ def generate_axon_morph_tsv(tmpdir):
 
 
 def get_tmd_parameters(filename):
+    """The TMD parameters."""
     with open(filename, "r") as f:
         tmd_parameters = json.load(f)
     return tmd_parameters
 
 
 def get_tmd_distributions(filename):
+    """The TMD distributions."""
     with open(filename, "r") as f:
         tmd_distributions = json.load(f)
     return tmd_distributions
 
 
 def get_cell_position():
+    """The cell position."""
     return [0, 500, 0]
 
 
 def get_cell_mtype():
+    """The cell mtype."""
     return "L2_TPC:A"
 
 
 def get_cell_orientation():
+    """The cell orientation."""
     return np.eye(3).reshape(1, 3, 3)

@@ -13,7 +13,11 @@ def cli():
 
 
 @cli.command(short_help="Generate the TMD parameter file")
-@click.argument("input_folder", type=str, required=True)
+@click.argument(
+    "input_folder",
+    type=str,
+    required=True,
+)
 @click.argument(
     "dat_file",
     type=str,
@@ -55,12 +59,11 @@ def generate_parameters(
     tmd_parameters,
     ext,
 ):
-    """Generate JSON files containing the TMD parameters for
-    each mtype in input_folder, using dat_file for mtypes
+    """Generate JSON files containing the TMD parameters for each mtype in input_folder.
 
-    Args:
-        input_folder: folder containing cells (required)
-        dat_file: .dat file with mtype for each cell (required)
+    INPUT_FOLDER is folder containing the cells.
+
+    DAT_FILE is the .dat file with mtype for each cell.
     """
     generate.generate_parameters(
         input_folder,
@@ -111,14 +114,12 @@ def generate_distributions(
     diametrizer_config,
     ext,
 ):
-    """Generate JSON files containing the TMD distributions for
-    each mtype in input_folder, using dat_file for mtypes.
+    """Generate JSON files containing the TMD distributions for each mtype in input_folder.
 
-    Args:
-        input_folder: folder containing cells (required)
-        dat_file: .dat file with mtype for each cell (required)
+    INPUT_FOLDER is folder containing the cells.
+
+    DAT_FILE is the .dat file with mtype for each cell.
     """
-
     generate.generate_distributions(
         input_folder, dat_file, distribution_filename, diametrizer_config, ext
     )

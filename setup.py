@@ -1,8 +1,8 @@
-"""Space synthesis"""
-
+"""Setup for the region-grower package."""
 import imp
-from setuptools import setup, find_packages
 
+from setuptools import find_packages
+from setuptools import setup
 
 # Read the contents of the README file
 with open("README.rst", encoding="utf-8") as f:

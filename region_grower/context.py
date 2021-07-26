@@ -69,7 +69,8 @@ class CellState:
     def lookup_orientation(self, vector: Optional[Point] = None) -> np.array:
         """Returns the looked-up orientation for the given position.
 
-        If orientation is None, the direction is assumed towards the pia"""
+        If orientation is None, the direction is assumed towards the pia.
+        """
         return np.dot(self.orientation, vector)[0] if vector else PIA_DIRECTION
 
 
@@ -81,7 +82,7 @@ class SpaceContext:
     cortical_depths: List
 
     def layer_fraction_to_position(self, layer: int, layer_fraction: float) -> float:
-        """Returns an absolute position from a layer and a fraction of the layer
+        """Returns an absolute position from a layer and a fraction of the layer.
 
         Args:
             layer: a layer
@@ -112,6 +113,7 @@ class SpaceContext:
         """Returns the distance from a given depth to a given constraint.
 
         Args:
+            depth: the given depth.
             constraint: a dict containing a 'layer' key and a 'fraction' keys.
 
         """
@@ -202,9 +204,7 @@ class SpaceWorker:
         return params
 
     def _post_growth_rescaling(self, grower: NeuronGrower, params: Dict) -> None:
-        """Scale all neurites so that their extents are compatible with the min and
-        max hard limits rules."""
-
+        """Scale all neurites so that their extents stay between the min and max hard limits."""
         for root_section in grower.neuron.root_sections:
             constraints = params.get("context_constraints", {}).get(
                 TYPE_TO_STR[root_section.type], {}
@@ -293,7 +293,6 @@ class SpaceWorker:
 
     def _synthesize_once(self, rng) -> SynthesisResult:
         """One try to synthesize the cell."""
-
         params = self._correct_position_orientation_scaling(self.params.tmd_parameters)
 
         # Today we don't use the atlas during the synthesis (we just use it to
@@ -384,20 +383,16 @@ class SpaceWorker:
 
 
 class CellHelper(object):  # pragma: no cover
-    """Loads spatial information and provides
-    basic functionality to query spatial properties
-    required for neuronal synthesis. In addition to
-    SpatialContext also loads the cell information to be used.
-    """
+    """Loads spatial information and provides basic functionality to query spatial properties."""
 
     def __init__(self, cells_file):
-        """ """
+        """The CellHelper constructor."""
         self.cells = CellCollection.load_mvd3(cells_file)
 
     def positions(self, mtype):
-        """Return a generator of mtype cell positions"""
+        """Return a generator of mtype cell positions."""
         return (self.cells.positions[gid] for gid in self._filter_by_mtype(mtype))
 
     def _filter_by_mtype(self, mtype):
-        """Returns ids of cell with the given mtype"""
+        """Returns ids of cell with the given mtype."""
         return self.cells.properties.index[self.cells.properties.mtype.str.contains(mtype)]

@@ -25,10 +25,7 @@ def generate_parameters(
     tmd_parameters,
     ext,
 ):
-    """Generate JSON files containing the TMD parameters for
-    each mtype in input_folder, using dat_file for mtypes
-    """
-
+    """Generate JSON files containing the TMD parameters for each mtype in input_folder."""
     L.info("Extracting TMD parameters for each mtype...")
     morphologies_dict = create_morphologies_dict(dat_file, input_folder, ext=ext)
 
@@ -47,7 +44,7 @@ def generate_parameters(
         tmd_parameters = json.load(tmd_parameters)
 
     def get_parameters(mtype):
-        """allow for precomputed tmd_parameter to be stacked with diameter parameters"""
+        """Allow for precomputed tmd_parameter to be stacked with diameter parameters."""
         if tmd_parameters is None:
             return extract_input.parameters(
                 neurite_types=neurite_types[mtype],
@@ -98,10 +95,7 @@ def generate_distributions(
     diametrizer_config,
     ext,
 ):
-    """Generate JSON files containing the TMD distributions for
-    each mtype in input_folder, using dat_file for mtypes.
-    """
-
+    """Generate JSON files containing the TMD distributions for each mtype in input_folder."""
     L.info("Extracting TMD distributions for each mtype.\n" "This can take a while...")
 
     morphologies_dict = create_morphologies_dict(dat_file, input_folder, ext=ext)

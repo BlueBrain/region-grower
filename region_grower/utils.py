@@ -31,7 +31,7 @@ class NumpyEncoder(json.JSONEncoder):
     """To encode numpy arrays."""
 
     def default(self, o):  # pylint: disable=method-hidden
-        """Actual encoder"""
+        """Actual encoder."""
         if isinstance(o, np.ndarray):
             return o.tolist()
         if isinstance(o, np.floating):

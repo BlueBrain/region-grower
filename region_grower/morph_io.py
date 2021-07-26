@@ -102,7 +102,7 @@ class MorphWriter:
         return morph_name, subdirs
 
     def filepaths(self, full_stem):
-        """Returns the paths to the morphology"""
+        """Returns the paths to the morphology."""
         return [Path(self.output_dir, full_stem.with_suffix("." + ext)) for ext in self.file_exts]
 
     def __call__(self, morph, seed):

@@ -1,6 +1,5 @@
-#!/usr/bin/env python
+"""Synthesize the morphologies.
 
-"""
 - launch TMD(?) synthesis in parallel
 - write each synthesized morphology to a separate file
 - assign morphology names to MVD3/sonata
@@ -380,7 +379,7 @@ class SynthesizeMorphologies:
         self.cells.save(self.out_cells)
 
         def first_non_None(apical_points):
-            """Returns the first non None apical coordinates"""
+            """Returns the first non None apical coordinates."""
             for coord in apical_points:
                 if coord is not None:  # pragma: no cover
                     return coord.tolist()

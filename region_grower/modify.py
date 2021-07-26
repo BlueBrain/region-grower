@@ -1,5 +1,4 @@
-""" Use spatial properties to modify synthesis input."""
-
+"""Use spatial properties to modify synthesis input."""
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -24,6 +23,7 @@ def scale_default_barcode(
     with_debug_info: bool = False,
 ) -> List[float]:
     """Modifies the barcode according to the reference and target thicknesses.
+
     Reference thickness defines the property of input data.
     Target thickness defines the property of space, which should be used by synthesis.
     """
@@ -52,6 +52,7 @@ def scale_target_barcode(
     with_debug_info: bool = False,
 ) -> List[float]:
     """Modifies the barcode according to the target thicknesses.
+
     Target thickness defines the total extend at which the cell can grow.
     """
     max_ph = np.nanmax([i[0] for i in persistent_homologies])
@@ -75,16 +76,17 @@ def input_scaling(
     apical_target_extent: Optional[float],
     debug_info: Optional[Dict] = None,
 ):
-    """Modifies the input parameters so that grown cells fit into the volume
+    """Modifies the input parameters so that grown cells fit into the volume.
 
     If expected_apical_size is not None, the apical scaling uses a different scaling
     than the rest of the dendrites.
 
     Args:
-        params: the param dictionary that this function will modify
-        reference_thicness: the expected thickness of input data
+        params: the param dictionary that this function will modify.
+        reference_thickness: the expected thickness of input data.
         target_thickness: the expected thickness that the synthesized cells should live in.
-        apical_target_extent: the expected extent of the apical dendrite
+        apical_target_extent: the expected extent of the apical dendrite.
+        debug_info: a dictionnary in which the debug info will be added.
     """
     for neurite_type in params["grow_types"]:
         if neurite_type == "apical" and apical_target_extent is not None:
@@ -155,7 +157,7 @@ def output_scaling(
     target_min_length: Optional[float] = None,
     target_max_length: Optional[float] = None,
 ) -> float:
-    """Returns the scaling factor to be applied on Y axis for this neurite
+    """Returns the scaling factor to be applied on Y axis for this neurite.
 
     The scaling is chosen such that the neurite is:
     - upscaled to reach the min target length if it is too short
@@ -167,7 +169,9 @@ def output_scaling(
         target_min_length: min length that the neurite must reach
         target_max_length: max length that the neurite can reach
 
-    Returns: scale factor to apply"""
+    Returns:
+        The scale factor to apply.
+    """
     max_y = max(p for sec in root_section.iter() for p in sec.points[:, COLS.XYZ].dot(orientation))
     y_extent = max_y - root_section.points[0, COLS.XYZ].dot(orientation)
 

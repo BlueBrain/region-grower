@@ -70,31 +70,37 @@ def axon_morph_tsv(tmpdir):
 
 @pytest.fixture(scope="function")
 def cell_position():
+    """The position of a cell."""
     return get_cell_position()
 
 
 @pytest.fixture(scope="function")
 def cell_mtype():
+    """The mtype of a cell."""
     return get_cell_mtype()
 
 
 @pytest.fixture(scope="function")
 def cell_orientation():
+    """The orientation of a cell."""
     return get_cell_orientation()
 
 
 @pytest.fixture(scope="function")
 def tmd_parameters():
+    """The TMD parameters."""
     return get_tmd_parameters(DATA / "parameters.json")
 
 
 @pytest.fixture(scope="function")
 def tmd_distributions():
+    """The TMD distributions."""
     return get_tmd_distributions(DATA / "distributions.json")
 
 
 @pytest.fixture(scope="function")
 def cell_state(cell_position, cell_mtype, cell_orientation, small_O1_path):
+    """A cell state object."""
     current_depth, _, _ = SynthesizeMorphologies.atlas_lookups(
         small_O1_path,
         [cell_position],
@@ -109,6 +115,7 @@ def cell_state(cell_position, cell_mtype, cell_orientation, small_O1_path):
 
 @pytest.fixture(scope="function")
 def space_context(cell_position, small_O1_path, tmd_distributions):
+    """A space context object."""
     _, layer_depth, _ = SynthesizeMorphologies.atlas_lookups(
         small_O1_path,
         [cell_position],
@@ -121,6 +128,7 @@ def space_context(cell_position, small_O1_path, tmd_distributions):
 
 @pytest.fixture(scope="function")
 def synthesis_parameters(cell_mtype, tmd_distributions, tmd_parameters):
+    """Synthesis parameters object."""
     return SynthesisParameters(
         tmd_distributions=tmd_distributions["mtypes"][cell_mtype],
         tmd_parameters=tmd_parameters[cell_mtype],
@@ -130,16 +138,19 @@ def synthesis_parameters(cell_mtype, tmd_distributions, tmd_parameters):
 
 @pytest.fixture(scope="function")
 def computation_parameters():
+    """Computation parameters object."""
     return ComputationParameters()
 
 
 @pytest.fixture(scope="function")
 def small_context_worker(cell_state, space_context, synthesis_parameters, computation_parameters):
+    """A small space worker object."""
     return SpaceWorker(cell_state, space_context, synthesis_parameters, computation_parameters)
 
 
 @pytest.fixture(scope="session")
 def synthesized_cell(small_O1_path):
+    """A synthesized cell."""
     np.random.seed(0)
 
     tmd_parameters = get_tmd_parameters(DATA / "parameters.json")
@@ -182,9 +193,11 @@ def synthesized_cell(small_O1_path):
 
 @pytest.fixture(scope="function")
 def morph_loader():
+    """The morph loader."""
     return MorphLoader(DATA / "input-cells", file_ext="h5")
 
 
 @pytest.fixture(scope="function")
 def morph_writer(tmpdir):
+    """The morph writer."""
     return MorphWriter(tmpdir, file_exts=["h5"])
