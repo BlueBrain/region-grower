@@ -15,14 +15,14 @@ REQS = [
     "attrs>=19.3.0",
     "click>=7.0",
     "dask[dataframe, distributed]>=2.15.0,!=2021.8.1,!=2021.8.2",
-    "diameter-synthesis>=0.2.4",
-    "morphio>=2.7",
-    "morph-tool[nrn]>=2.5",
-    "neuroc>=0.2.6",
-    "neurom>=2,<3",
-    "tns>=2.4.2",
+    "diameter-synthesis>=0.2.5,<1",
+    "morphio>=3,<4",
+    "morph-tool[nrn]>=2.9,<3",
+    "neuroc>=0.2.8,<1",
+    "neurom>=3,<4",
+    "tns>=2.5.0,<3",
     "tqdm>=4.28.1",
-    "voxcell>=2.7",
+    "voxcell>=2.7,<4",
 ]
 
 MPI_EXTRAS = [

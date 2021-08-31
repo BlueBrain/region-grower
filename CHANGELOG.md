@@ -1,5 +1,14 @@
 # Changelog
 
+## [region-grower-v0.2.4](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v0.2.3...region-grower-v0.2.4)
+
+> 31 August 2021
+
+- Update Dask dependency versions (Adrien Berchet - [5c542355](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/5c5423554e3345dda3bb74b341fdaf7ea9e35b84))
+- Fix changelog to be compatible with the auto-release CI job (Adrien Berchet - [f9f3dda6](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/f9f3dda6a523193dd67092be4100c3b7df07a910))
+- Fix retry for synthesize (Adrien Berchet - [a83c40a2](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/a83c40a209f854eac8c8d5dbf62241f3c2142061))
+- Improve logger entries (Adrien Berchet - [3e9f4261](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/3e9f42614deb299f8e2fa90e27f872bcc20189b3))
+
 ## [region-grower-v0.2.3](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v0.2.2...region-grower-v0.2.3)
 
 > 7 June 2021
