@@ -13,8 +13,6 @@ include:
      file:
         - /ci/jobs/auto-release.yml
         - /ci/lib/pytest-template.yml
-        - /ci/jobs/py36.yml
-        - /ci/jobs/py37.yml
         - /ci/jobs/py38.yml
         - /ci/jobs/coverage.yml
 
@@ -27,9 +25,9 @@ docs:
   variables:
     EXTRA_MODULES: archive/2021-05:py-mpi4py
 
-py37-MPI:
+py38-MPI:
   extends: .tox-template
   variables:
-    TOXENV: py37-MPI
+    TOXENV: py38-MPI
     bb5_ntasks: 5
     bb5_constraint: cpu
