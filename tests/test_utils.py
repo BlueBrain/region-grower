@@ -8,6 +8,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_almost_equal
 from numpy.testing import assert_array_equal
 from voxcell import CellCollection
 
@@ -75,7 +76,7 @@ def test_random_rotation_y():
             ]
         ]
     )
-    assert_array_equal(res_1, expected_res_1)
+    assert_almost_equal(res_1, expected_res_1)
 
 
 class TestLoadMorphologyList:

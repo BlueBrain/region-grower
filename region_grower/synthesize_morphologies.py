@@ -22,9 +22,9 @@ from diameter_synthesis.validators import validate_model_params
 from jsonschema import validate
 from morph_tool.exceptions import NoDendriteException
 from morphio.mut import Morphology
+from neurots.validator import validate_neuron_distribs
+from neurots.validator import validate_neuron_params
 from pkg_resources import resource_stream
-from tns.validator import validate_neuron_distribs
-from tns.validator import validate_neuron_params
 from voxcell.cell_collection import CellCollection
 from voxcell.nexus.voxelbrain import Atlas
 

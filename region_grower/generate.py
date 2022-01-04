@@ -7,7 +7,7 @@ from functools import partial
 import pkg_resources
 import yaml
 from diameter_synthesis import build_models
-from tns import extract_input
+from neurots import extract_input
 from tqdm import tqdm
 
 from region_grower.utils import NumpyEncoder

@@ -10,7 +10,7 @@ import sys
 
 import numpy as np
 
-from tns import extract_input
+from neurots import extract_input
 
 
 MTYPES = [

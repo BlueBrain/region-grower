@@ -3,7 +3,6 @@ import json
 import os
 from itertools import islice
 
-import tns
 from region_grower.context import SpaceContext, CellHelper
 
 from voxcell.nexus.voxelbrain import Atlas

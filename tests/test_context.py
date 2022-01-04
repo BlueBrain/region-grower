@@ -8,9 +8,9 @@ import dictdiffer
 import numpy as np
 import pytest
 from morphio import SectionType
+from neurots import NeuroTSError
 from numpy.testing import assert_array_almost_equal
 from numpy.testing import assert_array_equal
-from tns import TNSError
 
 import region_grower
 from region_grower import RegionGrowerError
@@ -514,7 +514,7 @@ class TestSpaceWorker:
         mock = mocker.patch.object(
             region_grower.context.modify,
             "output_scaling",
-            side_effect=[TNSError, mocker.DEFAULT],
+            side_effect=[NeuroTSError, mocker.DEFAULT],
             return_value=1.0,
         )
 
@@ -523,7 +523,7 @@ class TestSpaceWorker:
             result = context_worker.synthesize()
 
         # Synthesize 3 times
-        mock.side_effect = [TNSError] * 2 + [mocker.DEFAULT] * 4
+        mock.side_effect = [NeuroTSError] * 2 + [mocker.DEFAULT] * 4
         context_worker.internals.retries = 3
         result = context_worker.synthesize()
 

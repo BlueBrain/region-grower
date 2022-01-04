@@ -1,7 +1,7 @@
 """Use spatial properties to grow a cell.
 
 The objective of this module is to provide an interface between
-synthesis tools (here TNS) and the circuit building pipeline.
+synthesis tools (here NeutoTS) and the circuit building pipeline.
 
 TLDR: SpaceContext.synthesized() is being called by
 the placement_algorithm package to synthesize circuit morphologies.
@@ -25,9 +25,9 @@ from neuroc.scale import ScaleParameters
 from neuroc.scale import rotational_jitter
 from neuroc.scale import scale_morphology
 from neuroc.scale import scale_section
-from tns import NeuronGrower
-from tns import TNSError
-from tns.morphio_utils import TYPE_TO_STR
+from neurots import NeuronGrower
+from neurots import NeuroTSError
+from neurots.morphio_utils import TYPE_TO_STR
 from voxcell.cell_collection import CellCollection
 
 from region_grower import RegionGrowerError
@@ -263,11 +263,11 @@ class SpaceWorker:
         for _ in range(self.internals.retries):
             try:
                 return self._synthesize_once(rng)
-            except TNSError:
+            except NeuroTSError:
                 pass
 
         raise SkipSynthesisError(
-            "Too many attempts at synthesizing cell with TNS"
+            "Too many attempts at synthesizing cell with NeuroTS"
         )  # pragma: no cover
 
     def completion(self, synthesized):
