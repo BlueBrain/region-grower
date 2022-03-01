@@ -218,7 +218,7 @@ class TestSpaceWorker:
         assert_array_almost_equal(
             next(result.neuron.iter()).diameters,
             np.array(
-                [0.774056, 0.773625, 0.773154, 0.772351, 0.771622, 0.770973],
+                [0.933082, 0.9321, 0.931028, 0.929197, 0.927534, 0.926054],
                 dtype=np.float32,
             ),
         )

@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_almost_equal
-from numpy.testing import assert_array_equal
 from voxcell import CellCollection
 
 from region_grower import utils
@@ -60,7 +59,6 @@ def test_create_morphologies_dict():
 
 def test_random_rotation_y():
     np.random.seed(0)
-    assert_array_equal(utils.random_rotation_y(0), np.empty((0, 3, 3)))
     res_1 = utils.random_rotation_y(1)
     res_2 = utils.random_rotation_y(2)
 
@@ -73,6 +71,25 @@ def test_random_rotation_y():
                 [0.9533337806844938, 0.0, 0.30191837076569117],
                 [0.0, 1.0, 0.0],
                 [-0.30191837076569117, 0.0, 0.9533337806844938],
+            ]
+        ]
+    )
+    assert_almost_equal(res_1, expected_res_1)
+
+    # Test with a given RNG
+    rng = np.random.default_rng(0)
+    res_1 = utils.random_rotation_y(1, rng=rng)
+    res_2 = utils.random_rotation_y(2, rng=rng)
+
+    assert res_1.shape == (1, 3, 3)
+    assert res_2.shape == (2, 3, 3)
+
+    expected_res_1 = np.array(
+        [
+            [
+                [0.652016263584366, 0.0, 0.7582049802141123],
+                [0.0, 1.0, 0.0],
+                [-0.7582049802141123, 0.0, 0.652016263584366],
             ]
         ]
     )

@@ -8,6 +8,7 @@ from pathlib import Path
 from uuid import uuid4
 
 import jsonschema
+import neurots
 import pandas as pd
 import pytest
 import yaml
@@ -278,7 +279,7 @@ def test_verify(tmd_distributions, tmd_parameters):
 
     failing_params = deepcopy(initial_params)
     del failing_params[mtype]["origin"]
-    with pytest.raises(jsonschema.exceptions.ValidationError):
+    with pytest.raises(neurots.validator.ValidationError):
         SynthesizeMorphologies.verify([mtype], tmd_distributions, failing_params)
 
     # Fail when missing attributes

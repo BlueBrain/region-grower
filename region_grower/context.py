@@ -304,16 +304,7 @@ class SpaceWorker:
             params["origin"] = [0, 0, 0]
 
         if self.params.tmd_parameters["diameter_params"]["method"] == "external":
-            # pylint: disable=unused-argument
-            def external_diametrizer(neuron, neurite_type, model_all, random_generator):
-                return build_diameters.build(
-                    neuron,
-                    model_all,
-                    [TYPE_TO_STR[neurite_type]],
-                    self.params.tmd_parameters["diameter_params"],
-                    random_generator,
-                )
-
+            external_diametrizer = build_diameters.build
         else:
             external_diametrizer = None
 

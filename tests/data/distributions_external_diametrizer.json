@@ -672,6 +672,16 @@
                             "min": 3.141592653589793
                         }
                     },
+                    "absolute_elevation_deviation": {
+                        "data": {
+                            "bins": [
+                                0
+                            ],
+                            "weights": [
+                                1
+                            ]
+                        }
+                    },
                     "orientation_deviation": {
                         "data": {
                             "bins": [
@@ -1362,6 +1372,16 @@
                         "uniform": {
                             "max": 0.0,
                             "min": 3.141592653589793
+                        }
+                    },
+                    "absolute_elevation_deviation": {
+                        "data": {
+                            "bins": [
+                                0
+                            ],
+                            "weights": [
+                                1
+                            ]
                         }
                     },
                     "orientation_deviation": {
