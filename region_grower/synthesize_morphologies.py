@@ -178,6 +178,7 @@ class SynthesizeMorphologies:
         max_depth=5000,
         skip_write=False,
         min_hard_scale=0.2,
+        region_structure=None,
     ):  # pylint: disable=too-many-arguments, too-many-locals
         self.seed = seed
         self.scaling_jitter_std = scaling_jitter_std
@@ -226,6 +227,7 @@ class SynthesizeMorphologies:
             atlas_cache,
             min_depth,
             max_depth,
+            region_structure,
         )
 
         self.cells_data = self.cells.as_dataframe()
@@ -287,9 +289,12 @@ class SynthesizeMorphologies:
         atlas_cache=None,
         min_depth=25,
         max_depth=5000,
+        region_structure=None,
     ):
         """Open an Atlas and compute depths and orientations according to the given positions."""
-        atlas = AtlasHelper(Atlas.open(atlas_path, cache_dir=atlas_cache))
+        atlas = AtlasHelper(
+            Atlas.open(atlas_path, cache_dir=atlas_cache), region_structure_path=region_structure
+        )
         layer_depths = atlas.get_layer_boundary_depths(positions)
         current_depths = np.clip(atlas.depths.lookup(positions), min_depth, max_depth)
         if with_orientations:

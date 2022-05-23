@@ -36,8 +36,8 @@ class TestMorphWriter:
         assert morph_writer._calc_dir_depth(0) is None
         assert morph_writer._calc_dir_depth(500) is None
         assert morph_writer._calc_dir_depth(5000, 500) == 1
-        assert morph_writer._calc_dir_depth(256 ** 2 + 1, 256) == 2
-        assert morph_writer._calc_dir_depth(256 ** 3 + 1, 256) == 3
+        assert morph_writer._calc_dir_depth(256**2 + 1, 256) == 2
+        assert morph_writer._calc_dir_depth(256**3 + 1, 256) == 3
 
         with pytest.raises(
             RuntimeError, match="Less than 256 files per folder is too restrictive."
@@ -47,7 +47,7 @@ class TestMorphWriter:
         with pytest.raises(
             RuntimeError, match="More than three intermediate folders is a bit too much."
         ):
-            morph_writer._calc_dir_depth(256 ** 4 + 1, 256)
+            morph_writer._calc_dir_depth(256**4 + 1, 256)
 
     def test_make_subdirs(self, morph_writer, tmpdir):
         dirpath = Path(tmpdir)
@@ -62,12 +62,12 @@ class TestMorphWriter:
 
     def test_prepare(self, morph_writer, tmpdir):
         morph_writer.prepare(500, 256, True)
-        morph_writer.prepare(256 ** 2 + 1, 256, True)
+        morph_writer.prepare(256**2 + 1, 256, True)
 
         with pytest.raises(
             RuntimeError, match=r"Non-empty morphology output folder '.*/test_prepare.*"
         ):
-            morph_writer.prepare(256 ** 2 + 1, 256, False)
+            morph_writer.prepare(256**2 + 1, 256, False)
 
         new_morph_writer = MorphWriter(tmpdir / "test_new_dir", file_exts=["h5"])
         new_morph_writer.prepare(500, 256)

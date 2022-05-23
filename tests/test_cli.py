@@ -154,6 +154,7 @@ class TestCli:
                 "--scaling-jitter-std", 0.5,
                 "--rotational-jitter-std", 10,
                 "--nb-processes", 2,
+                "--region-structure", str(DATA / "region_structure.yaml"),
             ],
             catch_exceptions=False,
         )

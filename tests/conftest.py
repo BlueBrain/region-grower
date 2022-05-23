@@ -102,8 +102,7 @@ def tmd_distributions():
 def cell_state(cell_position, cell_mtype, cell_orientation, small_O1_path):
     """A cell state object."""
     current_depth, _, _ = SynthesizeMorphologies.atlas_lookups(
-        small_O1_path,
-        [cell_position],
+        small_O1_path, [cell_position], region_structure=DATA / "region_structure.yaml"
     )
     return CellState(
         position=cell_position,
@@ -117,8 +116,7 @@ def cell_state(cell_position, cell_mtype, cell_orientation, small_O1_path):
 def space_context(cell_position, small_O1_path, tmd_distributions):
     """A space context object."""
     _, layer_depth, _ = SynthesizeMorphologies.atlas_lookups(
-        small_O1_path,
-        [cell_position],
+        small_O1_path, [cell_position], region_structure=DATA / "region_structure.yaml"
     )
     return SpaceContext(
         layer_depths=layer_depth[:, 0].tolist(),
@@ -161,8 +159,7 @@ def synthesized_cell(small_O1_path):
     cell_orientation = get_cell_orientation()
 
     current_depth, layer_depth, _ = SynthesizeMorphologies.atlas_lookups(
-        small_O1_path,
-        [cell_position],
+        small_O1_path, [cell_position], region_structure=DATA / "region_structure.yaml"
     )
 
     cell_state = CellState(

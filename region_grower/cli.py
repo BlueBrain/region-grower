@@ -239,6 +239,12 @@ def generate_distributions(
     type=float,
     default=0.2,
 )
+@click.option(
+    "--region-structure",
+    help="Path to region structure file",
+    required=False,
+    default="region_structure.yaml",
+)
 def synthesize_morphologies(**kwargs):  # pylint: disable=too-many-arguments, too-many-locals
     """Synthesize morphologies."""
     setup_logger(kwargs.pop("log_level", "info"))

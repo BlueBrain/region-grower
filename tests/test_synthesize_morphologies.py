@@ -78,6 +78,7 @@ def create_args(
     args["max_drop_ratio"] = 0.5
     args["rotational_jitter_std"] = 10
     args["scaling_jitter_std"] = 0.5
+    args["region_structure"] = DATA / "region_structure.yaml"
 
     return args
 
