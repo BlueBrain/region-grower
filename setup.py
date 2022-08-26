@@ -20,7 +20,7 @@ REQS = [
     "morph-tool[nrn]>=2.9,<3",
     "neuroc>=0.2.8,<1",
     "neurom>=3,<4",
-    "neurots>=3.1,<4",
+    "neurots>=3.2,<4",
     "tqdm>=4.28.1",
     "voxcell>=2.7,<4",
 ]

@@ -57,7 +57,7 @@
                     "additionalProperties": false,
                     "description": "The constraints to obey in the given context",
                     "properties": {
-                        "apical": {
+                        "apical_dendrite": {
                             "additionalProperties": false,
                             "description": "Specific constraints for apicals",
                             "properties": {
@@ -101,7 +101,7 @@
                             "$ref": "#/definitions/limits",
                             "description": "Specific constraints for axons"
                         },
-                        "basal": {
+                        "basal_dendrite": {
                             "$ref": "#/definitions/limits",
                             "description": "Specific constraints for basals"
                         }
@@ -122,8 +122,8 @@
                 "grow_types": {
                     "items": {
                         "enum": [
-                            "basal",
-                            "apical",
+                            "basal_dendrite",
+                            "apical_dendrite",
                             "axon"
                         ],
                         "type": "string"

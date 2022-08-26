@@ -1,6 +1,6 @@
 {
     "L2_TPC:A": {
-        "apical": {
+        "apical_dendrite": {
             "branching_method": "directional",
             "growth_method": "tmd_apical",
             "has_apical_tuft": true,
@@ -25,7 +25,7 @@
             "tree_type": 4
         },
         "axon": {},
-        "basal": {
+        "basal_dendrite": {
             "branching_method": "bio_oriented",
             "growth_method": "tmd",
             "metric": "path_distances",
@@ -46,8 +46,8 @@
             "method": "default"
         },
         "grow_types": [
-            "basal",
-            "apical"
+            "basal_dendrite",
+            "apical_dendrite"
         ],
         "origin": [
             0.0,

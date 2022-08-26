@@ -22,6 +22,7 @@ from diameter_synthesis.validators import validate_model_params
 from jsonschema import validate
 from morph_tool.exceptions import NoDendriteException
 from morphio.mut import Morphology
+from neurots.utils import convert_from_legacy_neurite_type
 from neurots.validator import validate_neuron_distribs
 from neurots.validator import validate_neuron_params
 from pkg_resources import resource_stream
@@ -197,11 +198,11 @@ class SynthesizeMorphologies:
 
         LOGGER.info("Loading TMD parameters from %s", tmd_parameters)
         with open(tmd_parameters, "r") as f:
-            self.tmd_parameters = json.load(f)
+            self.tmd_parameters = convert_from_legacy_neurite_type(json.load(f))
 
         LOGGER.info("Loading TMD distributions from %s", tmd_distributions)
         with open(tmd_distributions, "r") as f:
-            self.tmd_distributions = json.load(f)
+            self.tmd_distributions = convert_from_legacy_neurite_type(json.load(f))
         self.cortical_depths = np.cumsum(
             self.tmd_distributions["metadata"]["cortical_thickness"]
         ).tolist()

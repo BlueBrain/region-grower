@@ -11,7 +11,7 @@
     },
     "mtypes": {
         "L2_TPC:A": {
-            "apical": {
+            "apical_dendrite": {
                 "filtration_metric": "path_distances",
                 "num_trees": {
                     "data": {
@@ -753,7 +753,7 @@
                 }
             },
             "axon": {},
-            "basal": {
+            "basal_dendrite": {
                 "filtration_metric": "path_distances",
                 "num_trees": {
                     "data": {
@@ -1456,7 +1456,7 @@
             },
             "diameter": {
                 "diameter_power_relation": {
-                    "apical": {
+                    "apical_dendrite": {
                         "distribution": "exponnorm",
                         "params": {
                             "a": 1.233998021953017,
@@ -1468,7 +1468,7 @@
                         },
                         "sequential": "asymmetry_threshold"
                     },
-                    "basal": {
+                    "basal_dendrite": {
                         "distribution": "exponnorm",
                         "params": {
                             "a": 4,
@@ -1483,7 +1483,7 @@
                 },
                 "method": "external",
                 "sibling_ratios": {
-                    "apical": {
+                    "apical_dendrite": {
                         "distribution": "expon_rev",
                         "params": {
                             "loc": -1.0,
@@ -1494,7 +1494,7 @@
                         },
                         "sequential": "asymmetry_threshold"
                     },
-                    "basal": {
+                    "basal_dendrite": {
                         "distribution": "expon_rev",
                         "params": {
                             "loc": -1.0,
@@ -1507,7 +1507,7 @@
                     }
                 },
                 "tapers": {
-                    "apical": {
+                    "apical_dendrite": {
                         "distribution": "expon_rev",
                         "params": {
                             "loc": -0.004950796690304635,
@@ -1518,7 +1518,7 @@
                         },
                         "sequential": null
                     },
-                    "basal": {
+                    "basal_dendrite": {
                         "distribution": "expon_rev",
                         "params": {
                             "loc": -0.003256270719543696,
@@ -1531,7 +1531,7 @@
                     }
                 },
                 "terminal_diameters": {
-                    "apical": {
+                    "apical_dendrite": {
                         "distribution": "exponnorm",
                         "params": {
                             "a": 0.3,
@@ -1543,7 +1543,7 @@
                         },
                         "sequential": null
                     },
-                    "basal": {
+                    "basal_dendrite": {
                         "distribution": "exponnorm",
                         "params": {
                             "a": 0.3,
@@ -1557,7 +1557,7 @@
                     }
                 },
                 "trunk_diameters": {
-                    "apical": {
+                    "apical_dendrite": {
                         "distribution": "exponnorm",
                         "params": {
                             "a": 4,
@@ -1569,7 +1569,7 @@
                         },
                         "sequential": null
                     },
-                    "basal": {
+                    "basal_dendrite": {
                         "distribution": "exponnorm",
                         "params": {
                             "a": 2.322537865837945,

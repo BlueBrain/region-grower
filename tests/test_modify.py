@@ -34,9 +34,9 @@ def test_scale_target_barcode():
 
 def test_input_scaling():
     init_params = {
-        "grow_types": ["apical", "basal"],
+        "grow_types": ["apical_dendrite", "basal_dendrite"],
         "context_constraints": {
-            "apical": {
+            "apical_dendrite": {
                 "extent_to_target": {
                     "slope": 0.5,
                     "intercept": 1,
@@ -45,15 +45,15 @@ def test_input_scaling():
                 }
             }
         },
-        "apical": {},
-        "basal": {},
+        "apical_dendrite": {},
+        "basal_dendrite": {},
     }
     reference_thickness = 1
     target_thickness = 2
     apical_target_distance = 3
 
     expected = deepcopy(init_params)
-    expected["apical"] = {
+    expected["apical_dendrite"] = {
         "modify": {
             "funct": modify.scale_target_barcode,
             "kwargs": {
@@ -62,7 +62,7 @@ def test_input_scaling():
             },
         }
     }
-    expected["basal"] = {
+    expected["basal_dendrite"] = {
         "modify": {
             "funct": modify.scale_default_barcode,
             "kwargs": {
@@ -82,8 +82,8 @@ def test_input_scaling():
         apical_target_distance,
     )
 
-    assert params.get("apical", {}) == expected["apical"]
-    assert params.get("basal", {}) == expected["basal"]
+    assert params.get("apical_dendrite", {}) == expected["apical_dendrite"]
+    assert params.get("basal_dendrite", {}) == expected["basal_dendrite"]
 
     with pytest.raises(RegionGrowerError):
         modify.input_scaling(
@@ -94,7 +94,7 @@ def test_input_scaling():
         )
 
     params = deepcopy(init_params)
-    params["context_constraints"]["apical"]["extent_to_target"]["slope"] = -0.5
+    params["context_constraints"]["apical_dendrite"]["extent_to_target"]["slope"] = -0.5
     with pytest.raises(RegionGrowerError):
         modify.input_scaling(
             params,

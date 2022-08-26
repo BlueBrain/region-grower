@@ -27,7 +27,6 @@ from neuroc.scale import scale_morphology
 from neuroc.scale import scale_section
 from neurots import NeuronGrower
 from neurots import NeuroTSError
-from neurots.morphio_utils import TYPE_TO_STR
 from voxcell.cell_collection import CellCollection
 
 from region_grower import RegionGrowerError
@@ -189,7 +188,7 @@ class SpaceWorker:
         target, reference = self.context.lookup_target_reference_depths(self.cell.depth)
 
         apical_target = (
-            params.get("context_constraints", {}).get("apical", {}).get("extent_to_target")
+            params.get("context_constraints", {}).get("apical_dendrite", {}).get("extent_to_target")
         )
         modify.input_scaling(
             params,
@@ -206,9 +205,7 @@ class SpaceWorker:
     def _post_growth_rescaling(self, grower: NeuronGrower, params: Dict) -> None:
         """Scale all neurites so that their extents stay between the min and max hard limits."""
         for root_section in grower.neuron.root_sections:
-            constraints = params.get("context_constraints", {}).get(
-                TYPE_TO_STR[root_section.type], {}
-            )
+            constraints = params.get("context_constraints", {}).get(root_section.type.name, {})
 
             target_min_length = self.context.distance_to_constraint(
                 self.cell.depth, constraints.get("hard_limit_min")
@@ -228,7 +225,7 @@ class SpaceWorker:
                 scale_section(root_section, ScaleParameters(mean=scale), recursive=True)
                 is_deleted = False
             else:
-                if TYPE_TO_STR[root_section.type] == "apical":
+                if root_section.type.name == "apical_dendrite":
                     raise RegionGrowerError(f"Apical is removed because rescale = {scale}")
 
                 grower.neuron.delete_section(root_section, recursive=True)
@@ -238,7 +235,7 @@ class SpaceWorker:
                 self.debug_infos["neurite_hard_limit_rescaling"].update(
                     {
                         root_section.id: {
-                            "neurite_type": TYPE_TO_STR[root_section.type],
+                            "neurite_type": root_section.type.name,
                             "scale": scale,
                             "target_min_length": target_min_length,
                             "target_max_length": target_max_length,

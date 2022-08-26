@@ -287,7 +287,7 @@ def test_verify(tmd_distributions, tmd_parameters):
     attributes = ["layer", "fraction", "slope", "intercept"]
     good_params = deepcopy(initial_params)
     good_params[mtype]["context_constraints"] = {
-        "apical": {
+        "apical_dendrite": {
             "hard_limit_min": {
                 "layer": 1,
                 "fraction": 0.1,
@@ -310,7 +310,9 @@ def test_verify(tmd_distributions, tmd_parameters):
         for missing_attributes in combinations(attributes, i):
             failing_params = deepcopy(good_params[mtype])
             for att in missing_attributes:
-                del failing_params["context_constraints"]["apical"]["extent_to_target"][att]
+                del failing_params["context_constraints"]["apical_dendrite"]["extent_to_target"][
+                    att
+                ]
             tmd_parameters[mtype] = failing_params
             with pytest.raises(jsonschema.exceptions.ValidationError):
                 SynthesizeMorphologies.verify([mtype], tmd_distributions, tmd_parameters)

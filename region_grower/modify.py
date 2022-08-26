@@ -89,8 +89,8 @@ def input_scaling(
         debug_info: a dictionnary in which the debug info will be added.
     """
     for neurite_type in params["grow_types"]:
-        if neurite_type == "apical" and apical_target_extent is not None:
-            apical_constraint = params["context_constraints"]["apical"]["extent_to_target"]
+        if neurite_type == "apical_dendrite" and apical_target_extent is not None:
+            apical_constraint = params["context_constraints"]["apical_dendrite"]["extent_to_target"]
             linear_fit = np.poly1d((apical_constraint["slope"], apical_constraint["intercept"]))
             target_path_distance = linear_fit(apical_target_extent)
             if debug_info is not None:

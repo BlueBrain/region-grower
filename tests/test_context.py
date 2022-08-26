@@ -107,7 +107,7 @@ class TestSpaceWorker:
 
         # This tests that input orientations are not mutated by the synthesize() call
         assert_array_almost_equal(
-            synthesis_parameters.tmd_parameters["apical"]["orientation"], [[0.0, 1.0, 0.0]]
+            synthesis_parameters.tmd_parameters["apical_dendrite"]["orientation"], [[0.0, 1.0, 0.0]]
         )
 
         assert_array_almost_equal(
@@ -179,7 +179,7 @@ class TestSpaceWorker:
 
         # This tests that input orientations are not mutated by the synthesize() call
         assert_array_almost_equal(
-            synthesis_parameters.tmd_parameters["apical"]["orientation"], [[0.0, 1.0, 0.0]]
+            synthesis_parameters.tmd_parameters["apical_dendrite"]["orientation"], [[0.0, 1.0, 0.0]]
         )
 
         assert_array_almost_equal(
@@ -228,7 +228,7 @@ class TestSpaceWorker:
 
         # Test with no hard limit scaling
         tmd_parameters[mtype]["context_constraints"] = {
-            "apical": {
+            "apical_dendrite": {
                 "extent_to_target": {
                     "slope": 0.5,
                     "intercept": 1,
@@ -281,7 +281,7 @@ class TestSpaceWorker:
 
         # Test with hard limit scale
         tmd_parameters[mtype]["context_constraints"] = {
-            "apical": {
+            "apical_dendrite": {
                 "hard_limit_min": {
                     "layer": 1,
                     "fraction": 0.1,
@@ -337,8 +337,8 @@ class TestSpaceWorker:
         # Test scale computation
         params = tmd_parameters[mtype]
 
-        assert params["apical"]["modify"] is None
-        assert params["basal"]["modify"] is None
+        assert params["apical_dendrite"]["modify"] is None
+        assert params["basal_dendrite"]["modify"] is None
 
         # pylint: disable=protected-access
         fixed_params = small_context_worker._correct_position_orientation_scaling(params)
@@ -349,12 +349,12 @@ class TestSpaceWorker:
             "target_thickness": 300.0,
             "with_debug_info": False,
         }
-        assert fixed_params["apical"]["modify"]["kwargs"] == expected_apical
-        assert fixed_params["basal"]["modify"]["kwargs"] == expected_basal
+        assert fixed_params["apical_dendrite"]["modify"]["kwargs"] == expected_apical
+        assert fixed_params["basal_dendrite"]["modify"]["kwargs"] == expected_basal
 
         # Test with hard limit scale and min_hard_scale on apical
         tmd_parameters[mtype]["context_constraints"] = {
-            "apical": {
+            "apical_dendrite": {
                 "hard_limit_min": {
                     "layer": 1,
                     "fraction": 0.1,
@@ -376,9 +376,9 @@ class TestSpaceWorker:
             result = small_context_worker.synthesize()
 
         # Test with hard limit scale and min_hard_scale on basal
-        tmd_parameters[mtype]["grow_types"] = ["basal"]
+        tmd_parameters[mtype]["grow_types"] = ["basal_dendrite"]
         tmd_parameters[mtype]["context_constraints"] = {
-            "basal": {
+            "basal_dendrite": {
                 "hard_limit_min": {
                     "layer": 1,
                     "fraction": 0.1,
@@ -400,7 +400,7 @@ class TestSpaceWorker:
 
         # Test with hard limit scale
         tmd_parameters[mtype]["context_constraints"] = {
-            "apical": {
+            "apical_dendrite": {
                 "hard_limit_min": {
                     "layer": 1,
                     "fraction": 0.1,
@@ -461,7 +461,7 @@ class TestSpaceWorker:
             },
             "neurite_hard_limit_rescaling": {
                 0: {
-                    "neurite_type": "apical",
+                    "neurite_type": "apical_dendrite",
                     "scale": 0.9676248059345621,
                     "target_min_length": 70.0,
                     "target_max_length": 70.0,

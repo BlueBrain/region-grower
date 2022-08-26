@@ -1,7 +1,7 @@
 {
     "asymmetry_threshold": {
-        "apical": 0.2,
-        "basal": 1.0
+        "apical_dendrite": 0.2,
+        "basal_dendrite": 1.0
     },
     "method": "external",
     "models": [
@@ -9,8 +9,8 @@
     ],
     "n_samples": 10,
     "neurite_types": [
-        "basal",
-        "apical"
+        "basal_dendrite",
+        "apical_dendrite"
     ],
     "seed": 0,
     "taper": {
