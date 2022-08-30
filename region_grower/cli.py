@@ -42,7 +42,7 @@ def cli():
     "--parameter-filename",
     type=click.Path(file_okay=True, dir_okay=False),
     default="tmd_parameters.json",
-    help="name of outputed .json file",
+    help="name of outputted .json file",
 )
 @click.option(
     "-e",
@@ -91,7 +91,7 @@ def generate_parameters(
     "--distribution-filename",
     type=click.Path(file_okay=True, dir_okay=False),
     default="tmd_distributions.json",
-    help="name of outputed .json file",
+    help="name of outputted .json file",
 )
 @click.option(
     "-dc",

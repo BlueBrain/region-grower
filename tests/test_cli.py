@@ -1,6 +1,5 @@
 """Test the region_grower.cli module."""
 # pylint: disable=missing-function-docstring
-# pylint: disable=no-self-use
 from pathlib import Path
 
 import dictdiffer

@@ -1,2 +1,4 @@
+global-exclude *.py[co] .DS_Store
+
 graft region_grower/data
 include region_grower/schemas/*.json

@@ -1,5 +1,10 @@
-"""Region grower module."""
-from region_grower.version import VERSION as __version__  # noqa
+"""region-grower package.
+
+Synthesize cells in a given spatial context.
+"""
+import importlib.metadata
+
+__version__ = importlib.metadata.version("region-grower")
 
 
 class RegionGrowerError(Exception):

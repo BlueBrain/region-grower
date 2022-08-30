@@ -167,7 +167,7 @@ class SpaceWorker:
         synthesis_parameters: SynthesisParameters,
         computation_parameters: ComputationParameters,
     ) -> None:
-        """Initialization with all required informations for synthesis."""
+        """Initialization with all required information for synthesis."""
         self.cell = cell_state
         self.context = space_context
         self.params = synthesis_parameters
@@ -370,7 +370,7 @@ class SpaceWorker:
         ]
 
 
-class CellHelper(object):  # pragma: no cover
+class CellHelper:  # pragma: no cover
     """Loads spatial information and provides basic functionality to query spatial properties."""
 
     def __init__(self, cells_file):

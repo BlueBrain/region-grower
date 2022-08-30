@@ -1,17 +1,19 @@
 """Setup for the region-grower package."""
-import imp
+import importlib.util
+from pathlib import Path
 
 from setuptools import find_packages
 from setuptools import setup
 
-# Read the contents of the README file
-with open("README.rst", encoding="utf-8") as f:
-    README = f.read()
+spec = importlib.util.spec_from_file_location(
+    "region_grower.version",
+    "region_grower/version.py",
+)
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+VERSION = module.VERSION
 
-
-VERSION = imp.load_source("region_grower.version", "region_grower/version.py").VERSION
-
-REQS = [
+reqs = [
     "attrs>=19.3.0",
     "click>=7.0",
     "dask[dataframe, distributed]>=2.15.0,!=2021.8.1,!=2021.8.2",
@@ -25,45 +27,60 @@ REQS = [
     "voxcell>=2.7,<4",
 ]
 
-MPI_EXTRAS = [
+mpi_extras = [
     "dask_mpi",
     "mpi4py>=3.0.3",
 ]
 
-DOC_EXTRAS = [
+doc_reqs = [
     "m2r2",
     "sphinx",
     "sphinx-bluebrain-theme",
     "sphinx-jsonschema",
 ]
 
+test_reqs = [
+    "brainbuilder",
+    "dictdiffer",
+    "pytest",
+    "pytest-cov",
+    "pytest-html",
+    "pytest-xdist",
+    "pytest-mock",
+]
+
 setup(
     name="region-grower",
     author="bbp-ou-cells",
     author_email="bbp-ou-cells@groupes.epfl.ch",
-    version=VERSION,
-    description="Synthesize cells in a given spatial context",
-    long_description=README,
-    long_description_content_type="text/x-rst",
+    description="Synthesize cells in a given spatial context.",
+    long_description=Path("README.md").read_text(encoding="utf-8"),
+    long_description_content_type="text/markdown",
     url="https://bbpteam.epfl.ch/documentation/projects/region-grower",
     project_urls={
         "Tracker": "https://bbpteam.epfl.ch/project/issues/projects/CELLS/issues",
         "Source": "https://bbpgitlab.epfl.ch/neuromath/region-grower",
     },
     license="BBP-internal-confidential",
-    packages=find_packages(exclude=["tests"]),
+    packages=find_packages(include=["region_grower"]),
     python_requires=">=3.8",
-    install_requires=REQS,
+    version=VERSION,
+    install_requires=reqs,
     extras_require={
-        "mpi": MPI_EXTRAS,
-        "docs": DOC_EXTRAS,
+        "docs": doc_reqs,
+        "mpi": mpi_extras,
+        "test": test_reqs,
     },
     entry_points={"console_scripts": ["region-grower=region_grower.cli:cli"]},
-    include_package_data=True,
     classifiers=[
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Education",
+        "Intended Audience :: Science/Research",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Topic :: Scientific/Engineering :: Bio-Informatics",
     ],
+    include_package_data=True,
 )

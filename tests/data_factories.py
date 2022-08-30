@@ -17,7 +17,7 @@ DF_SIZE = 12
 def generate_small_O1(directory):
     """Dump a small O1 atlas in folder path."""
     # fmt: off
-    with open(devnull, "w") as f:
+    with open(devnull, "w", encoding="utf-8") as f:
         call(
             [
                 "brainbuilder", "atlases",
@@ -110,14 +110,14 @@ def generate_axon_morph_tsv(tmpdir):
 
 def get_tmd_parameters(filename):
     """The TMD parameters."""
-    with open(filename, "r") as f:
+    with open(filename, "r", encoding="utf-8") as f:
         tmd_parameters = json.load(f)
     return tmd_parameters
 
 
 def get_tmd_distributions(filename):
     """The TMD distributions."""
-    with open(filename, "r") as f:
+    with open(filename, "r", encoding="utf-8") as f:
         tmd_distributions = json.load(f)
     return tmd_distributions
 

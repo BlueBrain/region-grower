@@ -1,6 +1,5 @@
 """Test the region_grower.utils module."""
 # pylint: disable=missing-function-docstring
-# pylint: disable=no-self-use
 import json
 import logging
 from pathlib import Path

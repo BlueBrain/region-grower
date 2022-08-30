@@ -86,7 +86,7 @@ def input_scaling(
         reference_thickness: the expected thickness of input data.
         target_thickness: the expected thickness that the synthesized cells should live in.
         apical_target_extent: the expected extent of the apical dendrite.
-        debug_info: a dictionnary in which the debug info will be added.
+        debug_info: a dictionary in which the debug info will be added.
     """
     for neurite_type in params["grow_types"]:
         if neurite_type == "apical_dendrite" and apical_target_extent is not None:

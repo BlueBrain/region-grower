@@ -1,6 +1,6 @@
 """Test the region_grower.context module."""
 # pylint: disable=missing-function-docstring
-# pylint: disable=no-self-use
+# pylint: disable=use-implicit-booleaness-not-comparison
 
 from pathlib import Path
 

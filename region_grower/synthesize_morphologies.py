@@ -45,7 +45,7 @@ from region_grower.utils import load_morphology_list
 
 LOGGER = logging.getLogger(__name__)
 
-morphio.set_maximum_warnings(0)  # supress MorphIO warnings on writing files
+morphio.set_maximum_warnings(0)  # suppress MorphIO warnings on writing files
 
 
 def _parallel_wrapper(
@@ -118,8 +118,8 @@ class SynthesizeMorphologies:
 
     Args:
         input_cells: the path to the MVD3 file.
-        tmd_parameters: the path to the JSON file containg the TMD parameters.
-        tmd_distributions: the path to the JSON file containg the TMD distributions.
+        tmd_parameters: the path to the JSON file containing the TMD parameters.
+        tmd_distributions: the path to the JSON file containing the TMD distributions.
         atlas: the path to the Atlas directory.
         out_cells: the path to the MVD3 file in which the properties of the synthesized
             cells are written.
@@ -146,7 +146,7 @@ class SynthesizeMorphologies:
         with_mpi: initialize and use MPI when set to True.
         min_depth: minimum depth from atlas computation
         max_depth: maximum depth from atlas computation
-        skip_write: set to True to bypass writing to disk for debuging/testing
+        skip_write: set to True to bypass writing to disk for debugging/testing
         min_hard_scale: the scale value below which a neurite is removed
     """
 
@@ -197,11 +197,11 @@ class SynthesizeMorphologies:
         self.cells = CellCollection.load(input_cells)
 
         LOGGER.info("Loading TMD parameters from %s", tmd_parameters)
-        with open(tmd_parameters, "r") as f:
+        with open(tmd_parameters, "r", encoding="utf-8") as f:
             self.tmd_parameters = convert_from_legacy_neurite_type(json.load(f))
 
         LOGGER.info("Loading TMD distributions from %s", tmd_distributions)
-        with open(tmd_distributions, "r") as f:
+        with open(tmd_distributions, "r", encoding="utf-8") as f:
             self.tmd_distributions = convert_from_legacy_neurite_type(json.load(f))
         self.cortical_depths = np.cumsum(
             self.tmd_distributions["metadata"]["cortical_thickness"]
@@ -393,7 +393,7 @@ class SynthesizeMorphologies:
 
         with_apicals = result.loc[~result["apical_points"].isnull()]
         LOGGER.info("Export apical points to %s...", self.out_apical)
-        with open(self.out_apical, "w") as apical_file:
+        with open(self.out_apical, "w", encoding="utf-8") as apical_file:
             apical_data = with_apicals[["name"]].join(
                 with_apicals["apical_points"].apply(first_non_None)
             )
@@ -401,7 +401,7 @@ class SynthesizeMorphologies:
 
         if self.out_apical_nrn_sections is not None:
             LOGGER.info("Export apical Neuron sections to %s...", self.out_apical_nrn_sections)
-            with open(self.out_apical_nrn_sections, "w") as apical_file:
+            with open(self.out_apical_nrn_sections, "w", encoding="utf-8") as apical_file:
                 yaml.dump(
                     with_apicals[["name", "apical_NRN_sections"]]
                     .set_index("name")["apical_NRN_sections"]
@@ -432,9 +432,9 @@ class SynthesizeMorphologies:
 
         for mtype in mtypes:
             if mtype not in tmd_distributions["mtypes"]:
-                raise RegionGrowerError("Missing distributions for mtype: '%s'" % mtype)
+                raise RegionGrowerError("Missing distributions for mtype: '{mtype}'")
             if mtype not in tmd_parameters:
-                raise RegionGrowerError("Missing parameters for mtype: '%s'" % mtype)
+                raise RegionGrowerError("Missing parameters for mtype: '{mtype}'")
 
             validate_neuron_distribs(tmd_distributions["mtypes"][mtype])
             validate_neuron_params(tmd_parameters[mtype])

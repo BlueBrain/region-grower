@@ -1,4 +1,3 @@
-"""Package version."""
+"""Version of the region-grower package."""
 
-VERSION = "0.4.1"
-__version__ = VERSION
+VERSION = "0.4.2.dev0"  # pragma: no cover

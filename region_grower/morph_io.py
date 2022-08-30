@@ -67,7 +67,7 @@ class MorphWriter:
         if depth <= 0:
             return
         for sub in range(256):
-            MorphWriter._make_subdirs(os.path.join(dirpath, "%02x" % sub), depth - 1)
+            MorphWriter._make_subdirs(os.path.join(dirpath, f"{sub:02x}"), depth - 1)
 
     def prepare(self, num_files, max_files_per_dir=None, overwrite=False):
         """Prepare output directory.
@@ -82,7 +82,7 @@ class MorphWriter:
         )
         if os.path.exists(self.output_dir):
             if not overwrite and os.listdir(self.output_dir):
-                raise RuntimeError("Non-empty morphology output folder '%s'" % self.output_dir)
+                raise RuntimeError(f"Non-empty morphology output folder '{self.output_dir}'")
         else:
             os.makedirs(self.output_dir)
         if self._dir_depth is not None:

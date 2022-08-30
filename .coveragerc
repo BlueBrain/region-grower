@@ -1,4 +1,6 @@
 [paths]
-source =
+source_paths =
 	region_grower
+	*/site-packages/region_grower
+	*/region_grower/region_grower
 	*/region-grower/region_grower

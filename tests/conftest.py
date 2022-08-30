@@ -1,4 +1,4 @@
-"""Setup test fixtures."""
+"""Configuration for the pytest test suite."""
 # pylint: disable=redefined-outer-name
 # pylint: disable=missing-function-docstring
 from pathlib import Path

@@ -1,0 +1,26 @@
+# Changes here will be overwritten by Copier
+
+_commit: 0.1.12
+_src_path: git@bbpgitlab.epfl.ch:neuromath/python-template.git
+author_email: bbp-ou-cells@groupes.epfl.ch
+author_name: bbp-ou-cells
+copyright_license: BBP-internal-confidential
+copyright_year: '2022'
+distribution_name: region-grower
+download_url: https://bbpgitlab.epfl.ch/neuromath/region-grower
+init_git: false
+maintainer: null
+package_name: region_grower
+project_description: Synthesize cells in a given spatial context.
+project_name: Region Grower
+project_url: https://bbpteam.epfl.ch/documentation/projects/region-grower
+repository_name: region-grower
+repository_namespace: neuromath
+repository_provider: gitlab
+ssh_url: git@bbpgitlab.epfl.ch:neuromath/region-grower.git
+support_py37: false
+team_name: neuromath
+tracker_url: https://bbpteam.epfl.ch/project/issues/projects/CELLS/issues
+version: 0.4.1
+
+# End of Copier answers

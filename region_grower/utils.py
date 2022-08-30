@@ -81,7 +81,7 @@ def load_morphology_list(filepath, check_gids=None):
 
 
 def _failure_ratio_by_mtype(mtypes, na_mask):
-    """Calculate ratio of N/A occurences per mtype."""
+    """Calculate ratio of N/A occurrences per mtype."""
     failed = mtypes.loc[na_mask].value_counts()
     overall = mtypes.value_counts()
     result = (
@@ -110,8 +110,8 @@ def check_na_morphologies(morph_list, mtypes, threshold=None):
             exceeded = 0.01 * stats["ratio, %"] > threshold
             if exceeded.any():
                 raise RuntimeError(
-                    "Max N/A ratio (%.1f%%) exceeded for mtype(s): %s"
-                    % (100.0 * threshold, ", ".join(exceeded[exceeded].index))
+                    f"Max N/A ratio ({100.0 * threshold:.1f}%) exceeded for mtype(s): "
+                    f"{', '.join(exceeded[exceeded].index)}"
                 )
 
 

@@ -28,7 +28,7 @@ class AtlasHelper:
         """
         self.atlas = atlas
         if region_structure_path is not None and Path(region_structure_path).exists():
-            with open(region_structure_path) as region_file:
+            with open(region_structure_path, "r", encoding="utf-8") as region_file:
                 self.region_structure = yaml.safe_load(region_file)
         else:
             raise ValueError("Please provide an existing region_structure file.")

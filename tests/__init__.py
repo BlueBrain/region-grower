@@ -1,1 +1,1 @@
-"""Tests of the region-grower package."""
+"""Tests suite for the region-grower package."""

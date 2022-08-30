@@ -1,4 +1,4 @@
-"""Functions fo generate parameters and distributions."""
+"""Functions to generate parameters and distributions."""
 import json
 import logging
 import multiprocessing
@@ -65,7 +65,7 @@ def generate_parameters(
 
     parameters = {mtype: get_parameters(mtype) for mtype in tqdm(morphologies_dict.keys())}
 
-    with open(parameter_filename, "w") as f:
+    with open(parameter_filename, "w", encoding="utf-8") as f:
         json.dump(parameters, f, cls=NumpyEncoder, indent=4)
 
 
@@ -98,7 +98,7 @@ def generate_distributions(
     ext,
 ):
     """Generate JSON files containing the TMD distributions for each mtype in input_folder."""
-    L.info("Extracting TMD distributions for each mtype.\n" "This can take a while...")
+    L.info("Extracting TMD distributions for each mtype. This can take a while...")
 
     morphologies_dict = create_morphologies_dict(dat_file, input_folder, ext=ext)
 
@@ -133,5 +133,5 @@ def generate_distributions(
         "metadata": {"cortical_thickness": [165, 149, 353, 190, 525, 700]},
     }
 
-    with open(distribution_filename, "w") as f:
+    with open(distribution_filename, "w", encoding="utf-8") as f:
         json.dump(distributions, f, cls=NumpyEncoder, indent=4)
