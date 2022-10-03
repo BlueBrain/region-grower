@@ -256,6 +256,7 @@ class SynthesizeMorphologies:
             self.morph_loader = None
 
     def __del__(self):
+        """Close the internal client when the object is deleted."""
         try:
             self._client.close()
         except Exception:  # pylint: disable=broad-except ; # pragma: no cover

@@ -1,4 +1,4 @@
-""" Example on how to use the TMD synthesis in space"""
+"""Example on how to use the TMD synthesis in space."""
 import os
 from itertools import islice
 
@@ -11,14 +11,14 @@ from region_grower.context import SpaceContext
 def create_population(
     context, cell_path, mtype, number_of_cells, output_path, output_name, formats=None
 ):
-    """Generates N cells according to input distributions
-    and saves them in the selected files formats (default: h5, swc, asc).
+    """Generates N cells according to input distributions.
+
+    The distributions are saved them in the selected files formats (default: h5, swc, asc).
     thickness_ref: initial thickness corresponding to input cell
                    taken from species, layer combination
     layer: defines the layer of the somata
     num_cells: number of cells to grow
     """
-
     somata = CellHelper(cell_path).positions(mtype)
 
     if formats is None:

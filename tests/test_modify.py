@@ -12,6 +12,7 @@ from region_grower import modify
 
 
 def test_scale_default_barcode():
+    """Test the `scale_default_barcode()` function."""
     ph = [[0.1, 0.2], [0.3, 0.4]]
     reference_thickness = 1
     target_thickness = 1
@@ -25,6 +26,7 @@ def test_scale_default_barcode():
 
 
 def test_scale_target_barcode():
+    """Test the `scale_target_barcode()` function."""
     ph = [[0.1, 0.2], [0.3, 0.4]]
     target_path_distance = 1
     res = modify.scale_target_barcode(ph, None, target_path_distance)
@@ -32,6 +34,7 @@ def test_scale_target_barcode():
 
 
 def test_input_scaling():
+    """Test the `input_scaling()` function."""
     init_params = {
         "grow_types": ["apical_dendrite", "basal_dendrite"],
         "context_constraints": {
@@ -108,30 +111,39 @@ class TestOutputScaling:
 
     @pytest.fixture(scope="class")
     def root_sec(self, synthesized_cell):
+        """The root section used for tests."""
         yield synthesized_cell.neuron.root_sections[0]
 
     def test_output_scaling_default(self, root_sec):
+        """Test with default arguments."""
         assert modify.output_scaling(root_sec, [0, 1, 0], None, None) == 1
 
     def test_output_scaling_useless_min(self, root_sec):
+        """Test with a min value that is smaller than all values (useless)."""
         assert modify.output_scaling(root_sec, [0, 1, 0], 1, None) == 1
 
     def test_output_scaling_min(self, root_sec):
+        """Test with a min value that is greater than a few values (useful)."""
         assert modify.output_scaling(root_sec, [0, 1, 0], 39.789311, None) == pytest.approx(1.2)
 
     def test_output_scaling_useless_max(self, root_sec):
+        """Test with a max value that is greater than all values (useless)."""
         assert modify.output_scaling(root_sec, [0, 1, 0], None, 1000) == 1
 
     def test_output_scaling_max(self, root_sec):
+        """Test with a max value that is greater than a few values (useful)."""
         assert modify.output_scaling(root_sec, [0, 1, 0], None, 26.5262075) == pytest.approx(0.8)
 
     def test_output_scaling_useless_min_useless_max(self, root_sec):
+        """Test with an useless min value and useless max values."""
         assert modify.output_scaling(root_sec, [0, 1, 0], 1, 1000) == 1
 
     def test_output_scaling_useless_min_max(self, root_sec):
+        """Test with an useless min value and useful max values."""
         assert modify.output_scaling(root_sec, [0, 1, 0], 1, 26.5262075) == pytest.approx(0.8)
 
     def test_output_scaling_min_max(self, root_sec):
+        """Test with an useful min value and useful max values."""
         assert modify.output_scaling(root_sec, [0, 1, 0], 39.789311, 26.5262075) == pytest.approx(
             1.2
         )

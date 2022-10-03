@@ -1,10 +1,11 @@
-#!/usr/bin/env python
+"""Script to add the diameter distributions to another distribution."""
 import argparse
 import json
 import os
 
 
 def main(args):
+    """Add the diameter distributions to the given distribution."""
     with open(args.input_distrib) as f:
         d = json.load(f)
 

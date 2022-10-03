@@ -37,6 +37,7 @@ doc_reqs = [
     "sphinx",
     "sphinx-bluebrain-theme",
     "sphinx-jsonschema",
+    "sphinx-click",
 ]
 
 test_reqs = [
@@ -63,7 +64,7 @@ setup(
         "Source": "https://bbpgitlab.epfl.ch/neuromath/region-grower",
     },
     license="BBP-internal-confidential",
-    packages=find_namespace_packages(include=["region_grower"]),
+    packages=find_namespace_packages(include=["region_grower*"]),
     python_requires=">=3.8",
     version=VERSION,
     install_requires=reqs,
@@ -72,7 +73,12 @@ setup(
         "mpi": mpi_extras,
         "test": test_reqs,
     },
-    entry_points={"console_scripts": ["region-grower=region_grower.cli:cli"]},
+    entry_points={
+        "console_scripts": [
+            "region-grower=region_grower.cli:cli",
+        ],
+    },
+    include_package_data=True,
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Education",
@@ -83,5 +89,4 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
     ],
-    include_package_data=True,
 )

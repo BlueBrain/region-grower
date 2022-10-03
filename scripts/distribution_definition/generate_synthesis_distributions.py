@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-
+"""Extract TNS distributions used by NeuroTS."""
 from __future__ import print_function
 
 import argparse
@@ -84,22 +83,29 @@ THICKNESSES = {
 
 
 class NumpyEncoder(json.JSONEncoder):
+    """The JSON encoder to handle Numpy objects."""
+
     def default(self, obj):
+        """The default handler."""
         if isinstance(obj, np.ndarray):
             return obj.tolist()
         return json.JSONEncoder.default(self, obj)
 
 
 class Worker:
+    """The Worker to extract distributions."""
+
     def __init__(self, base_dir, feature):
         self.base_dir = base_dir
         self.feature = feature
 
     def check(self, mtype):
+        """Check that a file exists for the given mtype."""
         if not os.path.exists(os.path.join(self.base_dir, mtype)):
             raise RuntimeError("No data for '%s'" % mtype)
 
     def __call__(self, mtype):
+        """Extract the distributions."""
         print("%s..." % mtype, file=sys.stderr)
         result = extract_input.distributions(
             os.path.join(self.base_dir, mtype),
@@ -111,6 +117,7 @@ class Worker:
 
 
 def main(args):
+    """The main process."""
     worker = Worker(args.base_dir, args.feature)
     for mtype in MTYPES:
         worker.check(mtype)

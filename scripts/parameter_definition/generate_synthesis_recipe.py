@@ -1,3 +1,4 @@
+"""Script to generate a synthesis recipe."""
 import copy
 import json
 
@@ -5,7 +6,7 @@ import numpy as np
 
 
 def run():
-    # Get all m-types within current circuit
+    """Get all m-types within current circuit."""
     # mtypes_all = np.unique(test.cells.properties.mtype.values)
     mtypes_all = np.array(
         [

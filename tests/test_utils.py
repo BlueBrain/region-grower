@@ -16,6 +16,7 @@ DATA = Path(__file__).parent / "data"
 
 
 def test_numpy_encoder():
+    """Test the JSON encoder for numpy objects."""
     tested = {
         "regular types": {
             "string type": "string data",
@@ -43,6 +44,7 @@ def test_numpy_encoder():
 
 
 def test_create_morphologies_dict():
+    """Test the create_morphologies_dict function."""
     res = utils.create_morphologies_dict(DATA / "input-cells" / "neurondb.dat", "/test/path")
     assert list(res.items()) == [
         (
@@ -57,6 +59,7 @@ def test_create_morphologies_dict():
 
 
 def test_random_rotation_y():
+    """Test the random_rotation_y function."""
     np.random.seed(0)
     res_1 = utils.random_rotation_y(1)
     res_2 = utils.random_rotation_y(2)
@@ -101,6 +104,7 @@ class TestLoadMorphologyList:
     @pytest.mark.parametrize("with_scale", [True, False])
     @pytest.mark.parametrize("gids", [None, [], [0, 1, 2]])
     def test_default(self, tmpdir, with_scale, gids):
+        """Test with and without scale and with several types of GIDs."""
         filepath = tmpdir / "morphs.tsv"
 
         df = pd.DataFrame(
@@ -133,10 +137,12 @@ class TestCheckNaMorphologies:
 
     @pytest.fixture
     def mtypes(self, cell_mtype):
+        """The mtypes used in the tests."""
         return pd.Series([cell_mtype] * 5)
 
     @pytest.mark.parametrize("threshold", [None, 0.25, 0.75])
     def test_default(self, mtypes, threshold, caplog):
+        """Test with several thresholds."""
         df = pd.DataFrame(
             {
                 "morphology": [
@@ -172,6 +178,7 @@ class TestCheckNaMorphologies:
 
     @pytest.mark.parametrize("threshold", [None, 0.25, 0.75])
     def test_no_missing_value(self, mtypes, threshold, caplog):
+        """Test without any missing value."""
         df = pd.DataFrame(
             {
                 "morphology": [
@@ -192,13 +199,14 @@ class TestAssignMorphologies:
 
     @pytest.mark.parametrize("with_missing", [True, False])
     def test_assign_morphologies(self, with_missing):
+        """Test with and without missing values."""
         cells = CellCollection.from_dataframe(pd.DataFrame(index=[1, 2, 3]))
         morphs = {
-            1: "a",
-            2: "b",
+            0: "a",
+            1: "b",
         }
         if not with_missing:
-            morphs[3] = "c"
+            morphs[2] = "c"
 
         utils.assign_morphologies(cells, morphs)
 
@@ -207,4 +215,4 @@ class TestAssignMorphologies:
         if with_missing:
             cells.as_dataframe().equals(expected.drop(3))
         else:
-            cells.as_dataframe().equals(expected.drop(3))
+            cells.as_dataframe().equals(expected)

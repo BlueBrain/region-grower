@@ -1,4 +1,4 @@
-"""App module that defines the command line interface."""
+"""Command Line Interface for the region_grower package."""
 # pylint: disable=redefined-outer-name
 import click
 
@@ -8,11 +8,11 @@ from region_grower.utils import setup_logger
 
 
 @click.group()
-def cli():
+def main():
     """A tool for space synthesis management."""
 
 
-@cli.command(short_help="Generate the TMD parameter file")
+@main.command(short_help="Generate the TMD parameter file")
 @click.argument(
     "input_folder",
     type=str,
@@ -75,7 +75,7 @@ def generate_parameters(
     )
 
 
-@cli.command(short_help="Create the TMD distribution file")
+@main.command(short_help="Create the TMD distribution file")
 @click.argument(
     "input_folder",
     type=str,
@@ -125,7 +125,7 @@ def generate_distributions(
     )
 
 
-@cli.command(
+@main.command(
     short_help=(
         "Synthesize morphologies into an given atlas according to the given TMD parameters and "
         "distributions."
@@ -253,4 +253,4 @@ def synthesize_morphologies(**kwargs):  # pylint: disable=too-many-arguments, to
 
 
 if __name__ == "__main__":  # pragma: no cover
-    cli()
+    main()

@@ -1,11 +1,11 @@
-"""Test the region_grower.cli module."""
+"""Tests for the region_grower.cli module."""
 # pylint: disable=missing-function-docstring
 from pathlib import Path
 
 import dictdiffer
 import pandas as pd
 
-from region_grower.cli import cli
+from region_grower.cli import main
 
 DATA = Path(__file__).parent / "data"
 
@@ -14,8 +14,9 @@ class TestCli:
     """Test the CLI entries."""
 
     def test_generate_parameters(self, tmpdir, cli_runner):
+        """Generate the parameters."""
         result = cli_runner.invoke(
-            cli,
+            main,
             [
                 "generate-parameters",
                 str(DATA / "input-cells"),
@@ -30,8 +31,9 @@ class TestCli:
         assert Path(tmpdir / "parameters.json").exists()
 
     def test_generate_parameters_external_diametrizer(self, tmpdir, cli_runner):
+        """Generate the parameters with an external diametrizer."""
         result = cli_runner.invoke(
-            cli,
+            main,
             [
                 "generate-parameters",
                 str(DATA / "input-cells"),
@@ -48,8 +50,9 @@ class TestCli:
         assert Path(tmpdir / "parameters_external_diametrizer.json").exists()
 
     def test_generate_parameters_tmd(self, tmpdir, cli_runner):
+        """Generate the parameters with TMD parameters."""
         result = cli_runner.invoke(
-            cli,
+            main,
             [
                 "generate-parameters",
                 str(DATA / "input-cells"),
@@ -66,8 +69,9 @@ class TestCli:
         assert Path(tmpdir / "parameters_tmd_parameters.json").exists()
 
     def test_generate_parameters_external_tmd(self, tmpdir, cli_runner):
+        """Generate the parameters with both an external diametrizer and TMD parameters."""
         result = cli_runner.invoke(
-            cli,
+            main,
             [
                 "generate-parameters",
                 str(DATA / "input-cells"),
@@ -86,8 +90,9 @@ class TestCli:
         assert Path(tmpdir / "parameters_external_tmd_parameters.json").exists()
 
     def test_generate_distributions(self, tmpdir, cli_runner):
+        """Generate the distributions."""
         result = cli_runner.invoke(
-            cli,
+            main,
             [
                 "generate-distributions",
                 str(DATA / "input-cells"),
@@ -102,8 +107,9 @@ class TestCli:
         assert Path(tmpdir / "distributions.json").exists()
 
     def test_generate_distributions_external_diametrizer(self, tmpdir, cli_runner):
+        """Generate the distributions with an external diametrizer."""
         result = cli_runner.invoke(
-            cli,
+            main,
             [
                 "generate-distributions",
                 str(DATA / "input-cells"),
@@ -122,9 +128,10 @@ class TestCli:
     def test_synthesize_morphologies(
         self, tmpdir, cli_runner, small_O1_path, input_cells, axon_morph_tsv
     ):
+        """Synthesize the morphologies."""
         # fmt: off
         result = cli_runner.invoke(
-            cli,
+            main,
             [
                 "synthesize-morphologies",
                 "--input-cells", str(input_cells),

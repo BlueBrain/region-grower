@@ -16,10 +16,12 @@ class TestMorphLoader:
     """Test the MorphLoader class."""
 
     def test_ensure_ext_start_with_point(self):
+        """Test extension handler."""
         assert MorphLoader("test_dir", file_ext="h5").file_ext == ".h5"
         assert MorphLoader("test_dir", file_ext=".h5").file_ext == ".h5"
 
     def test_get(self, morph_loader):
+        """Test the get method."""
         with pytest.raises(SkipSynthesisError):
             morph_loader.get("UNKNOWN")
 
@@ -32,6 +34,7 @@ class TestMorphWriter:
     """Test the MorphWriter class."""
 
     def test_calc_dir_depth(self, morph_writer):
+        """Test the `_calc_dir_depth()` method."""
         assert morph_writer._calc_dir_depth(0) is None
         assert morph_writer._calc_dir_depth(500) is None
         assert morph_writer._calc_dir_depth(5000, 500) == 1
@@ -49,6 +52,7 @@ class TestMorphWriter:
             morph_writer._calc_dir_depth(256**4 + 1, 256)
 
     def test_make_subdirs(self, morph_writer, tmpdir):
+        """Test the `_make_subdirs()` method."""
         dirpath = Path(tmpdir)
         morph_writer._make_subdirs(str(dirpath), 0)
         assert dirpath.exists()
@@ -60,6 +64,7 @@ class TestMorphWriter:
         assert len(list(dirpath.iterdir())) == 256
 
     def test_prepare(self, morph_writer, tmpdir):
+        """Test the `prepare()` method."""
         morph_writer.prepare(500, 256, True)
         morph_writer.prepare(256**2 + 1, 256, True)
 
@@ -72,10 +77,12 @@ class TestMorphWriter:
         new_morph_writer.prepare(500, 256)
 
     def test_file_paths(self, morph_writer):
+        """Test the `filepaths()` method."""
         morph_writer = MorphWriter("/test", file_exts=["h5"])
         assert morph_writer.filepaths(Path("", "morph_name")) == [Path("/test/morph_name.h5")]
 
     def test_generate_name(self, morph_writer):
+        """Test the `generate_name()` method."""
         assert morph_writer.generate_name(0) == ("e3e70682c2094cac629f6fbed82c07cd", "")
 
         morph_writer._dir_depth = 2
@@ -85,6 +92,7 @@ class TestMorphWriter:
         )
 
     def test_call(self, morph_writer, synthesized_cell, tmpdir):
+        """Test the `__call__()` method."""
         full_stem, ext_paths = morph_writer(synthesized_cell.neuron, 0)
 
         expected_full_stem = "e3e70682c2094cac629f6fbed82c07cd"

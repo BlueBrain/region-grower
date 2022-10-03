@@ -8,5 +8,6 @@
    Home <self>
    methodology
    parameters
+   cli
    api_ref
    changelog

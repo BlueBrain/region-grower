@@ -23,6 +23,7 @@ DATA = Path(__file__).parent / "data"
 
 
 def check_yaml(ref_path, tested_path):
+    """Compare a YAML file to a reference file."""
     print(f"Check YAML:\n\tref:{ref_path}\n\ttested: {tested_path}")
     assert ref_path.exists()
     assert tested_path.exists()
@@ -45,6 +46,7 @@ def create_args(
     out_apical_NRN_sections,
     min_depth,
 ):
+    """Create the arguments used for tests."""
     args = {}
 
     # Circuit
@@ -96,7 +98,8 @@ def test_synthesize(
     with_axon,
     with_NRN,
     min_depth,
-):  # pylint: disable=unused-argument,
+):  # pylint: disable=unused-argument
+    """Test morphology synthesis."""
     tmp_folder = Path(tmpdir)
 
     args = create_args(
@@ -145,7 +148,8 @@ def test_synthesize_skip_write(
     small_O1_path,
     input_cells,
     axon_morph_tsv,
-):  # pylint: disable=unused-argument,
+):  # pylint: disable=unused-argument
+    """Test morphology synthesis but skip write step."""
     with_axon = True
     with_NRN = True
     min_depth = 25
@@ -202,6 +206,7 @@ def test_synthesize_skip_write(
 
 
 def run_with_mpi():
+    """Test morphology synthesis with MPI."""
     # pylint: disable=import-outside-toplevel, too-many-locals, import-error
     from data_factories import generate_axon_morph_tsv
     from data_factories import generate_cell_collection
@@ -267,6 +272,7 @@ def run_with_mpi():
 
 
 def test_verify(tmd_distributions, tmd_parameters):
+    """Test the `verify` step."""
     mtype = "L2_TPC:A"
     initial_params = deepcopy(tmd_parameters)
 
@@ -321,6 +327,7 @@ def test_verify(tmd_distributions, tmd_parameters):
 
 
 def test_check_axon_morphology(caplog):
+    """Test the _check_axon_morphology() function."""
     # pylint: disable=protected-access
     # Test with no missing name
     caplog.set_level(logging.WARNING)

@@ -30,6 +30,7 @@ class TestCellState:
     """Test private functions of the CellState class."""
 
     def test_lookup_orientation(self, cell_state):
+        """Test the `lookup_orientation()` method."""
         assert cell_state.lookup_orientation() == PIA_DIRECTION
         vectors = [
             [1, 0, 0],
@@ -45,6 +46,7 @@ class TestSpaceContext:
     """Test private functions of the SpaceContext class."""
 
     def test_layer_fraction_to_position(self, space_context):
+        """Test the `layer_fraction_to_position()` method."""
         assert space_context.layer_fraction_to_position(2, 0.25) == 275
         assert space_context.layer_fraction_to_position(2, 0.5) == 250
         assert space_context.layer_fraction_to_position(2, 0.75) == 225
@@ -60,12 +62,14 @@ class TestSpaceContext:
         assert space_context.layer_fraction_to_position(6, -0.5) == 900
 
     def test_lookup_target_reference_depths(self, cell_state, space_context):
+        """Test the `lookup_target_reference_depths()` method."""
         assert space_context.lookup_target_reference_depths(cell_state.depth) == (300, 314)
 
         with pytest.raises(RegionGrowerError):
             space_context.lookup_target_reference_depths(9999)
 
     def test_distance_to_constraint(self, space_context):
+        """Test the `distance_to_constraint()` method."""
         assert space_context.distance_to_constraint(0, {}) is None
         assert space_context.distance_to_constraint(0, {"layer": 1, "fraction": 1}) == 0
         assert space_context.distance_to_constraint(0, {"layer": 1, "fraction": 0}) == -200
@@ -88,6 +92,7 @@ class TestSpaceWorker:
         computation_parameters,
         recenter,
     ):
+        """Test the whole context."""
         synthesis_parameters.recenter = recenter
         context_worker = SpaceWorker(
             cell_state,
@@ -153,6 +158,7 @@ class TestSpaceWorker:
         space_context,
         computation_parameters,
     ):
+        """Test the whole context with an external diametrizer."""
         synthesis_parameters = SynthesisParameters(
             tmd_distributions=get_tmd_distributions(
                 DATA / "distributions_external_diametrizer.json"
@@ -224,6 +230,7 @@ class TestSpaceWorker:
         )
 
     def test_scale(self, small_context_worker, tmd_parameters, tmd_distributions):
+        """Test the whole context with scaling."""
         mtype = small_context_worker.cell.mtype
 
         # Test with no hard limit scaling
@@ -394,7 +401,7 @@ class TestSpaceWorker:
         assert [i.type for i in result.neuron.root_sections] == [expected_types[-1]]
 
     def test_debug_scales(self, small_context_worker, tmd_parameters):
-        # Test debug logger
+        """Test debug logger."""
         mtype = small_context_worker.cell.mtype
         small_context_worker.internals.debug_data = True
 
@@ -480,6 +487,7 @@ class TestSpaceWorker:
         )
 
     def test_transform_morphology(self, small_context_worker, morph_loader, cell_orientation):
+        """Test the `transform_morphology()` method."""
         np.random.seed(0)
         morph = morph_loader.get("C170797A-P1")
         assert_array_almost_equal(
@@ -504,6 +512,7 @@ class TestSpaceWorker:
         computation_parameters,
         mocker,
     ):
+        """Test the `retry` feature."""
         context_worker = SpaceWorker(
             cell_state,
             space_context,
