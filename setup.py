@@ -2,7 +2,7 @@
 import importlib.util
 from pathlib import Path
 
-from setuptools import find_packages
+from setuptools import find_namespace_packages
 from setuptools import setup
 
 spec = importlib.util.spec_from_file_location(
@@ -43,6 +43,7 @@ test_reqs = [
     "brainbuilder",
     "dictdiffer",
     "pytest",
+    "pytest-click",
     "pytest-cov",
     "pytest-html",
     "pytest-xdist",
@@ -62,7 +63,7 @@ setup(
         "Source": "https://bbpgitlab.epfl.ch/neuromath/region-grower",
     },
     license="BBP-internal-confidential",
-    packages=find_packages(include=["region_grower"]),
+    packages=find_namespace_packages(include=["region_grower"]),
     python_requires=">=3.8",
     version=VERSION,
     install_requires=reqs,

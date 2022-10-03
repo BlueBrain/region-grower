@@ -4,8 +4,6 @@ from pathlib import Path
 
 import dictdiffer
 import pandas as pd
-import pytest
-from click.testing import CliRunner
 
 from region_grower.cli import cli
 
@@ -15,12 +13,8 @@ DATA = Path(__file__).parent / "data"
 class TestCli:
     """Test the CLI entries."""
 
-    @pytest.fixture
-    def runner(self):
-        return CliRunner()
-
-    def test_generate_parameters(self, tmpdir, runner):
-        result = runner.invoke(
+    def test_generate_parameters(self, tmpdir, cli_runner):
+        result = cli_runner.invoke(
             cli,
             [
                 "generate-parameters",
@@ -35,8 +29,8 @@ class TestCli:
         assert result.exception is None
         assert Path(tmpdir / "parameters.json").exists()
 
-    def test_generate_parameters_external_diametrizer(self, tmpdir, runner):
-        result = runner.invoke(
+    def test_generate_parameters_external_diametrizer(self, tmpdir, cli_runner):
+        result = cli_runner.invoke(
             cli,
             [
                 "generate-parameters",
@@ -53,8 +47,8 @@ class TestCli:
         assert result.exception is None
         assert Path(tmpdir / "parameters_external_diametrizer.json").exists()
 
-    def test_generate_parameters_tmd(self, tmpdir, runner):
-        result = runner.invoke(
+    def test_generate_parameters_tmd(self, tmpdir, cli_runner):
+        result = cli_runner.invoke(
             cli,
             [
                 "generate-parameters",
@@ -71,8 +65,8 @@ class TestCli:
         assert result.exception is None
         assert Path(tmpdir / "parameters_tmd_parameters.json").exists()
 
-    def test_generate_parameters_external_tmd(self, tmpdir, runner):
-        result = runner.invoke(
+    def test_generate_parameters_external_tmd(self, tmpdir, cli_runner):
+        result = cli_runner.invoke(
             cli,
             [
                 "generate-parameters",
@@ -91,8 +85,8 @@ class TestCli:
         assert result.exception is None
         assert Path(tmpdir / "parameters_external_tmd_parameters.json").exists()
 
-    def test_generate_distributions(self, tmpdir, runner):
-        result = runner.invoke(
+    def test_generate_distributions(self, tmpdir, cli_runner):
+        result = cli_runner.invoke(
             cli,
             [
                 "generate-distributions",
@@ -107,8 +101,8 @@ class TestCli:
         assert result.exception is None
         assert Path(tmpdir / "distributions.json").exists()
 
-    def test_generate_distributions_external_diametrizer(self, tmpdir, runner):
-        result = runner.invoke(
+    def test_generate_distributions_external_diametrizer(self, tmpdir, cli_runner):
+        result = cli_runner.invoke(
             cli,
             [
                 "generate-distributions",
@@ -126,10 +120,10 @@ class TestCli:
         assert Path(tmpdir / "distributions_external_diametrizer.json").exists()
 
     def test_synthesize_morphologies(
-        self, tmpdir, runner, small_O1_path, input_cells, axon_morph_tsv
+        self, tmpdir, cli_runner, small_O1_path, input_cells, axon_morph_tsv
     ):
         # fmt: off
-        result = runner.invoke(
+        result = cli_runner.invoke(
             cli,
             [
                 "synthesize-morphologies",

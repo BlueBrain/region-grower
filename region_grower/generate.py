@@ -87,7 +87,8 @@ class Worker:
                 diameter_input_morph=morphology_item[1],
                 diameter_model=self.diameter_model_function,
             ),
-        )
+        )  # pragma: no cover ; This is actually covered but not reported by coverage because of a
+        # bad interaction with Click
 
 
 def generate_distributions(
