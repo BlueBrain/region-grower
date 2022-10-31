@@ -269,7 +269,7 @@ class SynthesizeMorphologies:
             import dask_mpi
             from mpi4py import MPI
 
-            dask_mpi.initialize()
+            dask_mpi.initialize(dashboard=False)
             comm = MPI.COMM_WORLD  # pylint: disable=c-extension-no-member
             self.nb_processes = comm.Get_size()
             client_kwargs = {}
@@ -278,7 +278,10 @@ class SynthesizeMorphologies:
 
             if self.with_NRN_sections:
                 dask.config.set({"distributed.worker.daemon": False})
-            client_kwargs = {"n_workers": self.nb_processes}
+            client_kwargs = {
+                "n_workers": self.nb_processes,
+                "dashboard_address": None,
+            }
 
         # This is needed to make dask aware of the workers
         self._client = dask.distributed.Client(**client_kwargs)
