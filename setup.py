@@ -34,7 +34,7 @@ mpi_extras = [
 
 doc_reqs = [
     "m2r2",
-    "sphinx",
+    "sphinx<6",
     "sphinx-bluebrain-theme",
     "sphinx-jsonschema",
     "sphinx-click",
