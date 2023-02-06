@@ -41,14 +41,14 @@ doc_reqs = [
 ]
 
 test_reqs = [
-    "brainbuilder",
-    "dictdiffer",
-    "pytest",
-    "pytest-click",
-    "pytest-cov",
-    "pytest-html",
-    "pytest-xdist",
-    "pytest-mock",
+    "brainbuilder>=0.18.3",
+    "dictdiffer>=0.9",
+    "pytest>=6",
+    "pytest-click>=1",
+    "pytest-cov>=3",
+    "pytest-html>=2",
+    "pytest-xdist>=3.0.2",
+    "pytest-mock>=3.5",
 ]
 
 setup(
@@ -87,6 +87,8 @@ setup(
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
     ],
 )
