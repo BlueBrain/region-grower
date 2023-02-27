@@ -22,6 +22,7 @@ include:
 .tox-template:
   variables:
     EXTRA_MODULES: archive/2021-05:py-mpi4py
+    MPI_LAUNCH_TIMEOUT: 60
     bb5_cpus_per_task: 5
 
 docs:
