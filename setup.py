@@ -16,15 +16,16 @@ VERSION = module.VERSION
 reqs = [
     "attrs>=19.3.0",
     "click>=7.0",
-    "dask[dataframe, distributed]>=2.15.0,!=2021.8.1,!=2021.8.2",
-    "diameter-synthesis>=0.2.5,<1",
-    "morphio>=3,<4",
+    "dask[dataframe, distributed]>=2021.9",
+    "diameter-synthesis>=0.5,<1",
+    "morphio>=3.3.3,<4",
     "morph-tool[nrn]>=2.9,<3",
     "neuroc>=0.2.8,<1",
     "neurom>=3,<4",
     "neurots>=3.2,<4",
+    "numpy>=1.21",
     "tqdm>=4.28.1",
-    "voxcell>=2.7,<4",
+    "voxcell>=3.1.1,<4",
 ]
 
 mpi_extras = [
@@ -43,12 +44,12 @@ doc_reqs = [
 test_reqs = [
     "brainbuilder>=0.18.3",
     "dictdiffer>=0.9",
-    "pytest>=6",
+    "pytest>=6.2.5",
     "pytest-click>=1",
     "pytest-cov>=3",
     "pytest-html>=2",
-    "pytest-xdist>=3.0.2",
     "pytest-mock>=3.5",
+    "pytest-xdist>=3.0.2",
 ]
 
 setup(
