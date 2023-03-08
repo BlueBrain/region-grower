@@ -76,7 +76,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "region-grower=region_grower.cli:cli",
+            "region-grower=region_grower.cli:main",
         ],
     },
     include_package_data=True,
