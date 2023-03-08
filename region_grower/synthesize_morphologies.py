@@ -436,9 +436,9 @@ class SynthesizeMorphologies:
 
         for mtype in mtypes:
             if mtype not in tmd_distributions["mtypes"]:
-                raise RegionGrowerError("Missing distributions for mtype: '{mtype}'")
+                raise RegionGrowerError(f"Missing distributions for mtype: '{mtype}'")
             if mtype not in tmd_parameters:
-                raise RegionGrowerError("Missing parameters for mtype: '{mtype}'")
+                raise RegionGrowerError(f"Missing parameters for mtype: '{mtype}'")
 
             validate_neuron_distribs(tmd_distributions["mtypes"][mtype])
             validate_neuron_params(tmd_parameters[mtype])
