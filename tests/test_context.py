@@ -104,7 +104,7 @@ class TestSpaceWorker:
         # Synthesize in L2
         result = context_worker.synthesize()
 
-        assert_array_equal(result.apical_sections, np.array([97]))
+        assert_array_equal(result.apical_sections, np.array([63]))
         assert_array_almost_equal(
             result.apical_points,
             np.array([[-7.19463158, 266.21151733, 12.50336075]]),
@@ -177,7 +177,7 @@ class TestSpaceWorker:
 
         result = context_worker.synthesize()
 
-        assert_array_equal(result.apical_sections, np.array([97]))
+        assert_array_equal(result.apical_sections, np.array([63]))
         assert_array_almost_equal(
             result.apical_points,
             np.array([[-7.19463158, 266.21151733, 12.50336075]]),
@@ -280,7 +280,7 @@ class TestSpaceWorker:
             ],
         )
 
-        assert_array_equal(result.apical_sections, np.array([72]))
+        assert_array_equal(result.apical_sections, np.array([17]))
         assert_array_almost_equal(
             result.apical_points,
             np.array([[6.208977699279785, 59.538753509521484, -5.052260875701904]]),
@@ -335,7 +335,7 @@ class TestSpaceWorker:
             ],
         )
 
-        assert_array_equal(result.apical_sections, np.array([72]))
+        assert_array_equal(result.apical_sections, np.array([17]))
         assert_array_almost_equal(
             result.apical_points,
             np.array([[6.007961273193359, 57.8583984375, -4.888692855834961]]),
@@ -399,6 +399,12 @@ class TestSpaceWorker:
         SynthesizeMorphologies.verify([mtype], tmd_distributions, tmd_parameters)
         result = small_context_worker.synthesize()
         assert [i.type for i in result.neuron.root_sections] == [expected_types[-1]]
+
+        params["basal_dendrite"]["orientation"] = {}
+
+        # pylint: disable=protected-access
+        fixed_params = small_context_worker._correct_position_orientation_scaling(params)
+        assert fixed_params["pia_direction"] == PIA_DIRECTION
 
     def test_debug_scales(self, small_context_worker, tmd_parameters):
         """Test debug logger."""
@@ -536,7 +542,7 @@ class TestSpaceWorker:
         context_worker.internals.retries = 3
         result = context_worker.synthesize()
 
-        assert_array_equal(result.apical_sections, np.array([44]))
+        assert_array_equal(result.apical_sections, np.array([11]))
         assert_array_almost_equal(
             result.apical_points,
             [[5.773976, 201.404648, -1.283983]],

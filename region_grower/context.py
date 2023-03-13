@@ -27,6 +27,7 @@ from neuroc.scale import scale_morphology
 from neuroc.scale import scale_section
 from neurots import NeuronGrower
 from neurots import NeuroTSError
+from neurots.utils import PIA_DIRECTION
 from voxcell.cell_collection import CellCollection
 
 from region_grower import RegionGrowerError
@@ -38,8 +39,6 @@ from region_grower.utils import random_rotation_y
 
 Point = Union[List[float], np.array]
 Matrix = Union[List[List[float]], np.array]
-
-PIA_DIRECTION = [0.0, 1.0, 0.0]
 
 
 @attr.s(auto_attribs=True)
@@ -179,6 +178,8 @@ class SpaceWorker:
         params = deepcopy(params_orig)
 
         for neurite_type in params["grow_types"]:
+            if isinstance(params[neurite_type]["orientation"], dict):
+                params["pia_direction"] = self.cell.lookup_orientation(PIA_DIRECTION).tolist()
             if isinstance(params[neurite_type]["orientation"], list):
                 params[neurite_type]["orientation"] = [
                     self.cell.lookup_orientation(orient).tolist()
@@ -314,7 +315,7 @@ class SpaceWorker:
             input_parameters=params,
             input_distributions=self.params.tmd_distributions,
             external_diametrizer=external_diametrizer,
-            skip_validation=True,
+            skip_preprocessing=True,
             context={"debug_data": self.debug_infos["input_scaling"]},
             rng_or_seed=rng,
         )
