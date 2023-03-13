@@ -1,5 +1,26 @@
 # Changelog
 
+## [region-grower-v0.4.3](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v0.4.2...region-grower-v0.4.3)
+
+> 13 March 2023
+
+### Chores And Housekeeping
+
+- Apply Copier template (Adrien Berchet - [ab0da83](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/ab0da83259aad4c3bcc52150d2aad1be46d59bf0))
+
+### CI Improvements
+
+- Setup min_versions job (Adrien Berchet - [ee21db0](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/ee21db03d2356da199a27bcc99c9c0006b562f17))
+- Fix for tox&gt;=4 (Adrien Berchet - [a51546e](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/a51546e6cf1cfe2b875d99a81bbe3f5913fc8264))
+- Increase MPI timeout (Adrien Berchet - [7dd7635](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/7dd7635f7f12160c94c2fe92416be1aa028fa3e0))
+
+### General Changes
+
+- Update to 3d_angle mode (Alexis Arnaudon - [8621e4e](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/8621e4eabef694d42a1f21a576fae5cc8846926a))
+- Fix f-string (Alexis Arnaudon - [0a21f7d](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/0a21f7d46b6c0c96e1fe02ee221f987bba8a55ed))
+- Fix entry point (Alexis Arnaudon - [42f9a32](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/42f9a32bb1c22dca006b6acb773fc2dd98328832))
+- Build (deps): Pin Sphinx&lt;6 (Adrien Berchet - [877f3c7](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/877f3c7d89c7c1fb81386995f5fcd80bd24c18b0))
+
 ## [region-grower-v0.4.2](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v0.4.1...region-grower-v0.4.2)
 
 > 31 October 2022
@@ -21,7 +42,7 @@
 
 > 26 August 2022
 
-### Uncategorized Changes
+### General Changes
 
 - NeuriteType compat with neurom (Alexis Arnaudon - [657d7cf](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/657d7cfc84370b059c98ac18345bce7e8adda1eb))
 
@@ -29,7 +50,7 @@
 
 > 23 May 2022
 
-### Uncategorized Changes
+### General Changes
 
 - any regions handling (Alexis Arnaudon - [acd8e97](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/acd8e9705e96905f51c9c7a79973579168b70c22))
 
@@ -37,7 +58,7 @@
 
 > 1 March 2022
 
-### Uncategorized Changes
+### General Changes
 
 - Update for NeuroTS &gt;= 3.1 (Adrien Berchet - [c236c7e](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/c236c7e894b395073af83c896e72c6acf14602af))
 - rename tns into neurots (Alexis Arnaudon - [db1f65b](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/db1f65b4f04bee96216d6df08ec9a34f601718ac))
@@ -47,7 +68,7 @@
 
 > 31 August 2021
 
-### Uncategorized Changes
+### General Changes
 
 - Update NeuroM dependency to 3.0.0 (Aleksei Sanin - [4115a3d](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/4115a3dfd88e07cecae096c4cc7ed2a03cb6cbb1))
 
@@ -55,7 +76,7 @@
 
 > 31 August 2021
 
-### Uncategorized Changes
+### General Changes
 
 - Use pytest template to improve reports and coverage (Adrien Berchet - [e2b6cdb](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/e2b6cdb9f4e3c275824a6a1858252c14549f3d80))
 - Fix changelog to be compatible with the auto-release CI job (Adrien Berchet - [f9f3dda](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/f9f3dda6a523193dd67092be4100c3b7df07a910))
@@ -70,7 +91,7 @@
 
 > 7 June 2021
 
-### Uncategorized Changes
+### General Changes
 
 - fix load filename with . (arnaudon - [c366489](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/c3664899a60e0a031df51feba51ebfdb7298bcc5))
 - update changelog (arnaudon - [5becc11](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/5becc11f8baea8144be1b5ebd37139a74921e64d))
@@ -79,7 +100,7 @@
 
 > 31 May 2021
 
-### Uncategorized Changes
+### General Changes
 
 - Use random number generator and use pickle to save debug infos (Adrien Berchet - [ef54647](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/ef54647845607fdfa29229f20c09e91c409c009b))
 - Add skip_write option to not write synthesized morphologies (arnaudon - [7646c34](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/7646c34c70915e6757aa89fe1362d0d6f0271e05))
@@ -90,7 +111,7 @@
 
 > 10 May 2021
 
-### Uncategorized Changes
+### General Changes
 
 - small fixx (arnaudon - [2454ba9](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/2454ba99baddb7e4655626083ec5c8ab5f9ed2c8))
 - Revert "Force to update the CHANGELOG before each release" (Alexis Arnaudon - [958eba3](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/958eba335a250b0721235f5569aff556c2ac8303))
@@ -102,7 +123,7 @@
 
 > 6 May 2021
 
-### Uncategorized Changes
+### General Changes
 
 - Add validation of diametrizer parameters, improve doc and fix formatting (Adrien Berchet - [4178013](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/4178013b832547d42cf8f7551142aa9b88a93629))
 - Refactor synthesis cli to use dask (with mpi) (Adrien Berchet - [eb07813](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/eb078135dc0f1921ec10f3c7a9f20fcf0f060728))
@@ -119,7 +140,7 @@
 
 > 22 January 2021
 
-### Uncategorized Changes
+### General Changes
 
 - Remove deprecated script [NSETM-730] (Benoît Coste - [6b7721f](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/6b7721f890cfee4cafa3216c0c0837d5193258ee))
 - Use apical sections from TNS instead of apical points (Adrien Berchet - [a136072](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/a136072dcc5780b18c1465b4a74beb6d8f4efcd3))
@@ -128,7 +149,7 @@
 
 > 4 November 2020
 
-### Uncategorized Changes
+### General Changes
 
 - Merge "raise RegionGrowerError for bad scaling" (Benoît Coste - [94bca89](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/94bca8922be0b70d1e665a2a6a89a3e6b67ff866))
 - fix issue in max y extend with orientation (arnaudon - [63d4e0d](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/63d4e0d79066fd18ede74a1e4b06c2412fc68733))
@@ -139,7 +160,7 @@
 
 > 20 October 2020
 
-### Uncategorized Changes
+### General Changes
 
 - Add scale logging for validation purpose (Adrien Berchet - [31b62c2](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/31b62c2cf83518e76fcb9e78765136bcd386265c))
 
@@ -147,7 +168,7 @@
 
 > 15 October 2020
 
-### Uncategorized Changes
+### General Changes
 
 - Refactor of neurite scaling (arnaudon - [54e5988](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/54e59889c942761fdb0b35d9c777aa94b954b8ea))
 - Use brainbuilder in atlas_mock for tests (arnaudon - [d5ca1b9](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/d5ca1b9e96e8911ccb9a6bb3c14c427a22ec1e7c))
@@ -159,7 +180,7 @@
 
 > 15 July 2020
 
-### Uncategorized Changes
+### General Changes
 
 - Set neurite_types for each mtypes independently. (arnaudon - [d856397](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/d8563973d8586cc5b1ecf40427c5b22ee92b468e))
 - Fix bug that prevent TNS validation from passing (Benoît Coste - [03cabac](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/03cabacb7b645162905e86809c16870d56c03597))
@@ -169,7 +190,7 @@
 
 > 9 April 2020
 
-### Uncategorized Changes
+### General Changes
 
 - Refactor atlas handling (arnaudon - [c40b36b](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/c40b36b70b09e9a6fb07fabcd4dc62e632008595))
 - simplest scaling from atlas (arnaudon - [94f3182](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/94f3182ef212d219d78da962e54a2077a05c4fa1))
@@ -179,7 +200,7 @@
 
 > 30 March 2020
 
-### Uncategorized Changes
+### General Changes
 
 - cli update (.dat, 2 functions, allow for external tmd_parameters) (arnaudon - [81e0fa1](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/81e0fa1fa7b40c3b8124fa91c7277643c6e2e796))
 - updated dependency + fix tests (arnaudon - [5dacd2f](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/5dacd2f54510a45f117f0cf1acfdddacc6f1e1ae))
@@ -190,7 +211,7 @@
 
 > 25 February 2020
 
-### Uncategorized Changes
+### General Changes
 
 - Return the result of synthesize() in a SynthesisResult object (Benoît Coste - [2898424](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/2898424d5bfcb0eb0b3719c301d3e1fe20bba3d2))
 - Bump version to 0.1.4 (Benoît Coste - [3a51c3d](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/3a51c3d31990112e0b5a1981b2d28348ebcff210))
@@ -199,7 +220,7 @@
 
 > 20 February 2020
 
-### Uncategorized Changes
+### General Changes
 
 - can use external dimetrizer (diameter-synthesis) (Alexis Arnaudon - [5303922](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/5303922e724f39c97c5fc6badfd816620f26a250))
 - tns v2 compatibility (Alexis Arnaudon - [1893032](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/1893032a2ed875cde0afe45e0aca3216c074832d))
@@ -211,7 +232,7 @@
 
 > 7 March 2019
 
-### Uncategorized Changes
+### General Changes
 
 - Fix orientation bug caused by shallow copy (Benoît Coste - [5085152](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/508515248bb0c78ba45efdcb507fea2fffd8bfdd))
 - Bump version (Benoît Coste - [35ab1bd](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/35ab1bd8efac9e987c78ce31cb38f59e185f1ba8))
@@ -220,7 +241,7 @@
 
 > 26 February 2019
 
-### Uncategorized Changes
+### General Changes
 
 - Update script to incorporate diameter parameters into distribs (Benoît Coste - [694107a](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/694107a0536f89087884616d5b0d139971e0a1c1))
 - Add 'method' in distrib if missing (Benoît Coste - [ab7ada5](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/ab7ada55bbde4de92fad0361e458c0975b2d0365))
@@ -230,7 +251,7 @@
 
 > 20 February 2019
 
-### Uncategorized Changes
+### General Changes
 
 - Add flag to synthesized centered at 0 or not (Benoît Coste - [e5cf79a](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/e5cf79a92888a09a23542b939681052e2acc5e1e))
 - Add diametrization process (Benoît Coste - [b4fdd67](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/b4fdd671e3fef0c02387e7f4589b6285ea11df19))
@@ -245,7 +266,7 @@
 
 > 4 February 2019
 
-### Uncategorized Changes
+### General Changes
 
 - Release region-grower==0.0.2 (Arseny V. Povolotsky - [5e486e2](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/5e486e26eccc474e76ba224f844cee806f092d40))
 - Merge "Revised the script for extracting distributions" (Arseniy Povolotskiy - [934c1e2](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/934c1e2472b14511972fa62fef52bc9ea55c4900))
