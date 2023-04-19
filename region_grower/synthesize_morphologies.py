@@ -126,7 +126,9 @@ def _parallel_wrapper(
         )
         current_space_context = SpaceContext(
             layer_depths=row["layer_depths"],
-            cortical_depths=cortical_depths[row["synthesis_region"]],
+            cortical_depths=cortical_depths,
+            boundaries=row["boundaries"] if "boundaries" in row else None,
+            atlas_info=json.loads(row["atlas_info"]) if "atlas_info" in row else None,
         )
 
         axon_scale = row.get("axon_scale", None)
@@ -144,7 +146,6 @@ def _parallel_wrapper(
             axon_morph_scale=axon_scale,
             rotational_jitter_std=rotational_jitter_std,
             scaling_jitter_std=scaling_jitter_std,
-            recenter=True,
             seed=row["seed"],
             min_hard_scale=min_hard_scale,
         )
@@ -326,12 +327,28 @@ class SynthesizeMorphologies:
         self.cells_data["synthesis_region"] = self.cells_data["region"].apply(
             lambda region: self.region_mapper[region]
         )
+        self.cells_data["current_depth"] = current_depths
+        self.cells_data["layer_depths"] = layer_depths.T.tolist()
+
+        if "boundaries" in self.atlas.region_structure:
+            self.cells_data["boundaries"] = json.dumps(self.atlas.region_structure["boundaries"])
+            self.cells_data["atlas_info"] = json.dumps(
+                {
+                    "voxel_dimensions": self.atlas.depths.voxel_dimensions.tolist(),
+                    "offset": self.atlas.depths.offset.tolist(),
+                    "shape": self.atlas.depths.shape,
+                }
+            )
+
+        if not self.cells.orientations:  # pragma: no cover
+            self.cells_data["orientation"] = orientations.tolist()
 
         LOGGER.info("Checking TMD parameters and distributions according to cells mtypes")
         self.verify()
 
         LOGGER.info("Fetching atlas data from %s", atlas)
         self.assign_atlas_data(min_depth, max_depth)
+
         if morph_axon is not None:
             LOGGER.info("Loading axon morphologies from %s", morph_axon)
             self.axon_morph_list = load_morphology_list(morph_axon, self.task_ids)

@@ -132,7 +132,7 @@ def get_tmd_distributions(filename):
 
 def get_cell_position():
     """The cell position."""
-    return [0, 500, 0]
+    return np.array([0, 500, 0])
 
 
 def get_cell_mtype():

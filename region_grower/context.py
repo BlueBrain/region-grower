@@ -7,12 +7,14 @@ TLDR: SpaceContext.synthesized() is being called by
 the placement_algorithm package to synthesize circuit morphologies.
 """
 import os
+import json
 from collections import defaultdict
 from copy import deepcopy
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
+import trimesh
 
 os.environ.setdefault("NEURON_MODULE_OPTIONS", "-nogui")  # suppress NEURON warning
 # This environment variable must be set before 'NEURON' is loaded in 'morph_tool.nrnhines'.
@@ -83,6 +85,86 @@ class SpaceContext:
 
     layer_depths: List
     cortical_depths: List
+    boundaries: Dict = None
+    atlas_info: Dict = {}  # voxel_dimnesions, offset and shape from atlas for indices conversion
+
+    def indices_to_positions(self, indices):
+        """Local version of voxcel's function to prevent atlas loading."""
+        return indices * np.array(self.atlas_info["voxel_dimensions"]) + np.array(
+            self.atlas_info["offset"]
+        )
+
+    def positions_to_indices(self, positions):
+        """Local and reduced version of voxcel's function to prevent atlas loading."""
+        result = (positions - np.array(self.atlas_info["offset"])) / np.array(
+            self.atlas_info["voxel_dimensions"]
+        )
+        result[np.abs(result) < 1e-7] = 0.0  # suppress rounding errors around 0
+        result = np.floor(result).astype(int)
+        result[result < 0] = -1
+        result[result >= self.atlas_info["shape"]] = -1
+        return result
+
+    def get_boundaries(self):
+        """Returns a dict with boundaries data for NeuroTS."""
+        # add here necessary logic to convert raw config data to NeuroTS context data
+        self.boundaries = json.loads(self.boundaries)
+        mesh = trimesh.load_mesh(self.boundaries["path"])
+
+        # to save points for plotting while growing to debug the prob function
+        debug = True
+
+        def get_distance_to_mesh(mesh, ray_origin, ray_direction):
+            """Compute distances from point/directions to a mesh."""
+            vox_ray_origin = self.positions_to_indices(ray_origin)
+            locations = mesh.ray.intersects_location(
+                ray_origins=[vox_ray_origin], ray_directions=[ray_direction]
+            )[0]
+            if len(locations):
+                intersect = self.indices_to_positions(locations[0])
+                dist = np.linalg.norm(intersect - ray_origin)
+
+                if debug:
+                    x, y, z = ray_origin
+                    vx, vy, vz = ray_direction
+                    with open("data.csv", "a", encoding="utf8") as file:
+                        print(f"{x}, {y}, {z}, {vx}, {vy}, {vz}, {dist}", file=file)
+                return dist
+            if debug:
+                x, y, z = ray_origin
+                vx, vy, vz = ray_direction
+                with open("data.csv", "a", encoding="utf8") as file:
+                    print(f"{x}, {y}, {z}, {vx}, {vy}, {vz}, {-100}", file=file)
+            return np.inf
+
+        def _prob(dist, params):
+            """Probability function from distance to boundary."""
+            p = (dist - params.get("d_min", 0)) / (
+                params.get("d_max", 100) - params.get("d_min", 0)
+            ) ** params.get("power", 1.5)
+
+            # TODO: other variants for this function coud be included here
+            return np.clip(p, 0, 1)
+
+        if "params_section" in self.boundaries:
+
+            def section_prob(direction, current_point):
+                """Probability function for the sections."""
+                dist = get_distance_to_mesh(mesh, current_point, direction)
+                return _prob(dist, self.boundaries["params_section"])
+
+            self.boundaries["section_prob"] = section_prob
+
+        if "params_trunk" in self.boundaries:
+
+            def trunk_prob(direction, current_point):
+                """Probability function for the trunks."""
+                dist = get_distance_to_mesh(mesh, current_point, direction)
+                return _prob(dist, self.boundaries["params_trunk"])
+
+            self.boundaries["trunk_prob"] = trunk_prob
+
+        return self.boundaries
 
     def layer_fraction_to_position(self, layer: int, layer_fraction: float) -> float:
         """Returns an absolute position from a layer and a fraction of the layer.
@@ -141,7 +223,6 @@ class SynthesisParameters:
     axon_morph_scale: Optional[float] = None
     rotational_jitter_std: float = None
     scaling_jitter_std: float = None
-    recenter: bool = True
     seed: int = 0
     min_hard_scale: float = 0
 
@@ -313,14 +394,7 @@ class SpaceWorker:
     def _synthesize_once(self, rng) -> SynthesisResult:
         """One try to synthesize the cell."""
         params = self._correct_position_orientation_scaling(self.params.tmd_parameters)
-
-        # Today we don't use the atlas during the synthesis (we just use it to
-        # generate the parameters) so we can
-        # grow the cell as if it was in [0, 0, 0]
-        # But the day we use it during the actual growth, we will need to grow the cell at its
-        # absolute position and translate to [0, 0, 0] after the growth
-        if self.params.recenter:
-            params["origin"] = [0, 0, 0]
+        params["origin"] = self.cell.position.tolist()
 
         if self.params.tmd_parameters["diameter_params"]["method"] == "external":
             external_diametrizer = build_diameters.build
@@ -332,16 +406,20 @@ class SpaceWorker:
         else:
             axon_morph = None
 
+        context = {"debug_data": self.debug_infos["input_scaling"]}
+        if self.context.boundaries is not None:
+            context.update(self.context.get_boundaries())
+
         grower = NeuronGrower(
             input_parameters=params,
             input_distributions=self.params.tmd_distributions,
             external_diametrizer=external_diametrizer,
             skip_preprocessing=True,
-            context={"debug_data": self.debug_infos["input_scaling"]},
+            context=context,
             rng_or_seed=rng,
         )
         grower.grow()
-
+        mt.translate(grower.neuron, -self.cell.position)
         self._post_growth_rescaling(grower, params)
 
         if axon_morph is not None:

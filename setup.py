@@ -28,6 +28,7 @@ reqs = [
     "tqdm>=4.28.1",
     "urllib3>=1.26,<2; python_version < '3.9'",
     "voxcell>=3.1.1,<4",
+    "trimesh",
 ]
 
 mpi_extras = [
