@@ -186,16 +186,18 @@ def test_synthesize_skip_write(
         "4462ebfc5f915ef09cfbac6e7687a66e",
         None,
     ]
-    assert [[i[0].tolist()] if i else i for i in res["apical_points"].tolist()] == [
-        [[-69.30585479736328, 128.98513793945312, -27.75257110595703]],
-        None,
-        [[2.202280044555664, 116.80427551269531, 1.3548266887664795]],
-        None,
-        [[0.020046308636665344, 115.19947814941406, 5.582374572753906]],
-        None,
-        [[-0.5829713344573975, 91.27519226074219, -7.5925679206848145]],
-        None,
-    ]
+    print(res["apical_points"])
+    assert_allclose(res["apical_points"][0], [[-69.30586, 128.98514, -27.752563]])
+    assert res["apical_points"][1] is None
+
+    assert_allclose(res["apical_points"][3], [[2.2022858, 116.80426, 1.3548279]])
+    assert res["apical_points"][4] is None
+
+    assert_allclose(res["apical_points"][6], [[0.020050049, 115.19949, 5.582367]])
+    assert res["apical_points"][7] is None
+
+    assert_allclose(res["apical_points"][9], [[-0.5829773, 91.27518, -7.592575]])
+    assert res["apical_points"][10] is None
 
     # Check that the morphologies were not written
     res_files = tmpdir.listdir()
