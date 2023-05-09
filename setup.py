@@ -24,7 +24,9 @@ reqs = [
     "neurom>=3,<4",
     "neurots>=3.3.1,<4",
     "numpy>=1.22",
+    "pandas>=1.5",
     "tqdm>=4.28.1",
+    "urllib3>=1.26,<2; python_version < '3.9'",
     "voxcell>=3.1.1,<4",
 ]
 
