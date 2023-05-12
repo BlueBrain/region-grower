@@ -13,7 +13,7 @@ def test_atlas_helper(small_O1):
     helper = AtlasHelper(small_O1, region_structure_path=DATA / "region_structure.yaml")
 
     assert helper.layer_thickness(1).raw[5, 5, 5] == 200
-    assert helper.pia_coord.raw[5, 5, 5] == 800
+    assert helper.pia_coord("O0").raw[5, 5, 5] == 800
 
     with pytest.raises(ValueError):
         helper = AtlasHelper(small_O1, region_structure_path="WRONG_PATH")

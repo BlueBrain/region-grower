@@ -14,7 +14,6 @@ from region_grower.context import SpaceWorker
 from region_grower.context import SynthesisParameters
 from region_grower.morph_io import MorphLoader
 from region_grower.morph_io import MorphWriter
-from region_grower.synthesize_morphologies import SynthesizeMorphologies
 
 from .data_factories import generate_axon_morph_tsv
 from .data_factories import generate_cell_collection
@@ -99,37 +98,30 @@ def tmd_distributions():
 
 
 @pytest.fixture(scope="function")
-def cell_state(cell_position, cell_mtype, cell_orientation, small_O1_path):
+def cell_state(cell_position, cell_mtype, cell_orientation):
     """A cell state object."""
-    current_depth, _, _ = SynthesizeMorphologies.atlas_lookups(
-        small_O1_path, [cell_position], region_structure=DATA / "region_structure.yaml"
-    )
     return CellState(
         position=cell_position,
         orientation=cell_orientation,
         mtype=cell_mtype,
-        depth=current_depth[0],
+        depth=250,
     )
 
 
 @pytest.fixture(scope="function")
-def space_context(cell_position, small_O1_path, tmd_distributions):
+def space_context():
     """A space context object."""
-    _, layer_depth, _ = SynthesizeMorphologies.atlas_lookups(
-        small_O1_path, [cell_position], region_structure=DATA / "region_structure.yaml"
-    )
-    return SpaceContext(
-        layer_depths=layer_depth[:, 0].tolist(),
-        cortical_depths=np.cumsum(tmd_distributions["metadata"]["cortical_thickness"]).tolist(),
-    )
+    layer_depth = [0.0, 200.0, 300.0, 400.0, 500.0, 600.0, 800.0]
+    thicknesses = [165, 149, 353, 190, 525, 700]
+    return SpaceContext(layer_depths=layer_depth, cortical_depths=np.cumsum(thicknesses))
 
 
 @pytest.fixture(scope="function")
 def synthesis_parameters(cell_mtype, tmd_distributions, tmd_parameters):
     """Synthesis parameters object."""
     return SynthesisParameters(
-        tmd_distributions=tmd_distributions["mtypes"][cell_mtype],
-        tmd_parameters=tmd_parameters[cell_mtype],
+        tmd_distributions=tmd_distributions["default"][cell_mtype],
+        tmd_parameters=tmd_parameters["default"][cell_mtype],
         min_hard_scale=0.2,
     )
 
@@ -147,7 +139,7 @@ def small_context_worker(cell_state, space_context, synthesis_parameters, comput
 
 
 @pytest.fixture(scope="session")
-def synthesized_cell(small_O1_path):
+def synthesized_cell():
     """A synthesized cell."""
     np.random.seed(0)
 
@@ -158,23 +150,22 @@ def synthesized_cell(small_O1_path):
     cell_mtype = get_cell_mtype()
     cell_orientation = get_cell_orientation()
 
-    current_depth, layer_depth, _ = SynthesizeMorphologies.atlas_lookups(
-        small_O1_path, [cell_position], region_structure=DATA / "region_structure.yaml"
-    )
-
     cell_state = CellState(
         position=cell_position,
         orientation=cell_orientation,
         mtype=cell_mtype,
-        depth=current_depth[0],
+        depth=250,
     )
+
+    layer_depth = [0.0, 200.0, 300.0, 400.0, 500.0, 600.0, 800.0]
+    thicknesses = [165, 149, 353, 190, 525, 700]
     space_context = SpaceContext(
-        layer_depths=layer_depth[:, 0].tolist(),
-        cortical_depths=np.cumsum(tmd_distributions["metadata"]["cortical_thickness"]).tolist(),
+        layer_depths=layer_depth,
+        cortical_depths=np.cumsum(thicknesses),
     )
     synthesis_parameters = SynthesisParameters(
-        tmd_distributions=tmd_distributions["mtypes"][cell_mtype],
-        tmd_parameters=tmd_parameters[cell_mtype],
+        tmd_distributions=tmd_distributions["default"][cell_mtype],
+        tmd_parameters=tmd_parameters["default"][cell_mtype],
         min_hard_scale=0.2,
     )
     computation_parameters = ComputationParameters()

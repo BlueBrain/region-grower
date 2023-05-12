@@ -18,7 +18,6 @@ from region_grower import SkipSynthesisError
 from region_grower.context import PIA_DIRECTION
 from region_grower.context import SpaceWorker
 from region_grower.context import SynthesisParameters
-from region_grower.synthesize_morphologies import SynthesizeMorphologies
 
 from .data_factories import get_tmd_distributions
 from .data_factories import get_tmd_parameters
@@ -162,10 +161,10 @@ class TestSpaceWorker:
         synthesis_parameters = SynthesisParameters(
             tmd_distributions=get_tmd_distributions(
                 DATA / "distributions_external_diametrizer.json"
-            )["mtypes"][cell_state.mtype],
+            )["default"][cell_state.mtype],
             tmd_parameters=get_tmd_parameters(DATA / "parameters_external_diametrizer.json")[
-                cell_state.mtype
-            ],
+                "default"
+            ][cell_state.mtype],
         )
 
         context_worker = SpaceWorker(
@@ -229,12 +228,12 @@ class TestSpaceWorker:
             ),
         )
 
-    def test_scale(self, small_context_worker, tmd_parameters, tmd_distributions):
+    def test_scale(self, small_context_worker, tmd_parameters):
         """Test the whole context with scaling."""
         mtype = small_context_worker.cell.mtype
 
         # Test with no hard limit scaling
-        tmd_parameters[mtype]["context_constraints"] = {
+        tmd_parameters["default"][mtype]["context_constraints"] = {
             "apical_dendrite": {
                 "extent_to_target": {
                     "slope": 0.5,
@@ -244,7 +243,6 @@ class TestSpaceWorker:
                 }
             }
         }
-        SynthesizeMorphologies.verify([mtype], tmd_distributions, tmd_parameters)
         result = small_context_worker.synthesize()
 
         expected_types = [
@@ -287,7 +285,7 @@ class TestSpaceWorker:
         )
 
         # Test with hard limit scale
-        tmd_parameters[mtype]["context_constraints"] = {
+        tmd_parameters["default"][mtype]["context_constraints"] = {
             "apical_dendrite": {
                 "hard_limit_min": {
                     "layer": 1,
@@ -305,7 +303,6 @@ class TestSpaceWorker:
                 },
             }
         }
-        SynthesizeMorphologies.verify([mtype], tmd_distributions, tmd_parameters)
         result = small_context_worker.synthesize()
 
         assert [i.type for i in result.neuron.root_sections] == expected_types
@@ -342,7 +339,7 @@ class TestSpaceWorker:
         )
 
         # Test scale computation
-        params = tmd_parameters[mtype]
+        params = tmd_parameters["default"][mtype]
 
         assert params["apical_dendrite"]["modify"] is None
         assert params["basal_dendrite"]["modify"] is None
@@ -360,7 +357,7 @@ class TestSpaceWorker:
         assert fixed_params["basal_dendrite"]["modify"]["kwargs"] == expected_basal
 
         # Test with hard limit scale and min_hard_scale on apical
-        tmd_parameters[mtype]["context_constraints"] = {
+        tmd_parameters["default"][mtype]["context_constraints"] = {
             "apical_dendrite": {
                 "hard_limit_min": {
                     "layer": 1,
@@ -378,13 +375,12 @@ class TestSpaceWorker:
                 },
             }
         }
-        SynthesizeMorphologies.verify([mtype], tmd_distributions, tmd_parameters)
         with pytest.raises(RegionGrowerError):
             result = small_context_worker.synthesize()
 
         # Test with hard limit scale and min_hard_scale on basal
-        tmd_parameters[mtype]["grow_types"] = ["basal_dendrite"]
-        tmd_parameters[mtype]["context_constraints"] = {
+        tmd_parameters["default"][mtype]["grow_types"] = ["basal_dendrite"]
+        tmd_parameters["default"][mtype]["context_constraints"] = {
             "basal_dendrite": {
                 "hard_limit_min": {
                     "layer": 1,
@@ -396,7 +392,6 @@ class TestSpaceWorker:
                 },
             }
         }
-        SynthesizeMorphologies.verify([mtype], tmd_distributions, tmd_parameters)
         result = small_context_worker.synthesize()
         assert [i.type for i in result.neuron.root_sections] == [expected_types[-1]]
 
@@ -412,7 +407,7 @@ class TestSpaceWorker:
         small_context_worker.internals.debug_data = True
 
         # Test with hard limit scale
-        tmd_parameters[mtype]["context_constraints"] = {
+        tmd_parameters["default"][mtype]["context_constraints"] = {
             "apical_dendrite": {
                 "hard_limit_min": {
                     "layer": 1,

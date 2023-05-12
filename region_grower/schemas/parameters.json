@@ -50,96 +50,101 @@
     "description": "The TMD parameters used to synthesize the cells",
     "patternProperties": {
         ".*": {
-            "additionalProperties": true,
-            "description": "The TMD parameters used to synthesize the cells of the given mtype",
-            "properties": {
-                "context_constraints": {
-                    "additionalProperties": false,
-                    "description": "The constraints to obey in the given context",
+            "description": "The TMD parameters used to synthesize the cells for a region",
+            "patternProperties": {
+                ".*": {
+                    "additionalProperties": true,
+                    "description": "The TMD parameters used to synthesize the cells of the given mtype",
                     "properties": {
-                        "apical_dendrite": {
+                        "context_constraints": {
                             "additionalProperties": false,
-                            "description": "Specific constraints for apicals",
+                            "description": "The constraints to obey in the given context",
                             "properties": {
-                                "extent_to_target": {
+                                "apical_dendrite": {
                                     "additionalProperties": false,
-                                    "description": "The target depth given as a fraction of a layer and the properties of the fit of the Y extent relative to the path length",
+                                    "description": "Specific constraints for apicals",
                                     "properties": {
-                                        "fraction": {
-                                            "$ref": "#/definitions/fraction"
+                                        "extent_to_target": {
+                                            "additionalProperties": false,
+                                            "description": "The target depth given as a fraction of a layer and the properties of the fit of the Y extent relative to the path length",
+                                            "properties": {
+                                                "fraction": {
+                                                    "$ref": "#/definitions/fraction"
+                                                },
+                                                "intercept": {
+                                                    "type": "number"
+                                                },
+                                                "layer": {
+                                                    "$ref": "#/definitions/layer"
+                                                },
+                                                "slope": {
+                                                    "type": "number"
+                                                }
+                                            },
+                                            "required": [
+                                                "layer",
+                                                "fraction",
+                                                "intercept",
+                                                "slope"
+                                            ],
+                                            "type": "object"
                                         },
-                                        "intercept": {
-                                            "type": "number"
+                                        "hard_limit_max": {
+                                            "$ref": "#/definitions/limit",
+                                            "description": "The max of the hard limit"
                                         },
-                                        "layer": {
-                                            "$ref": "#/definitions/layer"
-                                        },
-                                        "slope": {
-                                            "type": "number"
+                                        "hard_limit_min": {
+                                            "$ref": "#/definitions/limit",
+                                            "description": "The min of the hard limit"
                                         }
                                     },
-                                    "required": [
-                                        "layer",
-                                        "fraction",
-                                        "intercept",
-                                        "slope"
-                                    ],
                                     "type": "object"
                                 },
-                                "hard_limit_max": {
-                                    "$ref": "#/definitions/limit",
-                                    "description": "The max of the hard limit"
+                                "axon": {
+                                    "$ref": "#/definitions/limits",
+                                    "description": "Specific constraints for axons"
                                 },
-                                "hard_limit_min": {
-                                    "$ref": "#/definitions/limit",
-                                    "description": "The min of the hard limit"
+                                "basal_dendrite": {
+                                    "$ref": "#/definitions/limits",
+                                    "description": "Specific constraints for basals"
                                 }
                             },
+                            "title": "Context constraints",
                             "type": "object"
                         },
-                        "axon": {
-                            "$ref": "#/definitions/limits",
-                            "description": "Specific constraints for axons"
+                        "diameter_params": {
+                            "additionalProperties": true,
+                            "properties": {
+                                "method": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": ["method"],
+                            "type": "object"
                         },
-                        "basal_dendrite": {
-                            "$ref": "#/definitions/limits",
-                            "description": "Specific constraints for basals"
+                        "grow_types": {
+                            "items": {
+                                "enum": [
+                                    "basal_dendrite",
+                                    "apical_dendrite",
+                                    "axon"
+                                ],
+                                "type": "string"
+                            },
+                            "type": "array"
+                        },
+                        "orientation": {
+                            "items": {
+                                "type": "number"
+                            },
+                            "type": "array"
                         }
                     },
-                    "title": "Context constraints",
-                    "type": "object"
-                },
-                "diameter_params": {
-                    "additionalProperties": true,
-                    "properties": {
-                        "method": {
-                            "type": "string"
-                        }
-                    },
-                    "required": ["method"],
-                    "type": "object"
-                },
-                "grow_types": {
-                    "items": {
-                        "enum": [
-                            "basal_dendrite",
-                            "apical_dendrite",
-                            "axon"
-                        ],
-                        "type": "string"
-                    },
-                    "type": "array"
-                },
-                "orientation": {
-                    "items": {
-                        "type": "number"
-                    },
-                    "type": "array"
+                    "required": [
+                        "grow_types"
+                    ]
                 }
-            },
-            "required": [
-                "grow_types"
-            ]
+            }
         }
     },
     "title": "TMD parameters",

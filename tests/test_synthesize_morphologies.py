@@ -7,6 +7,7 @@ from itertools import combinations
 from pathlib import Path
 from uuid import uuid4
 
+import attr
 import jsonschema
 import neurots
 import pandas as pd
@@ -15,8 +16,11 @@ import yaml
 from morph_tool.utils import iter_morphology_files
 from morphio import Morphology
 from numpy.testing import assert_allclose
+from voxcell import CellCollection
+from voxcell import RegionMap
 
 from region_grower import RegionGrowerError
+from region_grower.synthesize_morphologies import RegionMapper
 from region_grower.synthesize_morphologies import SynthesizeMorphologies
 
 DATA = Path(__file__).parent / "data"
@@ -250,6 +254,12 @@ def run_with_mpi():
         generate_small_O1(small_O1_path)
         generate_axon_morph_tsv(tmp_folder)
 
+        for dest in range(1, COMM.Get_size()):
+            req = COMM.isend("done", dest=dest)
+    else:
+        req = COMM.irecv(source=0)
+        req.wait()
+
     synthesizer = SynthesizeMorphologies(**args)
     try:
         print(f"============= #{rank}: Start synthesize")
@@ -271,30 +281,68 @@ def run_with_mpi():
         shutil.rmtree(tmp_folder)
 
 
-def test_verify(tmd_distributions, tmd_parameters):
+def test_verify(cell_collection, tmd_distributions, tmd_parameters, small_O1_path):
     """Test the `verify` step."""
     mtype = "L2_TPC:A"
-    initial_params = deepcopy(tmd_parameters)
 
-    SynthesizeMorphologies.verify([mtype], tmd_distributions, tmd_parameters)
+    @attr.s(auto_attribs=True)
+    class Data:
+        """Container to mimic SynthesizeMorphologies class."""
+
+        tmd_distributions: dict
+        tmd_parameters: dict
+        cells: CellCollection
+        region_mapper: dict
+
+    region_mapper = RegionMapper(
+        ["test"], RegionMap.load_json(Path(small_O1_path) / "hierarchy.json")
+    )
+    data = Data(
+        tmd_distributions=tmd_distributions,
+        tmd_parameters=tmd_parameters,
+        cells=cell_collection,
+        region_mapper=region_mapper,
+    )
+    SynthesizeMorphologies.verify(data)
+
+    cell_collection.properties.loc[0, "mtype"] = "UNKNOWN_MTYPE"
+    data = Data(
+        tmd_distributions=tmd_distributions,
+        tmd_parameters=tmd_parameters,
+        cells=cell_collection,
+        region_mapper=region_mapper,
+    )
     with pytest.raises(RegionGrowerError):
-        SynthesizeMorphologies.verify(["UNKNOWN_MTYPE"], tmd_distributions, tmd_parameters)
+        SynthesizeMorphologies.verify(data)
 
-    failing_params = deepcopy(initial_params)
+    cell_collection.properties.loc[0, "mtype"] = "L2_TPC:A"
 
-    del failing_params[mtype]
+    failing_params = deepcopy(tmd_parameters)
+    del failing_params["default"][mtype]
+    data = Data(
+        tmd_distributions=tmd_distributions,
+        tmd_parameters=failing_params,
+        cells=cell_collection,
+        region_mapper=region_mapper,
+    )
     with pytest.raises(RegionGrowerError):
-        SynthesizeMorphologies.verify([mtype], tmd_distributions, failing_params)
+        SynthesizeMorphologies.verify(data)
 
-    failing_params = deepcopy(initial_params)
-    del failing_params[mtype]["origin"]
+    failing_params = deepcopy(tmd_parameters)
+    del failing_params["default"][mtype]["origin"]
+    data = Data(
+        tmd_distributions=tmd_distributions,
+        tmd_parameters=failing_params,
+        cells=cell_collection,
+        region_mapper=region_mapper,
+    )
     with pytest.raises(neurots.validator.ValidationError):
-        SynthesizeMorphologies.verify([mtype], tmd_distributions, failing_params)
+        SynthesizeMorphologies.verify(data)
 
     # Fail when missing attributes
     attributes = ["layer", "fraction", "slope", "intercept"]
-    good_params = deepcopy(initial_params)
-    good_params[mtype]["context_constraints"] = {
+    good_params = deepcopy(tmd_parameters)
+    good_params["default"][mtype]["context_constraints"] = {
         "apical_dendrite": {
             "hard_limit_min": {
                 "layer": 1,
@@ -312,18 +360,29 @@ def test_verify(tmd_distributions, tmd_parameters):
             },
         }
     }
-    tmd_parameters = deepcopy(good_params)
-    SynthesizeMorphologies.verify([mtype], tmd_distributions, tmd_parameters)
+    data = Data(
+        tmd_distributions=tmd_distributions,
+        tmd_parameters=good_params,
+        cells=cell_collection,
+        region_mapper=region_mapper,
+    )
+    SynthesizeMorphologies.verify(data)
     for i in range(1, 5):
         for missing_attributes in combinations(attributes, i):
-            failing_params = deepcopy(good_params[mtype])
+            failing_params = deepcopy(good_params["default"][mtype])
             for att in missing_attributes:
                 del failing_params["context_constraints"]["apical_dendrite"]["extent_to_target"][
                     att
                 ]
-            tmd_parameters[mtype] = failing_params
+            tmd_parameters["default"][mtype] = failing_params
+            data = Data(
+                tmd_distributions=tmd_distributions,
+                tmd_parameters=tmd_parameters,
+                cells=cell_collection,
+                region_mapper=region_mapper,
+            )
             with pytest.raises(jsonschema.exceptions.ValidationError):
-                SynthesizeMorphologies.verify([mtype], tmd_distributions, tmd_parameters)
+                SynthesizeMorphologies.verify(data)
 
 
 def test_check_axon_morphology(caplog):
@@ -349,6 +408,27 @@ def test_check_axon_morphology(caplog):
             "The following gids were not found in the axon morphology list: [1]",
         ),
     ]
+
+
+def test_RegionMapper(small_O1_path):
+    region_mapper = RegionMapper(
+        ["O0", "UNKNOWN"], RegionMap.load_json(Path(small_O1_path) / "hierarchy.json")
+    )
+    # pylint: disable=protected-access
+    assert region_mapper._mapper == {
+        "mc0_Column": "O0",
+        "mc0;6": "O0",
+        "mc0;5": "O0",
+        "mc0;4": "O0",
+        "mc0;3": "O0",
+        "mc0;2": "O0",
+        "mc0;1": "O0",
+        "O0": "O0",
+    }
+
+    assert region_mapper["O0"] == "O0"
+    assert region_mapper["mc0;1"] == "O0"
+    assert region_mapper["OTHER"] == "default"
 
 
 if __name__ == "__main__":  # pragma: no cover

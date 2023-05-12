@@ -1,15 +1,5 @@
 {
-    "metadata": {
-        "cortical_thickness": [
-            165,
-            149,
-            353,
-            190,
-            525,
-            700
-        ]
-    },
-    "mtypes": {
+    "default": {
         "L2_TPC:A": {
             "apical_dendrite": {
                 "filtration_metric": "path_distances",

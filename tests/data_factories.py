@@ -1,11 +1,10 @@
 """Generate atlas for tests."""
 # pylint: disable=missing-function-docstring
 import json
+import os
 from itertools import cycle
 from itertools import islice
 from itertools import repeat
-from os import devnull
-from subprocess import call
 
 import numpy as np
 import pandas as pd
@@ -17,8 +16,8 @@ DF_SIZE = 12
 def generate_small_O1(directory):
     """Dump a small O1 atlas in folder path."""
     # fmt: off
-    with open(devnull, "w", encoding="utf-8") as f:
-        call(
+    os.system(
+        " ".join(
             [
                 "brainbuilder", "atlases",
                 "-n", "6,5,4,3,2,1",
@@ -27,10 +26,9 @@ def generate_small_O1(directory):
                 "-o", str(directory),
                 "column",
                 "-a", "1000",
-            ],
-            stdout=f,
-            stderr=f,
+            ]
         )
+    )
     # fmt: on
     return str(directory)
 
@@ -43,6 +41,7 @@ def generate_cells_df():
     df = pd.DataFrame(
         {
             "mtype": list(repeat("L2_TPC:A", DF_SIZE)),
+            "region": list(repeat("mc0;2", DF_SIZE)),
             "morphology": list(
                 islice(
                     cycle(

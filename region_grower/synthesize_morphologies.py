@@ -9,8 +9,8 @@
 import json
 import logging
 import os
+from pathlib import Path
 from typing import Optional
-from typing import Sequence
 
 import dask.dataframe as dd
 import dask.distributed
@@ -26,6 +26,7 @@ from neurots.utils import convert_from_legacy_neurite_type
 from neurots.validator import validate_neuron_distribs
 from neurots.validator import validate_neuron_params
 from pkg_resources import resource_stream
+from voxcell import RegionMap
 from voxcell.cell_collection import CellCollection
 from voxcell.nexus.voxelbrain import Atlas
 
@@ -48,6 +49,30 @@ LOGGER = logging.getLogger(__name__)
 morphio.set_maximum_warnings(0)  # suppress MorphIO warnings on writing files
 
 
+class RegionMapper:
+    """Mapper between region acronyms and regions names in synthesis config files."""
+
+    def __init__(self, synthesis_regions, region_map):
+        """Constructor.
+
+        Args:
+            synthesis_regions (list): list of regions available from synthesis
+            region_map (voxcell.RegionMap): RegionMap object related to hierarchy.json
+        """
+        self.region_map = region_map
+        self.synthesis_regions = synthesis_regions
+        self._mapper = {}
+        for synthesis_region in self.synthesis_regions:
+            for region_id in self.region_map.find(
+                synthesis_region, attr="acronym", with_descendants=True
+            ):
+                self._mapper[self.region_map.get(region_id, "acronym")] = synthesis_region
+
+    def __getitem__(self, key):
+        """Make this class behave like a dict with a default value."""
+        return self._mapper.get(key, "default")
+
+
 def _parallel_wrapper(
     row,
     computation_parameters,
@@ -65,7 +90,7 @@ def _parallel_wrapper(
         )
         current_space_context = SpaceContext(
             layer_depths=row["layer_depths"],
-            cortical_depths=cortical_depths,
+            cortical_depths=cortical_depths[row["synthesis_region"]],
         )
         axon_scale = row.get("axon_scale", None)
         if axon_scale is not None and np.isnan(axon_scale):
@@ -190,6 +215,9 @@ class SynthesizeMorphologies:
         self.out_apical = out_apical
         self.out_debug_data = out_debug_data
         self.min_hard_scale = min_hard_scale
+        self.atlas = AtlasHelper(
+            Atlas.open(atlas, cache_dir=atlas_cache), region_structure_path=region_structure
+        )
 
         self._init_parallel(with_mpi, nb_processes)
 
@@ -203,14 +231,20 @@ class SynthesizeMorphologies:
         LOGGER.info("Loading TMD distributions from %s", tmd_distributions)
         with open(tmd_distributions, "r", encoding="utf-8") as f:
             self.tmd_distributions = convert_from_legacy_neurite_type(json.load(f))
-        self.cortical_depths = np.cumsum(
-            self.tmd_distributions["metadata"]["cortical_thickness"]
-        ).tolist()
+
+        self.regions = [r for r in self.tmd_parameters if r != "default"]
+        self.cortical_depths = {}
+        for region in self.regions:
+            self.cortical_depths[region] = np.cumsum(
+                list(self.atlas.region_structure[region]["thicknesses"].values())
+            ).tolist()
+
+        self.region_mapper = RegionMapper(
+            self.regions, RegionMap.load_json(Path(atlas) / "hierarchy.json")
+        )
 
         LOGGER.info("Checking TMD parameters and distributions according to cells mtypes")
-        self.verify(
-            self.cells.properties["mtype"].unique(), self.tmd_distributions, self.tmd_parameters
-        )
+        self.verify()
 
         LOGGER.info("Preparing morphology output folder in %s", out_morph_dir)
         self.morph_writer = MorphWriter(out_morph_dir, out_morph_ext or ["swc"], skip_write)
@@ -220,24 +254,14 @@ class SynthesizeMorphologies:
             overwrite=overwrite,
         )
 
-        LOGGER.info("Fetching atlas data from %s", atlas)
-        current_depths, layer_depths, orientations = self.atlas_lookups(
-            atlas,
-            self.cells.positions,
-            not self.cells.orientations,
-            atlas_cache,
-            min_depth,
-            max_depth,
-            region_structure,
-        )
-
         self.cells_data = self.cells.as_dataframe()
         self.cells_data.index -= 1  # Index must start from 0
-        self.cells_data["current_depth"] = current_depths
-        self.cells_data["layer_depths"] = layer_depths.T.tolist()
-        if not self.cells.orientations:  # pragma: no cover
-            self.cells_data["orientation"] = orientations.tolist()
+        self.cells_data["synthesis_region"] = self.cells_data["region"].apply(
+            lambda region: self.region_mapper[region]
+        )
 
+        LOGGER.info("Fetching atlas data from %s", atlas)
+        self.assign_atlas_data(min_depth, max_depth)
         if morph_axon is not None:
             LOGGER.info("Loading axon morphologies from %s", morph_axon)
             self.axon_morph_list = load_morphology_list(morph_axon, self.task_ids)
@@ -286,27 +310,24 @@ class SynthesizeMorphologies:
         # This is needed to make dask aware of the workers
         self._client = dask.distributed.Client(**client_kwargs)
 
-    @staticmethod
-    def atlas_lookups(
-        atlas_path,
-        positions,
-        with_orientations=False,
-        atlas_cache=None,
-        min_depth=25,
-        max_depth=5000,
-        region_structure=None,
-    ):
+    def assign_atlas_data(self, min_depth=25, max_depth=5000):
         """Open an Atlas and compute depths and orientations according to the given positions."""
-        atlas = AtlasHelper(
-            Atlas.open(atlas_path, cache_dir=atlas_cache), region_structure_path=region_structure
-        )
-        layer_depths = atlas.get_layer_boundary_depths(positions)
-        current_depths = np.clip(atlas.depths.lookup(positions), min_depth, max_depth)
-        if with_orientations:
-            orientations = atlas.orientations.lookup(positions)
-        else:
-            orientations = None
-        return current_depths, layer_depths, orientations
+        for region in self.cells_data.region.unique():
+            _region = self.region_mapper[region]
+            region_mask = self.cells_data.region == region
+            positions = self.cells.positions[region_mask]
+            layer_depths = self.atlas.get_layer_boundary_depths(positions, _region)
+            current_depths = np.clip(
+                self.atlas.depths[_region].lookup(positions), min_depth, max_depth
+            )
+            self.cells_data.loc[region_mask, "current_depth"] = current_depths
+            self.cells_data.loc[region_mask, "layer_depths"] = pd.Series(
+                data=layer_depths.T.tolist(), index=self.cells_data.loc[region_mask].index
+            )
+            orientations = self.atlas.orientations.lookup(positions)
+            self.cells_data.loc[region_mask, "orientation"] = pd.Series(
+                data=orientations.tolist(), index=self.cells_data.loc[region_mask].index
+            )
 
     @property
     def task_ids(self):
@@ -334,9 +355,14 @@ class SynthesizeMorphologies:
             retries=self.MAX_SYNTHESIS_ATTEMPTS_COUNT,
             debug_data=self.out_debug_data is not None,
         )
-        str_mtype = self.cells_data["mtype"].astype(str)
-        self.cells_data["tmd_parameters"] = str_mtype.map(self.tmd_parameters.get)
-        self.cells_data["tmd_distributions"] = str_mtype.map(self.tmd_distributions["mtypes"].get)
+        self.cells_data["tmd_parameters"] = self.cells_data.apply(
+            lambda row: self.tmd_parameters[row["synthesis_region"]][row["mtype"]],
+            axis=1,
+        )
+        self.cells_data["tmd_distributions"] = self.cells_data.apply(
+            lambda row: self.tmd_distributions[row["synthesis_region"]][row["mtype"]],
+            axis=1,
+        )
         self.cells_data["seed"] = (self.seed + self.cells_data.index) % (1 << 32)
         func_kwargs = {
             "computation_parameters": computation_parameters,
@@ -423,24 +449,26 @@ class SynthesizeMorphologies:
         self.finalize(res)
         return res
 
-    @staticmethod
-    def verify(mtypes: Sequence[str], tmd_distributions: dict, tmd_parameters: dict) -> None:
-        """Check that context has distributions / parameters for all given mtypes."""
+    def verify(self) -> None:
+        """Check that context has distributions / parameters for all given regions and mtypes."""
         with resource_stream("region_grower", "schemas/distributions.json") as distr_file:
             distributions_schema = json.load(distr_file)
-        validate(tmd_distributions, distributions_schema)
+        validate(self.tmd_distributions, distributions_schema)
 
         with resource_stream("region_grower", "schemas/parameters.json") as param_file:
             parameters_schema = json.load(param_file)
-        validate(tmd_parameters, parameters_schema)
+        validate(self.tmd_parameters, parameters_schema)
 
-        for mtype in mtypes:
-            if mtype not in tmd_distributions["mtypes"]:
-                raise RegionGrowerError(f"Missing distributions for mtype: '{mtype}'")
-            if mtype not in tmd_parameters:
-                raise RegionGrowerError(f"Missing parameters for mtype: '{mtype}'")
+        for region in self.cells.properties["region"].unique():
+            _region = self.region_mapper[region]
+            for mtype in self.cells.properties[self.cells.properties["region"] == region][
+                "mtype"
+            ].unique():
+                if mtype not in self.tmd_distributions[_region]:
+                    raise RegionGrowerError(f"Missing distributions for mtype: '{mtype}'")
+                if mtype not in self.tmd_parameters[_region]:
+                    raise RegionGrowerError(f"Missing parameters for mtype: '{mtype}'")
 
-            validate_neuron_distribs(tmd_distributions["mtypes"][mtype])
-            validate_neuron_params(tmd_parameters[mtype])
-
-            validate_model_params(tmd_parameters[mtype]["diameter_params"])
+                validate_neuron_distribs(self.tmd_distributions[_region][mtype])
+                validate_neuron_params(self.tmd_parameters[_region][mtype])
+                validate_model_params(self.tmd_parameters[_region][mtype]["diameter_params"])

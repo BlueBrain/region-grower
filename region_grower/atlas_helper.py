@@ -32,9 +32,18 @@ class AtlasHelper:
                 self.region_structure = yaml.safe_load(region_file)
         else:
             raise ValueError("Please provide an existing region_structure file.")
-        self.layers = self.region_structure["layers"]
-        self.thicknesses = [self.layer_thickness(layer) for layer in self.layers]
-        self.depths = VoxelData.reduce(operator.sub, [self.pia_coord, atlas.load_data("[PH]y")])
+
+        self.layers = {}
+        self.thicknesses = {}
+        self.depths = {}
+        for region in self.region_structure:
+            self.layers[region] = self.region_structure[region]["layers"]
+            self.thicknesses[region] = [
+                self.layer_thickness(layer) for layer in self.layers[region]
+            ]
+            self.depths[region] = VoxelData.reduce(
+                operator.sub, [self.pia_coord(region), atlas.load_data("[PH]y")]
+            )
         self.brain_regions = atlas.load_data("brain_regions")
         self.orientations = atlas.load_data("orientation", cls=OrientationField)
 
@@ -43,20 +52,20 @@ class AtlasHelper:
         layer_bounds = self.atlas.load_data(f"[PH]{layer}")
         return layer_bounds.with_data(layer_bounds.raw[..., 1] - layer_bounds.raw[..., 0])
 
-    @property
-    def pia_coord(self) -> Atlas:
+    def pia_coord(self, region) -> Atlas:
         """Returns an atlas of the pia coordinate along the principal axis."""
-        top_layer = self.atlas.load_data(f"[PH]{self.layers[0]}")
+        top_layer = self.atlas.load_data(f"[PH]{self.layers[region][0]}")
         return top_layer.with_data(top_layer.raw[..., 1])
 
-    def get_layer_boundary_depths(self, position: Point) -> np.array:
+    def get_layer_boundary_depths(self, position: Point, region: str) -> np.array:
         """Return layer depths at the given position.
 
         Args:
             position: the position of a neuron in the atlas
+            region: name of the region to consider
         """
         pos = np.array(position, ndmin=2)
-        result = np.zeros((len(self.thicknesses) + 1, pos.shape[0]))
-        all_thicknesses = [thickness.lookup(pos) for thickness in self.thicknesses]
+        result = np.zeros((len(self.thicknesses[region]) + 1, pos.shape[0]))
+        all_thicknesses = [thickness.lookup(pos) for thickness in self.thicknesses[region]]
         result[1:, :] = np.cumsum(all_thicknesses, axis=0)
         return result
