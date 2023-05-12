@@ -1,5 +1,17 @@
 # Changelog
 
+## [region-grower-v1.0.0](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v0.4.3...region-grower-v1.0.0)
+
+> 12 May 2023
+
+### New Features
+
+- Support several regions at once (Alexis Arnaudon - [76cc9ab](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/76cc9ab3b7f0894afb7d39e7ffc5e43577edb5b3))
+
+### CI Improvements
+
+- Fix urllib3 requirement for Py38 (Adrien Berchet - [ab6b680](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/ab6b68066ff150aebd924d21ee20034bb6de9200))
+
 ## [region-grower-v0.4.3](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v0.4.2...region-grower-v0.4.3)
 
 > 13 March 2023
