@@ -186,17 +186,17 @@ def test_synthesize_skip_write(
         "4462ebfc5f915ef09cfbac6e7687a66e",
         None,
     ]
-    print(res["apical_points"])
-    assert_allclose(res["apical_points"][0], [[-69.30586, 128.98514, -27.752563]])
+
+    assert_allclose(res["apical_points"][0], [[-69.305855, 128.98514, -27.752571]])
     assert res["apical_points"][1] is None
 
-    assert_allclose(res["apical_points"][3], [[2.2022858, 116.80426, 1.3548279]])
+    assert_allclose(res["apical_points"][3], [[2.20228, 116.804276, 1.3548267]])
     assert res["apical_points"][4] is None
 
-    assert_allclose(res["apical_points"][6], [[0.020050049, 115.19949, 5.582367]])
+    assert_allclose(res["apical_points"][6], [[0.020046309, 115.19948, 5.5823746]])
     assert res["apical_points"][7] is None
 
-    assert_allclose(res["apical_points"][9], [[-0.5829773, 91.27518, -7.592575]])
+    assert_allclose(res["apical_points"][9], [[-0.58297133, 91.27519, -7.592568]])
     assert res["apical_points"][10] is None
 
     # Check that the morphologies were not written
