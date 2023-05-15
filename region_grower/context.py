@@ -86,7 +86,7 @@ class SpaceContext:
     layer_depths: List
     cortical_depths: List
     boundaries: Dict = None
-    atlas_info: Dict = {}  # voxel_dimnesions, offset and shape from atlas for indices conversion
+    atlas_info: Dict = {}  # voxel_dimensions, offset and shape from atlas for indices conversion
 
     def indices_to_positions(self, indices):
         """Local version of voxcel's function to prevent atlas loading."""
