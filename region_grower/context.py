@@ -112,7 +112,7 @@ class SpaceContext:
         mesh = trimesh.load_mesh(self.boundaries["path"])
 
         # to save points for plotting while growing to debug the prob function
-        debug = True
+        debug = False
 
         def get_distance_to_mesh(mesh, ray_origin, ray_direction):
             """Compute distances from point/directions to a mesh."""
@@ -163,7 +163,6 @@ class SpaceContext:
                 return _prob(dist, self.boundaries["params_trunk"])
 
             self.boundaries["trunk_prob"] = trunk_prob
-
         return self.boundaries
 
     def layer_fraction_to_position(self, layer: int, layer_fraction: float) -> float:
