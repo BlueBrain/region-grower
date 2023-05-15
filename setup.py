@@ -28,7 +28,7 @@ reqs = [
     "tqdm>=4.28.1",
     "urllib3>=1.26,<2; python_version < '3.9'",
     "voxcell>=3.1.1,<4",
-    "trimesh",
+    "trimesh>=3.21",
 ]
 
 mpi_extras = [
@@ -55,6 +55,7 @@ test_reqs = [
     "pytest-html>=2",
     "pytest-mock>=3.5",
     "pytest-xdist>=3.0.2",
+    "neurocollage>=0.3.0",
 ]
 
 setup(

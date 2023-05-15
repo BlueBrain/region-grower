@@ -143,7 +143,7 @@ class SpaceContext:
                 params.get("d_max", 100) - params.get("d_min", 0)
             ) ** params.get("power", 1.5)
 
-            # TODO: other variants for this function coud be included here
+            # TODO: other variants for this function could be included here
             return np.clip(p, 0, 1)
 
         if "params_section" in self.boundaries:

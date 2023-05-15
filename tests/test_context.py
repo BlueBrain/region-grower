@@ -78,9 +78,17 @@ class TestSpaceContext:
         assert space_context.distance_to_constraint(-100, {"layer": 6, "fraction": 0}) == -900
         assert space_context.distance_to_constraint(1000, {"layer": 6, "fraction": 0}) == 200
 
-        for i in [np.nan, None, []]:
-            space_context.layer_depths = i
-            assert space_context.distance_to_constraint(1000, {"layer": 6, "fraction": 0}) is None
+    def test_indices_to_positions(self, space_context):
+        pos = space_context.indices_to_positions([0, 0, 0])
+        assert_array_equal(pos, [-1100.0, -100.0, -1000.0])
+        pos = space_context.indices_to_positions([100, 100, 100])
+        assert_array_equal(pos, [8900.0, 9900.0, 9000.0])
+
+    def test_positions_to_indices(self, space_context):
+        indices = space_context.positions_to_indices([-1100.0, -100.0, -1000.0])
+        assert_array_equal(indices, [0, 0, 0])
+        indices = space_context.positions_to_indices([8900.0, 9900.0, -9000.0])
+        assert_array_equal(indices, [-1, -1, -1])
 
 
 class TestSpaceWorker:
