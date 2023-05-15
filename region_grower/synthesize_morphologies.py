@@ -109,7 +109,6 @@ class RegionMapper:
 def _parallel_wrapper(
     row,
     computation_parameters,
-    cortical_depths,
     rotational_jitter_std,
     scaling_jitter_std,
     min_hard_scale,
@@ -126,7 +125,7 @@ def _parallel_wrapper(
         )
         current_space_context = SpaceContext(
             layer_depths=row["layer_depths"],
-            cortical_depths=cortical_depths,
+            cortical_depths=row["cortical_depths"],
             boundaries=row["boundaries"] if "boundaries" in row else None,
             atlas_info=json.loads(row["atlas_info"]) if "atlas_info" in row else None,
         )
@@ -327,21 +326,6 @@ class SynthesizeMorphologies:
         self.cells_data["synthesis_region"] = self.cells_data["region"].apply(
             lambda region: self.region_mapper[region]
         )
-        self.cells_data["current_depth"] = current_depths
-        self.cells_data["layer_depths"] = layer_depths.T.tolist()
-
-        if "boundaries" in self.atlas.region_structure:
-            self.cells_data["boundaries"] = json.dumps(self.atlas.region_structure["boundaries"])
-            self.cells_data["atlas_info"] = json.dumps(
-                {
-                    "voxel_dimensions": self.atlas.depths.voxel_dimensions.tolist(),
-                    "offset": self.atlas.depths.offset.tolist(),
-                    "shape": self.atlas.depths.shape,
-                }
-            )
-
-        if not self.cells.orientations:  # pragma: no cover
-            self.cells_data["orientation"] = orientations.tolist()
 
         LOGGER.info("Checking TMD parameters and distributions according to cells mtypes")
         self.verify()
@@ -542,6 +526,18 @@ class SynthesizeMorphologies:
                 dtype=object,
             )
 
+            if "boundaries" in self.atlas.region_structure[_region]:
+                self.cells_data.loc[region_mask, "boundaries"] = json.dumps(
+                    self.atlas.region_structure[_region]["boundaries"]
+                )
+                self.cells_data.loc[region_mask, "atlas_info"] = json.dumps(
+                    {
+                        "voxel_dimensions": self.atlas.depths[_region].voxel_dimensions.tolist(),
+                        "offset": self.atlas.depths[_region].offset.tolist(),
+                        "shape": self.atlas.depths[_region].shape,
+                    }
+                )
+
     @property
     def task_ids(self):
         """Task IDs (= CellCollection IDs)."""
@@ -605,7 +601,6 @@ class SynthesizeMorphologies:
 
         func_kwargs = {
             "computation_parameters": computation_parameters,
-            "cortical_depths": self.cortical_depths,
             "rotational_jitter_std": self.rotational_jitter_std,
             "scaling_jitter_std": self.scaling_jitter_std,
             "min_hard_scale": self.min_hard_scale,
