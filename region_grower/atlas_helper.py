@@ -32,7 +32,7 @@ class AtlasHelper:
             with open(region_structure_path, "r", encoding="utf-8") as region_file:
                 self.region_structure = yaml.safe_load(region_file)
         else:
-            raise ValueError(f"region_structure file at {region_structure_path} not found.")
+            raise ValueError(f"region_structure file not found at {region_structure_path}.")
 
         self.regions = list(self.region_structure.keys())
         self.layers = {}
