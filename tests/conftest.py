@@ -20,7 +20,6 @@ from .data_factories import generate_cell_collection
 from .data_factories import generate_cells_df
 from .data_factories import generate_input_cells
 from .data_factories import generate_mesh
-from .data_factories import generate_region_structure_boundary
 from .data_factories import generate_small_O1
 from .data_factories import get_cell_mtype
 from .data_factories import get_cell_orientation
@@ -47,15 +46,6 @@ def mesh(small_O1_path, tmpdir_factory):
     atlas = {"atlas": small_O1_path, "structure": DATA / "region_structure.yaml"}
     generate_mesh(atlas, mesh_path)
     return mesh_path
-
-
-@pytest.fixture(scope="session")
-def region_structure_boundary(tmpdir_factory, mesh):
-    """Generate region_structure file with boundary entries."""
-    out_path = str(tmpdir_factory.mktemp("structure") / "region_structure.yaml")
-    region_structure_path = DATA / "region_structure.yaml"
-    generate_region_structure_boundary(region_structure_path, out_path, mesh)
-    return out_path
 
 
 @pytest.fixture(scope="session")
