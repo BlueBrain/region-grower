@@ -29,6 +29,7 @@ reqs = [
     "urllib3>=1.26,<2; python_version < '3.9'",
     "voxcell>=3.1.1,<4",
     "trimesh>=3.21",
+    "rtree>=1.0.1",
 ]
 
 mpi_extras = [

@@ -121,21 +121,30 @@ class TestSpaceWorker:
         )
 
         # This tests that input orientations are not mutated by the synthesize() call
-        assert_array_almost_equal(
-            synthesis_parameters.tmd_parameters["apical_dendrite"]["orientation"], [[0.0, 1.0, 0.0]]
+        assert (
+            list(
+                dictdiffer.diff(
+                    synthesis_parameters.tmd_parameters["apical_dendrite"]["orientation"],
+                    {
+                        "mode": "normal_pia_constraint",
+                        "values": {"direction": {"mean": 0.0, "std": 0.0}},
+                    },
+                )
+            )
+            == []
         )
         assert_array_almost_equal(
             result.neuron.soma.points,
             np.array(
                 [
-                    [-5.785500526428223, 4.984130859375, 0.0],
-                    [-7.5740227699279785, -0.973480224609375, 0.0],
-                    [-1.966903805732727, -7.378662109375, 0.0],
-                    [3.565324068069458, -6.7529296875, 0.0],
-                    [7.266839027404785, -2.34661865234375, 0.0],
-                    [7.384983062744141, 1.059783935546875, 0.0],
-                    [6.818241119384766, 3.438751220703125, 0.0],
-                    [4.675901919111924e-16, 7.636322021484375, 0.0],
+                    [7.0957971, -2.8218994, 0.0],
+                    [0.0, 7.6363220, 0.0],
+                    [-3.0748143, 6.9899292, 0.0],
+                    [-4.8864875, 5.8681946, 0.0],
+                    [-7.5141201, -1.3606873, 0.0],
+                    [-6.1610136, -3.6210632, 0.0],
+                    [-1.2113731, -7.5396423, 0.0],
+                    [0.67872918, -7.6061096, 0.0],
                 ],
                 dtype=np.float32,
             ),
@@ -447,6 +456,11 @@ class TestSpaceWorker:
             }
         }
         result = small_context_worker.synthesize()
+        assert [i.type for i in result.neuron.root_sections] == expected_types[1:]
+
+        # test removing basals if scale is too small
+        small_context_worker.params.min_hard_scale = 2.2
+        result = small_context_worker.synthesize()
         assert [i.type for i in result.neuron.root_sections] == [expected_types[-1]]
 
         params["basal_dendrite"]["orientation"] = {}
@@ -491,18 +505,9 @@ class TestSpaceWorker:
                         "min_target_thickness": 1.0,
                     },
                     "scaling": [
-                        {
-                            "max_ph": 126.96580088057513,
-                            "scaling_ratio": 0.9554140127388535,
-                        },
-                        {
-                            "max_ph": 139.93140451880743,
-                            "scaling_ratio": 0.9554140127388535,
-                        },
-                        {
-                            "max_ph": 143.28779114733433,
-                            "scaling_ratio": 0.9554140127388535,
-                        },
+                        {"max_ph": 78.53590605172101, "scaling_ratio": 0.9554140127388535},
+                        {"max_ph": 126.96580088057513, "scaling_ratio": 0.9554140127388535},
+                        {"max_ph": 126.96580088057513, "scaling_ratio": 0.9554140127388535},
                     ],
                 },
                 "target_func": {
@@ -514,10 +519,7 @@ class TestSpaceWorker:
                         "min_target_path_distance": 1.0,
                     },
                     "scaling": [
-                        {
-                            "max_ph": 420.70512274498446,
-                            "scaling_ratio": 0.18064909574697127,
-                        }
+                        {"max_ph": 255.45843100194077, "scaling_ratio": 0.2975043716581138}
                     ],
                 },
             },

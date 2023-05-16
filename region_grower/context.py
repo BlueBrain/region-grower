@@ -124,18 +124,18 @@ class SpaceContext:
                 intersect = self.indices_to_positions(locations[0])
                 dist = np.linalg.norm(intersect - ray_origin)
 
-                if debug:
+                if debug:  # pragma: no cover
                     x, y, z = ray_origin
                     vx, vy, vz = ray_direction
                     with open("data.csv", "a", encoding="utf8") as file:
                         print(f"{x}, {y}, {z}, {vx}, {vy}, {vz}, {dist}", file=file)
                 return dist
-            if debug:
+            if debug:  # pragma: no cover
                 x, y, z = ray_origin
                 vx, vy, vz = ray_direction
                 with open("data.csv", "a", encoding="utf8") as file:
                     print(f"{x}, {y}, {z}, {vx}, {vy}, {vz}, {-100}", file=file)
-            return np.inf
+            return np.inf  # pragma: no cover
 
         def _prob(dist, params):
             """Probability function from distance to boundary."""
@@ -322,7 +322,6 @@ class SpaceWorker:
                 target_min_length=target_min_length,
                 target_max_length=target_max_length,
             )
-
             if scale > self.params.min_hard_scale:
                 scale_section(root_section, ScaleParameters(mean=scale), recursive=True)
                 is_deleted = False

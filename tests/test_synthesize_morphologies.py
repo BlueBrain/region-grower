@@ -1,6 +1,7 @@
 """Test the region_grower.synthesize_morphologies module."""
 # pylint: disable=missing-function-docstring
 import json
+import sys
 import logging
 import os
 import shutil
@@ -25,6 +26,7 @@ from voxcell import RegionMap
 from region_grower import RegionGrowerError
 from region_grower.synthesize_morphologies import RegionMapper
 from region_grower.synthesize_morphologies import SynthesizeMorphologies
+
 
 DATA = Path(__file__).parent / "data"
 
@@ -53,6 +55,7 @@ def create_args(
     axon_morph_tsv,
     out_apical_NRN_sections,
     min_depth,
+    region_structure,
 ):
     """Create the arguments used for tests."""
     args = {}
@@ -90,7 +93,7 @@ def create_args(
     args["max_drop_ratio"] = 0.5
     args["rotational_jitter_std"] = 10
     args["scaling_jitter_std"] = 0.5
-    args["region_structure"] = DATA / "region_structure.yaml"
+    args["region_structure"] = region_structure
 
     return args
 
@@ -118,6 +121,7 @@ def test_synthesize(
         axon_morph_tsv if with_axon else None,
         "apical_NRN_sections.yaml" if with_NRN else None,
         min_depth,
+        DATA / "region_structure.yaml",
     )
 
     synthesizer = SynthesizeMorphologies(**args)
@@ -233,6 +237,7 @@ def test_synthesize_skip_write(
         axon_morph_tsv if with_axon else None,
         "apical_NRN_sections.yaml" if with_NRN else None,
         min_depth,
+        DATA / "region_structure.yaml",
     )
     args["skip_write"] = True
     args["nb_processes"] = nb_processes
@@ -285,6 +290,109 @@ def test_synthesize_skip_write(
     ]
 
 
+@pytest.mark.parametrize("with_sections", [True, False])
+@pytest.mark.parametrize("with_trunks", [True, False])
+def test_synthesize_boundary(
+    tmpdir,
+    small_O1_path,
+    input_cells,
+    axon_morph_tsv,
+    mesh,
+    with_sections,
+    with_trunks,
+):  # pylint: disable=unused-argument
+    """Test morphology synthesis but skip write step."""
+    with_axon = True
+    with_NRN = True
+    min_depth = 25
+    tmp_folder = Path(tmpdir)
+
+    # pylint: disable=import-outside-toplevel
+    from .data_factories import generate_region_structure_boundary
+
+    region_structure = "region_structure.yaml"
+    generate_region_structure_boundary(
+        DATA / "region_structure.yaml", region_structure, mesh, with_sections, with_trunks
+    )
+    args = create_args(
+        False,
+        tmp_folder,
+        input_cells,
+        small_O1_path,
+        axon_morph_tsv if with_axon else None,
+        "apical_NRN_sections.yaml" if with_NRN else None,
+        min_depth,
+        region_structure,
+    )
+    args["skip_write"] = True
+
+    synthesizer = SynthesizeMorphologies(**args)
+    res = synthesizer.synthesize()
+
+    assert (res["x"] == 200).all()
+    assert (res["y"] == 200).all()
+    assert (res["z"] == 200).all()
+    assert res["name"].tolist() == [
+        "e3e70682c2094cac629f6fbed82c07cd",
+        None,
+        "216363698b529b4a97b750923ceb3ffd",
+        None,
+        "14a03569d26b949692e5dfe8cb1855fe",
+        None,
+        "4462ebfc5f915ef09cfbac6e7687a66e",
+        None,
+    ]
+    if with_sections and with_trunks:
+        assert_allclose(res["apical_points"][0], [[16.126877, 160.5279, 22.8638]])
+        assert res["apical_points"][1] is None
+
+        assert_allclose(res["apical_points"][3], [[5.216095, 114.55658, -12.494751]])
+        assert res["apical_points"][4] is None
+
+        assert_allclose(res["apical_points"][6], [[4.36911, 55.535736, -6.2556915]])
+        assert res["apical_points"][7] is None
+
+        assert_allclose(res["apical_points"][9], [[-11.084274, 111.49124, 0.98043823]])
+        assert res["apical_points"][10] is None
+
+    if with_sections and not with_trunks:
+        assert_allclose(res["apical_points"][0], [[-0.29234314, 58.81488, 0.5384369]])
+        assert res["apical_points"][1] is None
+
+        assert_allclose(res["apical_points"][3], [[8.230438, 116.570435, -7.345169]])
+        assert res["apical_points"][4] is None
+
+        assert_allclose(res["apical_points"][6], [[11.181992, 96.11371, -12.706863]])
+        assert res["apical_points"][7] is None
+
+        assert_allclose(res["apical_points"][9], [[3.5267944, 164.42618, 1.2018433]])
+        assert res["apical_points"][10] is None
+
+    if not with_sections and with_trunks:
+        assert_allclose(res["apical_points"][0], [[8.792313, 131.91104, -4.2198334]])
+        assert res["apical_points"][1] is None
+
+        assert_allclose(res["apical_points"][3], [[2.0048676, 116.672, -5.334656]])
+        assert res["apical_points"][4] is None
+
+        assert_allclose(res["apical_points"][6], [[-2.347641, 58.229614, -0.56985474]])
+        assert res["apical_points"][7] is None
+
+        assert_allclose(res["apical_points"][9], [[6.861679, 112.31445, -13.528854]])
+        assert res["apical_points"][10] is None
+
+    # Check that the morphologies were not written
+    res_files = tmpdir.listdir()
+    assert len(res_files) == 5
+    assert sorted(i.basename for i in res_files) == [
+        "apical.yaml",
+        "apical_NRN_sections.yaml",
+        "axon_morphs.tsv",
+        "input_cells.mvd3",
+        "test_cells.mvd3",
+    ]
+
+
 def run_with_mpi():
     """Test morphology synthesis with MPI."""
     # pylint: disable=import-outside-toplevel, too-many-locals, import-error
@@ -316,6 +424,7 @@ def run_with_mpi():
         tmp_folder / "axon_morphs.tsv",
         "apical_NRN_sections.yaml",
         min_depth=25,
+        region_structure=DATA / "region_structure.yaml",
     )
 
     setup_logger("debug", prefix=f"Rank = {rank} - ")
@@ -346,12 +455,83 @@ def run_with_mpi():
         print(f"============= #{rank}: Checking results")
         expected_size = 18
         assert len(list(iter_morphology_files(tmp_folder))) == expected_size
+        check_yaml(DATA / "apical.yaml", args["out_apical"])
+        check_yaml(DATA / "apical_NRN_sections.yaml", args["out_apical_nrn_sections"])
+    finally:
+        # Clean the directory
+        print(f"============= #{rank}: Cleaning")
+        shutil.rmtree(tmp_folder)
 
-        check_yaml(DATA / ("apical.yaml"), args["out_apical"])
-        check_yaml(
-            DATA / ("apical_NRN_sections.yaml"),
-            args["out_apical_nrn_sections"],
+
+def run_with_mpi_boundary():
+    """Test morphology synthesis with MPI."""
+    # pylint: disable=import-outside-toplevel, too-many-locals, import-error
+    from data_factories import generate_axon_morph_tsv
+    from data_factories import generate_cell_collection
+    from data_factories import generate_cells_df
+    from data_factories import generate_input_cells
+    from data_factories import generate_mesh
+    from data_factories import generate_region_structure_boundary
+    from data_factories import generate_small_O1
+    from data_factories import input_cells_path
+    from mpi4py import MPI
+
+    from region_grower.utils import setup_logger
+
+    COMM = MPI.COMM_WORLD  # pylint: disable=c-extension-no-member
+    rank = COMM.Get_rank()
+    MASTER_RANK = 0
+    is_master = rank == MASTER_RANK
+
+    tmp_folder = Path("/tmp/test-run-synthesis_" + str(uuid4()))
+    tmp_folder = COMM.bcast(tmp_folder, root=MASTER_RANK)
+    input_cells = input_cells_path(tmp_folder)
+    small_O1_path = str(tmp_folder / "atlas")
+    region_structure_path = str(tmp_folder / "region_structure_boundary.yaml")
+    args = create_args(
+        True,
+        tmp_folder,
+        input_cells,
+        small_O1_path,
+        tmp_folder / "axon_morphs.tsv",
+        "apical_NRN_sections.yaml",
+        min_depth=25,
+        region_structure=region_structure_path,
+    )
+
+    setup_logger("info")
+    logging.getLogger("distributed").setLevel(logging.ERROR)
+
+    if is_master:
+        tmp_folder.mkdir(exist_ok=True)
+        print(f"============= #{rank}: Create data")
+        cells_raw_data = generate_cells_df()
+        cell_collection = generate_cell_collection(cells_raw_data)
+        generate_input_cells(cell_collection, tmp_folder)
+        generate_small_O1(small_O1_path)
+        atlas = {"atlas": small_O1_path, "structure": DATA / "region_structure.yaml"}
+        generate_mesh(atlas, tmp_folder / "mesh.obj")
+        region_structure_path = generate_region_structure_boundary(
+            DATA / "region_structure.yaml", region_structure_path, str(tmp_folder / "mesh.obj")
         )
+
+        generate_axon_morph_tsv(tmp_folder)
+        for dest in range(1, COMM.Get_size()):
+            req = COMM.isend("done", dest=dest)
+    else:
+        req = COMM.irecv(source=0)
+        req.wait()
+
+    synthesizer = SynthesizeMorphologies(**args)
+    try:
+        print(f"============= #{rank}: Start synthesize")
+        synthesizer.synthesize()
+
+        # Check results
+        print(f"============= #{rank}: Checking results")
+        expected_size = 12
+        assert len(list(iter_morphology_files(tmp_folder))) == expected_size
+        check_yaml(DATA / "apical_boundary.yaml", args["out_apical"])
     finally:
         # Clean the directory
         print(f"============= #{rank}: Cleaning")
@@ -603,4 +783,7 @@ def test_inconsistent_context(
 
 
 if __name__ == "__main__":  # pragma: no cover
-    run_with_mpi()
+    if sys.argv[-1] == "boundary":
+        run_with_mpi_boundary()
+    else:
+        run_with_mpi()
