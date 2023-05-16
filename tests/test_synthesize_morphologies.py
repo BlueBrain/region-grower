@@ -1,10 +1,10 @@
 """Test the region_grower.synthesize_morphologies module."""
 # pylint: disable=missing-function-docstring
 import json
-import sys
 import logging
 import os
 import shutil
+import sys
 from copy import deepcopy
 from itertools import combinations
 from pathlib import Path
@@ -26,7 +26,6 @@ from voxcell import RegionMap
 from region_grower import RegionGrowerError
 from region_grower.synthesize_morphologies import RegionMapper
 from region_grower.synthesize_morphologies import SynthesizeMorphologies
-
 
 DATA = Path(__file__).parent / "data"
 
