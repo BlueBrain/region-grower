@@ -527,7 +527,7 @@ class SynthesizeMorphologies:
                 for boundary in boundaries:
                     if not Path(boundary["path"]).is_absolute():
                         boundary["path"] = str(
-                            self.atlas.region_structure_base_path / boundary["path"]
+                            (self.atlas.region_structure_base_path / boundary["path"]).absolute()
                         )
                 self.cells_data.loc[region_mask, "boundaries"] = json.dumps(boundaries)
                 self.cells_data.loc[region_mask, "atlas_info"] = json.dumps(
