@@ -85,7 +85,7 @@ class SpaceContext:
 
     layer_depths: List
     cortical_depths: List
-    boundaries: Dict = None
+    boundaries: List = None
     atlas_info: Dict = {}  # voxel_dimensions, offset and shape from atlas for indices conversion
 
     def indices_to_positions(self, indices):
@@ -105,16 +105,10 @@ class SpaceContext:
         result[result >= self.atlas_info["shape"]] = -1
         return result
 
-    def get_boundaries(self):
+    def get_boundaries(self, mtype, neurite_types):
         """Returns a dict with boundaries data for NeuroTS."""
-        # add here necessary logic to convert raw config data to NeuroTS context data
-        self.boundaries = json.loads(self.boundaries)
-        mesh = trimesh.load_mesh(self.boundaries["path"])
 
-        # to save points for plotting while growing to debug the prob function
-        debug = False
-
-        def get_distance_to_mesh(mesh, ray_origin, ray_direction):
+        def get_distance_to_mesh(mesh, ray_origin, ray_direction, debug=False):
             """Compute distances from point/directions to a mesh."""
             vox_ray_origin = self.positions_to_indices(ray_origin)
             locations = mesh.ray.intersects_location(
@@ -146,23 +140,35 @@ class SpaceContext:
             # TODO: other variants for this function could be included here
             return np.clip(p, 0, 1)
 
-        if "params_section" in self.boundaries:
+        # add here necessary logic to convert raw config data to NeuroTS context data
+        self.boundaries = json.loads(self.boundaries)
+        for i, boundary in enumerate(self.boundaries):
 
-            def section_prob(direction, current_point):
-                """Probability function for the sections."""
-                dist = get_distance_to_mesh(mesh, current_point, direction)
-                return _prob(dist, self.boundaries["params_section"])
+            mtypes = boundary.pop('mtypes', None)
+            if mtypes is not None and mtype not in mtypes:
+                continue
+            # TODO: add check a similar check on neurite_types
 
-            self.boundaries["section_prob"] = section_prob
+            mesh = trimesh.load_mesh(boundary["path"])
 
-        if "params_trunk" in self.boundaries:
+            if "params_section" in boundary:
 
-            def trunk_prob(direction, current_point):
-                """Probability function for the trunks."""
-                dist = get_distance_to_mesh(mesh, current_point, direction)
-                return _prob(dist, self.boundaries["params_trunk"])
+                def section_prob(direction, current_point):
+                    """Probability function for the sections."""
+                    dist = get_distance_to_mesh(mesh, current_point, direction)
+                    return _prob(dist, boundary["params_section"])
 
-            self.boundaries["trunk_prob"] = trunk_prob
+                self.boundaries[i]["section_prob"] = section_prob
+
+            if "params_trunk" in boundary:
+
+                def trunk_prob(direction, current_point):
+                    """Probability function for the trunks."""
+                    dist = get_distance_to_mesh(mesh, current_point, direction)
+                    return _prob(dist, boundary["params_trunk"])
+
+                self.boundaries[i]["trunk_prob"] = trunk_prob
+
         return self.boundaries
 
     def layer_fraction_to_position(self, layer: int, layer_fraction: float) -> float:
@@ -406,7 +412,9 @@ class SpaceWorker:
 
         context = {"debug_data": self.debug_infos["input_scaling"]}
         if self.context.boundaries is not None:
-            context.update(self.context.get_boundaries())
+            context["boundaries"] = self.context.get_boundaries(
+                mtype=self.cell.mtype, neurite_types=params["grow_types"]
+            )
 
         grower = NeuronGrower(
             input_parameters=params,

@@ -31,6 +31,7 @@ class AtlasHelper:
         if region_structure_path is not None and Path(region_structure_path).exists():
             with open(region_structure_path, "r", encoding="utf-8") as region_file:
                 self.region_structure = yaml.safe_load(region_file)
+                self.region_structure_base_path = Path(region_structure_path).parent
         else:
             raise ValueError(f"region_structure file not found at {region_structure_path}.")
 

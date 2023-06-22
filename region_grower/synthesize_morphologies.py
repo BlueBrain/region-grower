@@ -527,9 +527,13 @@ class SynthesizeMorphologies:
             )
 
             if "boundaries" in self.atlas.region_structure[_region]:
-                self.cells_data.loc[region_mask, "boundaries"] = json.dumps(
-                    self.atlas.region_structure[_region]["boundaries"]
-                )
+                boundaries = self.atlas.region_structure[_region]["boundaries"]
+                for boundary in boundaries:
+                    if not Path(boundary["path"]).is_absolute():
+                        boundary["path"] = str(
+                            self.atlas.region_structure_base_path / boundary["path"]
+                        )
+                self.cells_data.loc[region_mask, "boundaries"] = json.dumps(boundaries)
                 self.cells_data.loc[region_mask, "atlas_info"] = json.dumps(
                     {
                         "voxel_dimensions": self.atlas.depths[_region].voxel_dimensions.tolist(),
