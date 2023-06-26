@@ -28,7 +28,7 @@ DATA = Path(__file__).parent / "data"
 
 def check_yaml(ref_path, tested_path):
     """Compare a YAML file to a reference file."""
-    print(f"Check YAML:\n\tref:{ref_path}\n\ttested: {tested_path}")
+    print(f"Check YAML:\n\tref: {ref_path}\n\ttested: {tested_path}")
     assert ref_path.exists()
     assert tested_path.exists()
     with open(ref_path, encoding="utf-8") as ref_file, open(
@@ -187,7 +187,7 @@ def test_synthesize_skip_write(
         None,
     ]
     assert [[i[0].tolist()] if i else i for i in res["apical_points"].tolist()] == [
-        [[-69.30585479736328, 128.98513793945312, -27.75257110595703]],
+        [[-61.4032096862793, 143.58326721191406, 7.500986576080322]],
         None,
         [[2.202280044555664, 116.80427551269531, 1.3548266887664795]],
         None,

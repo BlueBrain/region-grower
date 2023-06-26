@@ -103,10 +103,10 @@ class TestSpaceWorker:
         # Synthesize in L2
         result = context_worker.synthesize()
 
-        assert_array_equal(result.apical_sections, np.array([63]))
+        assert_array_equal(result.apical_sections, np.array([65]))
         assert_array_almost_equal(
             result.apical_points,
-            np.array([[-7.19463158, 266.21151733, 12.50336075]]),
+            np.array([[27.938920974731445, 241.92730712890625, -40.238929748535156]]),
         )
 
         # This tests that input orientations are not mutated by the synthesize() call
@@ -176,10 +176,10 @@ class TestSpaceWorker:
 
         result = context_worker.synthesize()
 
-        assert_array_equal(result.apical_sections, np.array([63]))
+        assert_array_equal(result.apical_sections, np.array([65]))
         assert_array_almost_equal(
             result.apical_points,
-            np.array([[-7.19463158, 266.21151733, 12.50336075]]),
+            np.array([[27.938920974731445, 241.92730712890625, -40.238929748535156]]),
         )
 
         # This tests that input orientations are not mutated by the synthesize() call
@@ -260,28 +260,28 @@ class TestSpaceWorker:
             ],
             [
                 [
-                    [0.0, 7.636328220367432, 0.0],
-                    [-0.05446799844503403, 9.565113067626953, -0.004176999907940626],
+                    [0.0, 7.636328, 0.0],
+                    [-0.05446800, 9.565113, -0.004177],
                 ],
                 [
-                    [-1.8836770057678223, -3.8763949871063232, 6.3038740158081055],
-                    [-2.8858020305633545, -6.487758159637451, 10.838364601135254],
+                    [-1.883677, -3.876395, 6.303874],
+                    [-2.885802, -6.487758, 10.838365],
                 ],
                 [
-                    [7.384983062744141, 1.0597859621047974, 1.6286120414733887],
-                    [18.221834182739258, 0.030551999807357788, 2.9156060218811035],
+                    [7.384983, 1.059786, 1.628612],
+                    [18.221834, 0.030552, 2.915606],
                 ],
                 [
-                    [-3.335297107696533, 4.92931604385376, 4.784468173980713],
-                    [-21.92222785949707, 27.993545532226562, 22.405996322631836],
+                    [-3.335297, 4.929316, 4.784468],
+                    [-21.454908, 24.892109, 23.978989],
                 ],
             ],
         )
 
-        assert_array_equal(result.apical_sections, np.array([17]))
+        assert_array_equal(result.apical_sections, np.array([18]))
         assert_array_almost_equal(
             result.apical_points,
-            np.array([[6.208977699279785, 59.538753509521484, -5.052260875701904]]),
+            np.array([[8.790215, 73.14615, -5.571031]]),
         )
 
         # Test with hard limit scale
@@ -312,30 +312,30 @@ class TestSpaceWorker:
                 np.around(np.array([neu.points[0], neu.points[-1]]), 6)
                 for neu in result.neuron.root_sections
             ],
-            [
+            [  # fmt: off
                 [
-                    [0.0, 7.636328220367432, 0.0],
-                    [-0.05270500108599663, 9.502668380737305, -0.0040420000441372395],
+                    [0.0, 7.636328, 0.0],
+                    [-0.05147900, 9.459249, -0.003948000],
                 ],
                 [
-                    [-1.8836770057678223, -3.8763949871063232, 6.3038740158081055],
-                    [-2.8858020305633545, -6.487758159637451, 10.838364601135254],
+                    [-1.883677, -3.876395, 6.303874],
+                    [-2.885802, -6.487758, 10.838365],
                 ],
                 [
-                    [7.384983062744141, 1.0597859621047974, 1.6286120414733887],
-                    [18.221834182739258, 0.030551999807357788, 2.9156060218811035],
+                    [7.384983, 1.059786, 1.628612],
+                    [18.221834, 0.030552, 2.915606],
                 ],
                 [
-                    [-3.335297107696533, 4.92931604385376, 4.784468173980713],
-                    [-21.92222785949707, 27.993545532226562, 22.405996322631836],
-                ],
+                    [-3.335297, 4.929316, 4.784468],
+                    [-21.454908, 24.892109, 23.978989],
+                ],  # fmt: on
             ],
         )
 
-        assert_array_equal(result.apical_sections, np.array([17]))
+        assert_array_equal(result.apical_sections, np.array([18]))
         assert_array_almost_equal(
             result.apical_points,
-            np.array([[6.007961273193359, 57.8583984375, -4.888692855834961]]),
+            np.array([[8.30774974822998, 69.55054473876953, -5.265255451202393]]),
         )
 
         # Test scale computation
@@ -470,7 +470,7 @@ class TestSpaceWorker:
             "neurite_hard_limit_rescaling": {
                 0: {
                     "neurite_type": "apical_dendrite",
-                    "scale": 0.9676248059345621,
+                    "scale": 0.945113475926085,
                     "target_min_length": 70.0,
                     "target_max_length": 70.0,
                     "deleted": False,
@@ -533,12 +533,12 @@ class TestSpaceWorker:
             result = context_worker.synthesize()
 
         # Synthesize 3 times
-        mock.side_effect = [NeuroTSError] * 2 + [mocker.DEFAULT] * 4
+        mock.side_effect = [NeuroTSError] * 2 + [mocker.DEFAULT] * 7
         context_worker.internals.retries = 3
         result = context_worker.synthesize()
 
-        assert_array_equal(result.apical_sections, np.array([11]))
+        assert_array_equal(result.apical_sections, np.array([57]))
         assert_array_almost_equal(
             result.apical_points,
-            [[5.773976, 201.404648, -1.283983]],
+            [[-91.2721176147461, 202.21499633789062, -86.49562072753906]],
         )
