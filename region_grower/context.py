@@ -108,14 +108,22 @@ class SpaceContext:
     def get_boundaries(self, mtype, neurite_types):
         """Returns a dict with boundaries data for NeuroTS."""
 
-        def get_distance_to_mesh(mesh, ray_origin, ray_direction, debug=False):
+        def get_distance_to_mesh(mesh, ray_origin, ray_direction, mesh_type):
             """Compute distances from point/directions to a mesh."""
-            vox_ray_origin = self.positions_to_indices(ray_origin)
+            debug = os.environ.get("REGION_GROWER_BOUNDARY_DEBUG", 0)
+
+            if mesh_type == "voxel":
+                ray_origin = self.positions_to_indices(ray_origin)
+
             locations = mesh.ray.intersects_location(
-                ray_origins=[vox_ray_origin], ray_directions=[ray_direction]
+                ray_origins=[ray_origin], ray_directions=[ray_direction]
             )[0]
+
             if len(locations):
-                intersect = self.indices_to_positions(locations[0])
+                intersect = locations[0]
+                if mesh_type == "voxel":
+                    intersect = self.indices_to_positions(intersect)
+
                 dist = np.linalg.norm(intersect - ray_origin)
 
                 if debug:  # pragma: no cover
@@ -124,11 +132,13 @@ class SpaceContext:
                     with open("data.csv", "a", encoding="utf8") as file:
                         print(f"{x}, {y}, {z}, {vx}, {vy}, {vz}, {dist}", file=file)
                 return dist
+
             if debug:  # pragma: no cover
                 x, y, z = ray_origin
                 vx, vy, vz = ray_direction
                 with open("data.csv", "a", encoding="utf8") as file:
                     print(f"{x}, {y}, {z}, {vx}, {vy}, {vz}, {-100}", file=file)
+
             return np.inf  # pragma: no cover
 
         def _prob(dist, params):
@@ -143,8 +153,7 @@ class SpaceContext:
         # add here necessary logic to convert raw config data to NeuroTS context data
         self.boundaries = json.loads(self.boundaries)
         for i, boundary in enumerate(self.boundaries):
-
-            mtypes = boundary.pop('mtypes', None)
+            mtypes = boundary.pop("mtypes", None)
             if mtypes is not None and mtype not in mtypes:
                 continue
             # TODO: add check a similar check on neurite_types
@@ -155,7 +164,9 @@ class SpaceContext:
 
                 def section_prob(direction, current_point):
                     """Probability function for the sections."""
-                    dist = get_distance_to_mesh(mesh, current_point, direction)
+                    dist = get_distance_to_mesh(
+                        mesh, current_point, direction, mesh_type=boundary.get("mesh_type", "voxel")
+                    )
                     return _prob(dist, boundary["params_section"])
 
                 self.boundaries[i]["section_prob"] = section_prob
@@ -164,7 +175,9 @@ class SpaceContext:
 
                 def trunk_prob(direction, current_point):
                     """Probability function for the trunks."""
-                    dist = get_distance_to_mesh(mesh, current_point, direction)
+                    dist = get_distance_to_mesh(
+                        mesh, current_point, direction, mesh_type=boundary.get("mesh_type", "voxel")
+                    )
                     return _prob(dist, boundary["params_trunk"])
 
                 self.boundaries[i]["trunk_prob"] = trunk_prob
