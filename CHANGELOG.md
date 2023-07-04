@@ -1,5 +1,18 @@
 # Changelog
 
+## [region-grower-v1.0.1](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.0.0...region-grower-v1.0.1)
+
+> 4 July 2023
+
+### Build
+
+- Relax constrain Numpy&lt;1.25 (Adrien Berchet - [88d45f2](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/88d45f246309cba43cee4f61ba2b70bae41f2442))
+- Constrain Numpy&lt;1.25 (Adrien Berchet - [319e3f2](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/319e3f2e65b50e3bc29409d737f5bcf381ee569f))
+
+### New Features
+
+- Handles unknown regions (Alexis Arnaudon - [dca11c6](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/dca11c69d34f7711b5036e202c950c5efc279f32))
+
 ## [region-grower-v1.0.0](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v0.4.3...region-grower-v1.0.0)
 
 > 12 May 2023
