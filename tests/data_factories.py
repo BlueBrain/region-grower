@@ -35,9 +35,9 @@ def generate_small_O1(directory):
 
 def generate_cells_df():
     """Raw data for the cell collection."""
-    x = [200] * 12
-    y = [200] * 12
-    z = [200] * 12
+    x = [200] * DF_SIZE
+    y = [200] * DF_SIZE
+    z = [200] * DF_SIZE
     df = pd.DataFrame(
         {
             "mtype": list(repeat("L2_TPC:A", DF_SIZE)),
@@ -62,6 +62,9 @@ def generate_cells_df():
             "z": z,
         }
     )
+    # add a cell from another region without region_structure information
+    df.loc[12] = df.loc[11]
+    df.loc[12, "region"] = "other"
     df.index += 1
     return df
 
@@ -102,6 +105,8 @@ def generate_axon_morph_tsv(tmpdir):
             "scale": np.repeat([0.5, 1, None], np.ceil(DF_SIZE // 3))[:DF_SIZE],
         }
     )
+    df.loc[12, "morphology"] = "C170797A-P1"
+    df.loc[12, "scale"] = 1
     filename = tmpdir / "axon_morphs.tsv"
     df.to_csv(filename, sep="\t", na_rep="N/A")
     return filename

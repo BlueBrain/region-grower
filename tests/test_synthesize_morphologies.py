@@ -121,9 +121,10 @@ def test_synthesize(
 
     # Check results
     if with_axon:
-        expected_size = 12
+        expected_size = 15
     else:
-        expected_size = 36
+        expected_size = 39
+
     assert len(list(iter_morphology_files(tmp_folder))) == expected_size
 
     if with_axon:
@@ -176,6 +177,7 @@ def test_synthesize_skip_write(
     assert (res["x"] == 200).all()
     assert (res["y"] == 200).all()
     assert (res["z"] == 200).all()
+
     assert res["name"].tolist() == [
         "e3e70682c2094cac629f6fbed82c07cd",
         None,
@@ -185,6 +187,7 @@ def test_synthesize_skip_write(
         None,
         "4462ebfc5f915ef09cfbac6e7687a66e",
         None,
+        "87751d4ca8501e2c44dcda6a797d76de",
     ]
     assert [[i[0].tolist()] if i else i for i in res["apical_points"].tolist()] == [
         [[-61.4032096862793, 143.58326721191406, 7.500986576080322]],
@@ -195,6 +198,7 @@ def test_synthesize_skip_write(
         None,
         [[-0.5829713344573975, 91.27519226074219, -7.5925679206848145]],
         None,
+        [[0.0966511219739914, 9.414212226867676, -0.15542809665203094]],
     ]
 
     # Check that the morphologies were not written
@@ -267,7 +271,7 @@ def run_with_mpi():
 
         # Check results
         print(f"============= #{rank}: Checking results")
-        expected_size = 12
+        expected_size = 15
         assert len(list(iter_morphology_files(tmp_folder))) == expected_size
 
         check_yaml(DATA / ("apical.yaml"), args["out_apical"])

@@ -100,6 +100,8 @@ class SpaceContext:
 
         Second one is the equivalent value for the same layer but in the cortical column.
         """
+        if self.cortical_depths is None:
+            return 1, 1
         for layer_depth, cortical_depth in zip(self.layer_depths[1:], self.cortical_depths):
             # we round to avoid being outside due to numerical precision
             if np.round(depth, 3) <= np.round(layer_depth, 3):

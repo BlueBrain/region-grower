@@ -92,6 +92,7 @@ def _parallel_wrapper(
             layer_depths=row["layer_depths"],
             cortical_depths=cortical_depths[row["synthesis_region"]],
         )
+
         axon_scale = row.get("axon_scale", None)
         if axon_scale is not None and np.isnan(axon_scale):
             axon_scale = None
@@ -233,7 +234,7 @@ class SynthesizeMorphologies:
             self.tmd_distributions = convert_from_legacy_neurite_type(json.load(f))
 
         self.regions = [r for r in self.tmd_parameters if r != "default"]
-        self.cortical_depths = {}
+        self.cortical_depths = {"default": None}
         for region in self.regions:
             self.cortical_depths[region] = np.cumsum(
                 list(self.atlas.region_structure[region]["thicknesses"].values())
@@ -314,15 +315,26 @@ class SynthesizeMorphologies:
         """Open an Atlas and compute depths and orientations according to the given positions."""
         for region in self.cells_data.region.unique():
             _region = self.region_mapper[region]
+
             region_mask = self.cells_data.region == region
             positions = self.cells.positions[region_mask]
-            layer_depths = self.atlas.get_layer_boundary_depths(positions, _region)
-            current_depths = np.clip(
-                self.atlas.depths[_region].lookup(positions), min_depth, max_depth
-            )
+
+            if _region in self.atlas.regions:
+                layer_depths = self.atlas.get_layer_boundary_depths(positions, _region).T.tolist()
+                current_depths = np.clip(
+                    self.atlas.depths[_region].lookup(positions), min_depth, max_depth
+                )
+            else:
+                LOGGER.warning(
+                    "We are not able to syhnthesize the region %s, we fallback to 'default' region",
+                    _region,
+                )
+                layer_depths = None
+                current_depths = None
+
             self.cells_data.loc[region_mask, "current_depth"] = current_depths
             self.cells_data.loc[region_mask, "layer_depths"] = pd.Series(
-                data=layer_depths.T.tolist(), index=self.cells_data.loc[region_mask].index
+                data=layer_depths, index=self.cells_data.loc[region_mask].index
             )
             orientations = self.atlas.orientations.lookup(positions)
             self.cells_data.loc[region_mask, "orientation"] = pd.Series(

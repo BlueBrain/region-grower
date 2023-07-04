@@ -36,7 +36,8 @@ class AtlasHelper:
         self.layers = {}
         self.thicknesses = {}
         self.depths = {}
-        for region in self.region_structure:
+        self.regions = list(self.region_structure.keys())
+        for region in self.regions:
             self.layers[region] = self.region_structure[region]["layers"]
             self.thicknesses[region] = [
                 self.layer_thickness(layer) for layer in self.layers[region]
