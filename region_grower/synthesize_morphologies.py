@@ -236,9 +236,12 @@ class SynthesizeMorphologies:
         self.regions = [r for r in self.tmd_parameters if r != "default"]
         self.cortical_depths = {"default": None}
         for region in self.regions:
-            self.cortical_depths[region] = np.cumsum(
-                list(self.atlas.region_structure[region]["thicknesses"].values())
-            ).tolist()
+            if region not in self.atlas.region_structure:
+                self.cortical_depths[region] = self.cortical_depths["default"]
+            else:
+                self.cortical_depths[region] = np.cumsum(
+                    list(self.atlas.region_structure[region]["thicknesses"].values())
+                ).tolist()
 
         self.region_mapper = RegionMapper(
             self.regions, RegionMap.load_json(Path(atlas) / "hierarchy.json")

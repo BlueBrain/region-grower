@@ -65,6 +65,8 @@ def generate_cells_df():
     # add a cell from another region without region_structure information
     df.loc[12] = df.loc[11]
     df.loc[12, "region"] = "other"
+    df.loc[13] = df.loc[11]
+    df.loc[13, "region"] = "other without layer info"
     df.index += 1
     return df
 
@@ -107,6 +109,8 @@ def generate_axon_morph_tsv(tmpdir):
     )
     df.loc[12, "morphology"] = "C170797A-P1"
     df.loc[12, "scale"] = 1
+    df.loc[13, "morphology"] = "C170797A-P1"
+    df.loc[13, "scale"] = 1
     filename = tmpdir / "axon_morphs.tsv"
     df.to_csv(filename, sep="\t", na_rep="N/A")
     return filename

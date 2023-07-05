@@ -189,6 +189,7 @@ class TestCli:
             [48],
             None,
             [18],
+            [18],
         ]
         assert debug_data["apical_NRN_sections"].tolist() == [
             [56],
@@ -199,6 +200,7 @@ class TestCli:
             None,
             [22],
             None,
+            [0],
             [0],
         ]
 

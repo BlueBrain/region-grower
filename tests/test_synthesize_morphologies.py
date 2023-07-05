@@ -121,9 +121,9 @@ def test_synthesize(
 
     # Check results
     if with_axon:
-        expected_size = 15
+        expected_size = 18
     else:
-        expected_size = 39
+        expected_size = 42
 
     assert len(list(iter_morphology_files(tmp_folder))) == expected_size
 
@@ -188,6 +188,7 @@ def test_synthesize_skip_write(
         "4462ebfc5f915ef09cfbac6e7687a66e",
         None,
         "87751d4ca8501e2c44dcda6a797d76de",
+        "e8d79f49af6d114c4a6f188a424e617b",
     ]
     assert [[i[0].tolist()] if i else i for i in res["apical_points"].tolist()] == [
         [[-61.4032096862793, 143.58326721191406, 7.500986576080322]],
@@ -199,6 +200,7 @@ def test_synthesize_skip_write(
         [[-0.5829713344573975, 91.27519226074219, -7.5925679206848145]],
         None,
         [[0.0966511219739914, 9.414212226867676, -0.15542809665203094]],
+        [[-0.1115664467215538, 11.184382438659668, -0.11046791821718216]],
     ]
 
     # Check that the morphologies were not written
