@@ -9,7 +9,9 @@
 import json
 import logging
 import os
+import subprocess
 from pathlib import Path
+from shutil import which
 from typing import Optional
 
 import dask.dataframe as dd
@@ -143,11 +145,11 @@ class SynthesizeMorphologies:
     - write the global results (the new CellCollection and the apical points)
 
     Args:
-        input_cells: the path to the MVD3 file.
+        input_cells: the path to the MVD3/sonata file.
         tmd_parameters: the path to the JSON file containing the TMD parameters.
         tmd_distributions: the path to the JSON file containing the TMD distributions.
         atlas: the path to the Atlas directory.
-        out_cells: the path to the MVD3 file in which the properties of the synthesized
+        out_cells: the path to the MVD3/sonata file in which the properties of the synthesized
             cells are written.
         out_apical: the path to the YAML file in which the apical points are written.
         out_morph_dir: the path to the directory in which the synthesized morphologies are
@@ -206,6 +208,7 @@ class SynthesizeMorphologies:
         skip_write=False,
         min_hard_scale=0.2,
         region_structure=None,
+        container_path=None,
     ):  # pylint: disable=too-many-arguments, too-many-locals
         self.seed = seed
         self.scaling_jitter_std = scaling_jitter_std
@@ -219,6 +222,7 @@ class SynthesizeMorphologies:
         self.atlas = AtlasHelper(
             Atlas.open(atlas, cache_dir=atlas_cache), region_structure_path=region_structure
         )
+        self.container_path = container_path
 
         self._init_parallel(with_mpi, nb_processes)
 
@@ -457,6 +461,30 @@ class SynthesizeMorphologies:
         if self.out_debug_data is not None:
             LOGGER.info("Export debug data to %s...", self.out_debug_data)
             result.to_pickle(self.out_debug_data)
+
+        if self.container_path is not None:  # pragma: no cover
+            # this needs at least module morpho-kit/0.3.6
+            LOGGER.info("Containerizing morphologies to %s...", self.container_path)
+
+            if which("morphokit_merge") is None:
+                raise RuntimeError(
+                    "The 'morphokit_merge' command is not available, please install the MorphoKit."
+                )
+
+            with subprocess.Popen(
+                [
+                    "morphokit_merge",
+                    self.morph_writer.output_dir,
+                    "--nodes",
+                    self.out_cells,
+                    "--output",
+                    self.container_path,
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                env={"PATH": os.getenv("PATH", "")},
+            ) as proc:
+                LOGGER.debug(proc.communicate()[0].decode())
 
     def synthesize(self):
         """Execute the complete synthesis process and export the results."""

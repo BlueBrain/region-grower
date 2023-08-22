@@ -134,7 +134,7 @@ def generate_distributions(
 @click.option(
     "--input-cells",
     help=(
-        "Path to a MVD3 file storing cells collection whose positions are used as new soma "
+        "Path to a MVD3/sonata file storing cells collection whose positions are used as new soma "
         "locations"
     ),
     required=True,
@@ -244,6 +244,12 @@ def generate_distributions(
     help="Path to region structure file",
     required=False,
     default="region_structure.yaml",
+)
+@click.option(
+    "--container-path",
+    help="Path to container file of all morphologies (if None, not container created)",
+    required=False,
+    default=None,
 )
 def synthesize_morphologies(**kwargs):  # pylint: disable=too-many-arguments, too-many-locals
     """Synthesize morphologies."""
