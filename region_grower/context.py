@@ -117,7 +117,7 @@ class SpaceContext:
             constraint: a dict containing a 'layer' key and a 'fraction' keys.
 
         """
-        if not constraint:
+        if not constraint or not self.layer_depths or np.isnan(self.layer_depths).all():
             return None
 
         constraint_position = self.layer_fraction_to_position(

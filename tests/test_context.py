@@ -78,6 +78,10 @@ class TestSpaceContext:
         assert space_context.distance_to_constraint(-100, {"layer": 6, "fraction": 0}) == -900
         assert space_context.distance_to_constraint(1000, {"layer": 6, "fraction": 0}) == 200
 
+        for i in [np.nan, None, []]:
+            space_context.layer_depths = i
+            assert space_context.distance_to_constraint(1000, {"layer": 6, "fraction": 0}) is None
+
 
 class TestSpaceWorker:
     """Test private functions of the SpaceWorker class."""

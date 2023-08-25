@@ -214,6 +214,11 @@ class SynthesizeMorphologies:
         self.scaling_jitter_std = scaling_jitter_std
         self.rotational_jitter_std = rotational_jitter_std
         self.with_NRN_sections = out_apical_nrn_sections is not None
+        if self.with_NRN_sections and not set(["asc", "swc"]).intersection(out_morph_ext):
+            raise ValueError(
+                """The 'out_morph_ext' parameter must contain one of ["asc", "swc"] when """
+                f"'with_NRN_sections' is set to True (current value is {list(out_morph_ext)})."
+            )
         self.out_apical_nrn_sections = out_apical_nrn_sections
         self.out_cells = out_cells
         self.out_apical = out_apical
@@ -237,15 +242,11 @@ class SynthesizeMorphologies:
         with open(tmd_distributions, "r", encoding="utf-8") as f:
             self.tmd_distributions = convert_from_legacy_neurite_type(json.load(f))
 
+        # Set default values to tmd_parameters and tmd_distributions
+        self.set_default_params_and_distrs()
+
         self.regions = [r for r in self.tmd_parameters if r != "default"]
-        self.cortical_depths = {"default": None}
-        for region in self.regions:
-            if region not in self.atlas.region_structure:
-                self.cortical_depths[region] = self.cortical_depths["default"]
-            else:
-                self.cortical_depths[region] = np.cumsum(
-                    list(self.atlas.region_structure[region]["thicknesses"].values())
-                ).tolist()
+        self.set_cortical_depths()
 
         self.region_mapper = RegionMapper(
             self.regions, RegionMap.load_json(Path(atlas) / "hierarchy.json")
@@ -287,6 +288,31 @@ class SynthesizeMorphologies:
             self.axon_morph_list = None
             self.morph_loader = None
 
+    def set_cortical_depths(self):
+        """Set cortical depths for all regions."""
+        self.cortical_depths = {"default": None}
+        for region in self.regions:
+            if region not in self.atlas.region_structure:
+                self.cortical_depths[region] = self.cortical_depths["default"]
+            else:
+                self.cortical_depths[region] = np.cumsum(
+                    list(self.atlas.region_structure[region]["thicknesses"].values())
+                ).tolist()
+
+    def set_default_params_and_distrs(self):
+        """Set default values to all regions in tmd_parameters and tmd_distributions."""
+
+        def set_default_values(data):
+            if "default" in data:  # pragma: no cover
+                for region in data:
+                    if region == "default":
+                        continue
+                    for mtype, value in data["default"].items():
+                        data[region].setdefault(mtype, value)
+
+        set_default_values(self.tmd_parameters)
+        set_default_values(self.tmd_distributions)
+
     def __del__(self):
         """Close the internal client when the object is deleted."""
         try:
@@ -306,7 +332,7 @@ class SynthesizeMorphologies:
             self.nb_processes = comm.Get_size()
             client_kwargs = {}
         else:
-            self.nb_processes = nb_processes or os.cpu_count()
+            self.nb_processes = nb_processes if nb_processes is not None else os.cpu_count()
 
             if self.with_NRN_sections:
                 dask.config.set({"distributed.worker.daemon": False})
@@ -333,7 +359,7 @@ class SynthesizeMorphologies:
                 )
             else:
                 LOGGER.warning(
-                    "We are not able to syhnthesize the region %s, we fallback to 'default' region",
+                    "We are not able to synthesize the region %s, we fallback to 'default' region",
                     _region,
                 )
                 layer_depths = None
@@ -365,6 +391,27 @@ class SynthesizeMorphologies:
             return no_axon.loc[~no_axon].index
         return None
 
+    def check_context_consistency(self):
+        """Check that the context_constraints entries in TMD parameters are consistent."""
+        has_context_constraints = self.cells_data.apply(
+            lambda row: bool(row["tmd_parameters"].get("context_constraints", {})),
+            axis=1,
+        ).rename("has_context_constraints")
+        df = self.cells_data[["synthesis_region", "mtype"]].join(has_context_constraints)
+        df["has_layers"] = df.apply(
+            lambda row: row["synthesis_region"] in self.atlas.regions, axis=1
+        )
+        df["inconsistent_context"] = df.apply(
+            lambda row: row["has_context_constraints"] and not row["has_layers"], axis=1
+        )
+        invalid_elements = df.loc[df["inconsistent_context"]]
+        if not invalid_elements.empty:
+            LOGGER.warning(
+                "The morphologies with the following region/mtype couples have inconsistent "
+                "context and constraints: %s",
+                invalid_elements[["synthesis_region", "mtype"]].value_counts().index.tolist(),
+            )
+
     def compute(self):
         """Run synthesis for all GIDs."""
         computation_parameters = ComputationParameters(
@@ -383,6 +430,9 @@ class SynthesizeMorphologies:
             axis=1,
         )
         self.cells_data["seed"] = (self.seed + self.cells_data.index) % (1 << 32)
+
+        self.check_context_consistency()
+
         func_kwargs = {
             "computation_parameters": computation_parameters,
             "cortical_depths": self.cortical_depths,
@@ -403,13 +453,18 @@ class SynthesizeMorphologies:
                 ]
             }
         )
-        ddf = dd.from_pandas(self.cells_data, npartitions=self.nb_processes)
-        future = ddf.apply(_parallel_wrapper, meta=meta, axis=1, **func_kwargs)
-        future = future.persist()
-        dask.distributed.progress(future)
-        res = self.cells_data.drop(columns=["tmd_parameters", "tmd_distributions"]).join(
-            future.compute()
-        )
+        if self.nb_processes == 0:
+            computed = self.cells_data.apply(
+                lambda row: _parallel_wrapper(row, **func_kwargs), axis=1
+            )
+        else:
+            ddf = dd.from_pandas(self.cells_data, npartitions=self.nb_processes)
+            future = ddf.apply(_parallel_wrapper, meta=meta, axis=1, **func_kwargs)
+            future = future.persist()
+            dask.distributed.progress(future)
+            computed = future.compute()
+
+        res = self.cells_data.drop(columns=["tmd_parameters", "tmd_distributions"]).join(computed)
         return res
 
     def finalize(self, result: pd.DataFrame):

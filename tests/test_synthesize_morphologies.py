@@ -1,5 +1,6 @@
 """Test the region_grower.synthesize_morphologies module."""
 # pylint: disable=missing-function-docstring
+import json
 import logging
 import shutil
 from copy import deepcopy
@@ -148,11 +149,13 @@ def test_synthesize(
             assert_allclose(max_y, 150.24948)
 
 
+@pytest.mark.parametrize("nb_processes", [0, 2, None])
 def test_synthesize_skip_write(
     tmpdir,
     small_O1_path,
     input_cells,
     axon_morph_tsv,
+    nb_processes,
 ):  # pylint: disable=unused-argument
     """Test morphology synthesis but skip write step."""
     with_axon = True
@@ -170,6 +173,7 @@ def test_synthesize_skip_write(
         min_depth,
     )
     args["skip_write"] = True
+    args["nb_processes"] = nb_processes
 
     synthesizer = SynthesizeMorphologies(**args)
     res = synthesizer.synthesize()
@@ -435,6 +439,89 @@ def test_RegionMapper(small_O1_path):
     assert region_mapper["O0"] == "O0"
     assert region_mapper["mc0;1"] == "O0"
     assert region_mapper["OTHER"] == "default"
+
+
+def test_inconsistent_params(
+    tmpdir,
+    small_O1_path,
+    input_cells,
+    axon_morph_tsv,
+):  # pylint: disable=unused-argument
+    """Test morphology synthesis but skip write step."""
+    min_depth = 25
+    tmp_folder = Path(tmpdir)
+
+    args = create_args(
+        False,
+        tmp_folder,
+        input_cells,
+        small_O1_path,
+        axon_morph_tsv,
+        "apical_NRN_sections.yaml",
+        min_depth,
+    )
+    args["out_morph_ext"] = ["h5"]
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"""The 'out_morph_ext' parameter must contain one of \["asc", "swc"\] when """
+            r"""'with_NRN_sections' is set to True \(current value is \['h5'\]\)\."""
+        ),
+    ):
+        SynthesizeMorphologies(**args)
+
+
+def test_inconsistent_context(
+    tmpdir,
+    small_O1_path,
+    input_cells,
+    axon_morph_tsv,
+    caplog,
+):  # pylint: disable=unused-argument
+    """Test morphology synthesis with inconsistent context constraints."""
+    min_depth = 25
+    tmp_folder = Path(tmpdir)
+
+    args = create_args(
+        False,
+        tmp_folder,
+        input_cells,
+        small_O1_path,
+        axon_morph_tsv,
+        "apical_NRN_sections.yaml",
+        min_depth,
+    )
+    args["nb_processes"] = 0
+
+    with args["tmd_parameters"].open("r", encoding="utf-8") as f:
+        tmd_parameters = json.load(f)
+
+    tmd_parameters["default"]["L2_TPC:A"]["context_constraints"] = {
+        "apical_dendrite": {
+            "extent_to_target": {
+                "slope": 0.5,
+                "intercept": 1,
+                "layer": 1,
+                "fraction": 0.5,
+            }
+        }
+    }
+
+    args["tmd_parameters"] = tmp_folder / "tmd_parameters.json"
+    with args["tmd_parameters"].open("w", encoding="utf-8") as f:
+        json.dump(tmd_parameters, f)
+
+    synthesizer = SynthesizeMorphologies(**args)
+    caplog.set_level(logging.WARNING)
+    caplog.clear()
+    synthesizer.synthesize()
+    assert caplog.record_tuples[0] == (
+        "region_grower.synthesize_morphologies",
+        30,
+        "The morphologies with the following region/mtype couples have inconsistent context and "
+        "constraints: [('default', 'L2_TPC:A')]",
+    )
 
 
 if __name__ == "__main__":  # pragma: no cover
