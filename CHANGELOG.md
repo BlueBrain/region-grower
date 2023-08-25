@@ -1,5 +1,18 @@
 # Changelog
 
+## [region-grower-v1.1.0](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.0.1...region-grower-v1.1.0)
+
+> 25 August 2023
+
+### New Features
+
+- Propagate mtypes from default region to all others (Adrien Berchet - [5813df4](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/5813df48d85ce8fb54cb97d3ca8596ce8430dc49))
+- Add optional container finalize step (Alexis Arnaudon - [0ecdcae](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/0ecdcaee8fbe51ef9191fda8557e26dd1af819c5))
+
+### Fixes
+
+- Handle regions with parameters but no layer information (Adrien Berchet - [08aadd8](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/08aadd8bc7b4703b6a8b68fb1cf4ad6a7a5977d3))
+
 ## [region-grower-v1.0.1](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.0.0...region-grower-v1.0.1)
 
 > 4 July 2023
