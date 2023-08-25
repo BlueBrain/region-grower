@@ -1,3 +1,3 @@
 """Version of the region-grower package."""
 
-VERSION = "1.0.2.dev0"  # pragma: no cover
+VERSION = "1.1.0"  # pragma: no cover
