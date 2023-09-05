@@ -24,15 +24,15 @@ reqs = [
     "neurom>=3,<4",
     "neurots>=3.4,<4",
     "numpy>=1.22",
-    "pandas>=2.0",
+    "pandas>=1.5.3",
     "tqdm>=4.28.1",
     "urllib3>=1.26,<2; python_version < '3.9'",
     "voxcell>=3.1.1,<4",
 ]
 
 mpi_extras = [
-    "dask_mpi",
-    "mpi4py>=3.0.3",
+    "dask_mpi>=2022.4",
+    "mpi4py>=3.1.1",
 ]
 
 doc_reqs = [
