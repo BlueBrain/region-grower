@@ -1,8 +1,16 @@
 # Changelog
 
+## [region-grower-v1.1.1](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.1.0...region-grower-v1.1.1)
+
+> 5 September 2023
+
+### General Changes
+
+- Build (deps): Relax Pandas to &gt;=1.5.3 (Adrien Berchet - [8a113a1](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/8a113a18dd655743fea1cdf869f8d16f46eaca64))
+
 ## [region-grower-v1.1.0](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.0.1...region-grower-v1.1.0)
 
-> 25 August 2023
+> 26 August 2023
 
 ### New Features
 
