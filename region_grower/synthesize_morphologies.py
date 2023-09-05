@@ -126,6 +126,7 @@ def _parallel_wrapper(
         current_space_context = SpaceContext(
             layer_depths=row["layer_depths"],
             cortical_depths=row["cortical_depths"],
+            directions=row["directions"] if "directions" in row else None,
             boundaries=row["boundaries"] if "boundaries" in row else None,
             atlas_info=json.loads(row["atlas_info"]) if "atlas_info" in row else None,
         )
@@ -526,6 +527,10 @@ class SynthesizeMorphologies:
                 dtype=object,
             )
 
+            if "directions" in self.atlas.region_structure[_region]:
+                self.cells_data.loc[region_mask, "directions"] = json.dumps(
+                    self.atlas.region_structure[_region]["directions"]
+                )
             if "boundaries" in self.atlas.region_structure[_region]:
                 boundaries = self.atlas.region_structure[_region]["boundaries"]
                 for boundary in boundaries:
