@@ -86,6 +86,7 @@ class SpaceContext:
     layer_depths: List
     cortical_depths: List
     boundaries: List = None
+    directions: Dict = None
     atlas_info: Dict = {}  # voxel_dimensions, offset and shape from atlas for indices conversion
 
     def indices_to_positions(self, indices):
@@ -105,7 +106,25 @@ class SpaceContext:
         result[result >= self.atlas_info["shape"]] = -1
         return result
 
-    def get_boundaries(self, mtype, neurite_types):
+    def get_direction(self, mtype):
+        for i, direction in enumerate(self.directions):
+            target_direction = direction["params"]["direction"]
+            strength = direction["params"]["strength"]
+
+            def section_prob(seg_direction, current_point):
+                """Probability function for the sections."""
+                p = np.clip(
+                    1.0 - np.arccos(seg_direction.dot(target_direction)) * strength / np.pi,
+                    0,
+                    1,
+                )
+                return p
+
+            self.directions[i]["section_prob"] = section_prob
+
+        return self.directions
+
+    def get_boundaries(self, mtype):
         """Returns a dict with boundaries data for NeuroTS."""
 
         def get_distance_to_mesh(mesh, ray_origin, ray_direction, mesh_type):
@@ -151,12 +170,11 @@ class SpaceContext:
             return np.clip(p, 0, 1)
 
         # add here necessary logic to convert raw config data to NeuroTS context data
-        self.boundaries = json.loads(self.boundaries)
-        for i, boundary in enumerate(self.boundaries):
+        boundaries = json.loads(self.boundaries)
+        for i, boundary in enumerate(boundaries):
             mtypes = boundary.pop("mtypes", None)
             if mtypes is not None and mtype not in mtypes:
                 continue
-            # TODO: add check a similar check on neurite_types
 
             mesh = trimesh.load_mesh(boundary["path"])
 
@@ -169,7 +187,7 @@ class SpaceContext:
                     )
                     return _prob(dist, boundary["params_section"])
 
-                self.boundaries[i]["section_prob"] = section_prob
+                boundaries[i]["section_prob"] = section_prob
 
             if "params_trunk" in boundary:
 
@@ -180,9 +198,9 @@ class SpaceContext:
                     )
                     return _prob(dist, boundary["params_trunk"])
 
-                self.boundaries[i]["trunk_prob"] = trunk_prob
+                boundaries[i]["trunk_prob"] = trunk_prob
 
-        return self.boundaries
+        return boundaries
 
     def layer_fraction_to_position(self, layer: int, layer_fraction: float) -> float:
         """Returns an absolute position from a layer and a fraction of the layer.
@@ -282,6 +300,12 @@ class SpaceWorker:
     def _correct_position_orientation_scaling(self, params_orig: Dict) -> Dict:
         """Return a copy of the parameter with the correct orientation and scaling."""
         params = deepcopy(params_orig)
+        self.context.directions = json.loads(self.context.directions)
+        if self.context.directions is not None:
+            for i, direction in enumerate(self.context.directions):
+                self.context.directions[i]["params"]["direction"] = self.cell.lookup_orientation(
+                    direction["params"]["direction"]
+                )
 
         for neurite_type in params["grow_types"]:
             if isinstance(params[neurite_type]["orientation"], dict):
@@ -424,10 +448,14 @@ class SpaceWorker:
             axon_morph = None
 
         context = {"debug_data": self.debug_infos["input_scaling"]}
+        if self.context.directions is not None:
+            if "constraints" not in context:
+                context["constraints"] = []
+            context["constraints"] += self.context.get_direction(mtype=self.cell.mtype)
         if self.context.boundaries is not None:
-            context["boundaries"] = self.context.get_boundaries(
-                mtype=self.cell.mtype, neurite_types=params["grow_types"]
-            )
+            if "constraints" not in context:
+                context["constraints"] = []
+            context["constraints"] += self.context.get_boundaries(mtype=self.cell.mtype)
 
         grower = NeuronGrower(
             input_parameters=params,
