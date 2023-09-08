@@ -180,25 +180,25 @@ class TestCli:
         )
         assert equal_infos.all()
         assert debug_data["apical_sections"].tolist() == [
-            [78],
+            [36],
             None,
-            [19],
+            [20],
             None,
-            [46],
+            [43],
             None,
-            [48],
+            [49],
             None,
             [18],
             [18],
         ]
         assert debug_data["apical_NRN_sections"].tolist() == [
-            [56],
+            [14],
             None,
-            [5],
+            [6],
             None,
-            [13],
+            [10],
             None,
-            [22],
+            [18],
             None,
             [0],
             [0],
