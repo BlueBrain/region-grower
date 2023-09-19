@@ -1,5 +1,17 @@
 # Changelog
 
+## [region-grower-v1.1.2](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.1.1...region-grower-v1.1.2)
+
+> 19 September 2023
+
+### New Features
+
+- Handle no layers (Alexis Arnaudon - [2a0a366](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/2a0a3662ac454ee828f23d82a7caccec745776a8))
+
+### Fixes
+
+- Update test from NeuroTS changes (Alexis Arnaudon - [7e6443a](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/7e6443a724fa971d27915e3fa55b35be11f8b7b7))
+
 ## [region-grower-v1.1.1](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.1.0...region-grower-v1.1.1)
 
 > 5 September 2023
