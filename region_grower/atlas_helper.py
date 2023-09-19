@@ -39,12 +39,16 @@ class AtlasHelper:
         self.regions = list(self.region_structure.keys())
         for region in self.regions:
             self.layers[region] = self.region_structure[region]["layers"]
-            self.thicknesses[region] = [
-                self.layer_thickness(layer) for layer in self.layers[region]
-            ]
-            self.depths[region] = VoxelData.reduce(
-                operator.sub, [self.pia_coord(region), atlas.load_data("[PH]y")]
-            )
+            if self.layers[region]:
+                self.thicknesses[region] = [
+                    self.layer_thickness(layer) for layer in self.layers[region]
+                ]
+                self.depths[region] = VoxelData.reduce(
+                    operator.sub, [self.pia_coord(region), atlas.load_data("[PH]y")]
+                )
+            else:  # pragma: no cover
+                self.thicknesses[region] = None
+                self.depths[region] = None
         self.brain_regions = atlas.load_data("brain_regions")
         self.orientations = atlas.load_data("orientation", cls=OrientationField)
 

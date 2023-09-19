@@ -223,11 +223,10 @@ class TestSpaceWorker:
                 dtype=np.float32,
             ),
         )
-
         assert_array_almost_equal(
             next(result.neuron.iter()).diameters,
             np.array(
-                [0.896093, 0.894735, 0.892976, 0.891206, 0.889024, 0.887687, 0.886687],
+                [0.8960928, 0.89473546, 0.8929764, 0.89120615, 0.88902414, 0.88768685, 0.8866874],
                 dtype=np.float32,
             ),
         )
@@ -285,7 +284,7 @@ class TestSpaceWorker:
         assert_array_equal(result.apical_sections, np.array([14]))
         assert_array_almost_equal(
             result.apical_points,
-            np.array([[-2.841851, 67.963264, 1.485908]]),
+            np.array([[-2.841851234436035, 67.96326446533203, 1.485908031463623]]),
         )
 
         # Test with hard limit scale

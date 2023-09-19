@@ -188,8 +188,8 @@ class TestCli:
             None,
             [49],
             None,
-            [18],
-            [18],
+            [76],
+            [75],
         ]
         assert debug_data["apical_NRN_sections"].tolist() == [
             [14],
@@ -200,8 +200,8 @@ class TestCli:
             None,
             [18],
             None,
-            [0],
-            [0],
+            [57],
+            [21],
         ]
 
         cols = ["apical_sections", "apical_NRN_sections", "apical_points", "debug_infos"]

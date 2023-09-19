@@ -22,7 +22,12 @@ def test_scale_default_barcode():
     res = modify.scale_default_barcode(
         np.array(ph) * 10, None, reference_thickness, target_thickness
     )
-    assert_array_equal(res, [[1 / 3, 2 / 3], [1, 4 / 3]])
+    assert_array_equal(res, [[1, 2], [3, 4]])
+
+    reference_thickness = 2.0
+    target_thickness = 0.5
+    res = modify.scale_default_barcode(ph, None, reference_thickness, target_thickness)
+    assert_array_equal(res, [[0.025, 0.05], [0.075, 0.1]])
 
 
 def test_scale_target_barcode():

@@ -292,7 +292,10 @@ class SynthesizeMorphologies:
         """Set cortical depths for all regions."""
         self.cortical_depths = {"default": None}
         for region in self.regions:
-            if region not in self.atlas.region_structure:
+            if (
+                region not in self.atlas.region_structure
+                or self.atlas.region_structure[region]["thicknesses"] is None
+            ):
                 self.cortical_depths[region] = self.cortical_depths["default"]
             else:
                 self.cortical_depths[region] = np.cumsum(
@@ -352,7 +355,10 @@ class SynthesizeMorphologies:
             region_mask = self.cells_data.region == region
             positions = self.cells.positions[region_mask]
 
-            if _region in self.atlas.regions:
+            if (
+                _region in self.atlas.regions
+                and self.atlas.region_structure[_region]["thicknesses"] is not None
+            ):
                 layer_depths = self.atlas.get_layer_boundary_depths(positions, _region).T.tolist()
                 current_depths = np.clip(
                     self.atlas.depths[_region].lookup(positions), min_depth, max_depth

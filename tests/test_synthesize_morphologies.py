@@ -37,6 +37,7 @@ def check_yaml(ref_path, tested_path):
     ) as tested_file:
         ref_obj = yaml.load(ref_file, Loader=yaml.FullLoader)
         tested_obj = yaml.load(tested_file, Loader=yaml.FullLoader)
+
     assert ref_obj.keys() == tested_obj.keys()
     for k in ref_obj.keys():
         assert_allclose(ref_obj[k], tested_obj[k])
@@ -203,8 +204,8 @@ def test_synthesize_skip_write(
         None,
         [[12.359382629394531, 90.04046630859375, -1.825372576713562]],
         None,
-        [[0.0966511219739914, 9.414212226867676, -0.15542809665203094]],
-        [[-0.1115664467215538, 11.184382438659668, -0.11046791821718216]],
+        [[6.219625949859619, 371.3540344238281, 6.843407154083252]],
+        [[50.62730407714844, 181.1993865966797, -23.8173828125]],
     ]
 
     # Check that the morphologies were not written
