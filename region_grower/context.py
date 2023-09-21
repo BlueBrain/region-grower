@@ -142,6 +142,7 @@ class SpaceContext:
                 intersect = locations[0]
                 if mesh_type == "voxel":
                     intersect = self.indices_to_positions(intersect)
+                    ray_origin = self.indices_to_positions(ray_origin)
 
                 dist = np.linalg.norm(intersect - ray_origin)
 
@@ -300,8 +301,8 @@ class SpaceWorker:
     def _correct_position_orientation_scaling(self, params_orig: Dict) -> Dict:
         """Return a copy of the parameter with the correct orientation and scaling."""
         params = deepcopy(params_orig)
-        self.context.directions = json.loads(self.context.directions)
         if self.context.directions is not None:
+            self.context.directions = json.loads(self.context.directions)
             for i, direction in enumerate(self.context.directions):
                 self.context.directions[i]["params"]["direction"] = self.cell.lookup_orientation(
                     direction["params"]["direction"]

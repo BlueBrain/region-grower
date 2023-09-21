@@ -537,9 +537,9 @@ class SynthesizeMorphologies:
                 self.cells_data.loc[region_mask, "boundaries"] = json.dumps(boundaries)
                 self.cells_data.loc[region_mask, "atlas_info"] = json.dumps(
                     {
-                        "voxel_dimensions": self.atlas.depths[_region].voxel_dimensions.tolist(),
-                        "offset": self.atlas.depths[_region].offset.tolist(),
-                        "shape": self.atlas.depths[_region].shape,
+                        "voxel_dimensions": self.atlas.brain_regions.voxel_dimensions.tolist(),
+                        "offset": self.atlas.brain_regions.offset.tolist(),
+                        "shape": self.atlas.brain_regions.shape,
                     }
                 )
 
