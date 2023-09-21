@@ -323,7 +323,10 @@ def test_verify(cell_collection, tmd_distributions, tmd_parameters, small_O1_pat
         cells=cell_collection,
         region_mapper=region_mapper,
     )
-    with pytest.raises(RegionGrowerError):
+    with pytest.raises(
+        RegionGrowerError,
+        match="Missing distributions for mtype 'UNKNOWN_MTYPE' in region 'default'",
+    ):
         SynthesizeMorphologies.verify(data)
 
     cell_collection.properties.loc[0, "mtype"] = "L2_TPC:A"
@@ -336,7 +339,9 @@ def test_verify(cell_collection, tmd_distributions, tmd_parameters, small_O1_pat
         cells=cell_collection,
         region_mapper=region_mapper,
     )
-    with pytest.raises(RegionGrowerError):
+    with pytest.raises(
+        RegionGrowerError, match="Missing parameters for mtype 'L2_TPC:A' in region 'default'"
+    ):
         SynthesizeMorphologies.verify(data)
 
     failing_params = deepcopy(tmd_parameters)
@@ -347,7 +352,7 @@ def test_verify(cell_collection, tmd_distributions, tmd_parameters, small_O1_pat
         cells=cell_collection,
         region_mapper=region_mapper,
     )
-    with pytest.raises(neurots.validator.ValidationError):
+    with pytest.raises(neurots.validator.ValidationError, match=r"'origin' is a required property"):
         SynthesizeMorphologies.verify(data)
 
     # Fail when missing attributes
@@ -392,7 +397,9 @@ def test_verify(cell_collection, tmd_distributions, tmd_parameters, small_O1_pat
                 cells=cell_collection,
                 region_mapper=region_mapper,
             )
-            with pytest.raises(jsonschema.exceptions.ValidationError):
+            with pytest.raises(
+                jsonschema.exceptions.ValidationError, match="is a required property"
+            ):
                 SynthesizeMorphologies.verify(data)
 
 

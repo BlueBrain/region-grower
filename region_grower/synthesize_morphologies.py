@@ -569,9 +569,11 @@ class SynthesizeMorphologies:
                 "mtype"
             ].unique():
                 if mtype not in self.tmd_distributions[_region]:
-                    raise RegionGrowerError(f"Missing distributions for mtype: '{mtype}'")
+                    error_msg = f"Missing distributions for mtype '{mtype}' in region '{_region}'"
+                    raise RegionGrowerError(error_msg)
                 if mtype not in self.tmd_parameters[_region]:
-                    raise RegionGrowerError(f"Missing parameters for mtype: '{mtype}'")
+                    error_msg = f"Missing parameters for mtype '{mtype}' in region '{_region}'"
+                    raise RegionGrowerError(error_msg)
 
                 validate_neuron_distribs(self.tmd_distributions[_region][mtype])
                 validate_neuron_params(self.tmd_parameters[_region][mtype])
