@@ -209,7 +209,7 @@ class SynthesizeMorphologies:
         min_hard_scale=0.2,
         region_structure=None,
         container_path=None,
-    ):  # pylint: disable=too-many-arguments, too-many-locals
+    ):  # pylint: disable=too-many-arguments, too-many-locals, too-many-statements
         self.seed = seed
         self.scaling_jitter_std = scaling_jitter_std
         self.rotational_jitter_std = rotational_jitter_std
@@ -228,8 +228,10 @@ class SynthesizeMorphologies:
             Atlas.open(atlas, cache_dir=atlas_cache), region_structure_path=region_structure
         )
         self.container_path = container_path
-
-        self._init_parallel(with_mpi, nb_processes)
+        self.with_mpi = with_mpi
+        self.nb_processes = nb_processes
+        self._client = None
+        self._init_parallel(mpi_only=True)
 
         LOGGER.info("Loading CellCollection from %s", input_cells)
         self.cells = CellCollection.load(input_cells)
@@ -323,9 +325,12 @@ class SynthesizeMorphologies:
         except Exception:  # pylint: disable=broad-except ; # pragma: no cover
             pass
 
-    def _init_parallel(self, with_mpi=False, nb_processes=None):
+    def _init_parallel(self, mpi_only=False):
         """Initialize MPI workers if required or get the number of available processes."""
-        if with_mpi:  # pragma: no cover
+        if self._client is not None:  # pragma: no cover
+            return
+
+        if self.with_mpi:  # pragma: no cover
             # pylint: disable=import-outside-toplevel
             import dask_mpi
             from mpi4py import MPI
@@ -334,8 +339,15 @@ class SynthesizeMorphologies:
             comm = MPI.COMM_WORLD  # pylint: disable=c-extension-no-member
             self.nb_processes = comm.Get_size()
             client_kwargs = {}
+            LOGGER.debug(
+                "Initializing parallel workers using MPI (%s workers found)", self.nb_processes
+            )
+        elif mpi_only:
+            return
         else:
-            self.nb_processes = nb_processes if nb_processes is not None else os.cpu_count()
+            self.nb_processes = (
+                self.nb_processes if self.nb_processes is not None else os.cpu_count()
+            )
 
             if self.with_NRN_sections:
                 dask.config.set({"distributed.worker.daemon": False})
@@ -343,9 +355,18 @@ class SynthesizeMorphologies:
                 "n_workers": self.nb_processes,
                 "dashboard_address": None,
             }
+            LOGGER.debug(
+                "Initializing parallel workers using the following config: %s", client_kwargs
+            )
 
         # This is needed to make dask aware of the workers
         self._client = dask.distributed.Client(**client_kwargs)
+
+    def _close_parallel(self):
+        LOGGER.debug("Closing the Dask client")
+        if not self.with_mpi:  # pragma: no cover
+            self._client.close()
+        self._client = None
 
     def assign_atlas_data(self, min_depth=25, max_depth=5000):
         """Open an Atlas and compute depths and orientations according to the given positions."""
@@ -459,6 +480,7 @@ class SynthesizeMorphologies:
                 ]
             }
         )
+
         if self.nb_processes == 0:
             computed = self.cells_data.apply(
                 lambda row: _parallel_wrapper(row, **func_kwargs), axis=1
@@ -549,8 +571,10 @@ class SynthesizeMorphologies:
 
     def synthesize(self):
         """Execute the complete synthesis process and export the results."""
+        self._init_parallel()
         res = self.compute()
         self.finalize(res)
+        self._close_parallel()
         return res
 
     def verify(self) -> None:
