@@ -1,5 +1,13 @@
 # Changelog
 
+## [region-grower-v1.1.3](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.1.2...region-grower-v1.1.3)
+
+> 21 September 2023
+
+### New Features
+
+- Improve validation error messages (Adrien Berchet - [d0063e5](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/d0063e54b0710032d6bdbcbf25d2ecf06bc31f5f))
+
 ## [region-grower-v1.1.2](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.1.1...region-grower-v1.1.2)
 
 > 19 September 2023
