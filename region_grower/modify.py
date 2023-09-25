@@ -134,7 +134,7 @@ def input_scaling(
                     "with_debug_info": debug_info is not None,
                 },
             }
-        else:
+        elif neurite_type != "axon":
             if debug_info is not None:
                 debug_info.update(
                     {

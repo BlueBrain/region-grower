@@ -110,15 +110,17 @@ class SpaceContext:
         for i, direction in enumerate(self.directions):
             target_direction = direction["params"]["direction"]
             strength = direction["params"]["strength"]
+            mode = direction["params"]["mode"]
 
             def section_prob(seg_direction, current_point):
                 """Probability function for the sections."""
-                p = np.clip(
-                    1.0 - np.arccos(seg_direction.dot(target_direction)) * strength / np.pi,
-                    0,
-                    1,
-                )
-                return p
+                if mode == "parallel":
+                    p = 1.0 - np.arccos(seg_direction.dot(target_direction)) * strength / np.pi
+                if mode == "perpendicular":
+                    p = 1.0 - strength * abs(
+                        np.arccos(seg_direction.dot(target_direction)) / np.pi * 2.0 - 1.0
+                    )
+                return np.clip(p, 0, 1)
 
             self.directions[i]["section_prob"] = section_prob
 
@@ -402,6 +404,7 @@ class SpaceWorker:
         """
         rng = np.random.default_rng(self.params.seed)
 
+        return self._synthesize_once(rng)
         for _ in range(self.internals.retries):
             try:
                 return self._synthesize_once(rng)
