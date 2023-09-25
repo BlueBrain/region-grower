@@ -11,7 +11,7 @@ from voxcell.math_utils import angles_to_matrices
 L = logging.getLogger(__name__)
 
 
-def setup_logger(level="info"):
+def setup_logger(level="info", prefix="", suffix=""):
     """Setup application logger."""
     levels = {
         "debug": logging.DEBUG,
@@ -21,7 +21,7 @@ def setup_logger(level="info"):
         "critical": logging.CRITICAL,
     }
     logging.basicConfig(
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        format=prefix + "%(asctime)s - %(name)s - %(levelname)s - %(message)s" + suffix,
         datefmt="%Y-%m-%dT%H:%M:%S",
         level=levels[level],
     )

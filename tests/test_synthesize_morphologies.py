@@ -253,7 +253,7 @@ def run_with_mpi():
         min_depth=25,
     )
 
-    setup_logger("info")
+    setup_logger("debug", prefix=f"Rank = {rank} - ")
     logging.getLogger("distributed").setLevel(logging.ERROR)
 
     if is_master:
@@ -268,6 +268,7 @@ def run_with_mpi():
         for dest in range(1, COMM.Get_size()):
             req = COMM.isend("done", dest=dest)
     else:
+        print(f"============= #{rank}: Waiting for initialization")
         req = COMM.irecv(source=0)
         req.wait()
 
@@ -278,7 +279,7 @@ def run_with_mpi():
 
         # Check results
         print(f"============= #{rank}: Checking results")
-        expected_size = 15
+        expected_size = 18
         assert len(list(iter_morphology_files(tmp_folder))) == expected_size
 
         check_yaml(DATA / ("apical.yaml"), args["out_apical"])

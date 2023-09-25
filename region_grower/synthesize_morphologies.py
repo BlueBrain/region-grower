@@ -10,6 +10,7 @@ import json
 import logging
 import os
 import subprocess
+import time
 from pathlib import Path
 from shutil import which
 from typing import Optional
@@ -230,7 +231,7 @@ class SynthesizeMorphologies:
         self.container_path = container_path
         self.with_mpi = with_mpi
         self.nb_processes = nb_processes
-        self._client = None
+        self._parallel_client = None
         self._init_parallel(mpi_only=True)
 
         LOGGER.info("Loading CellCollection from %s", input_cells)
@@ -321,13 +322,13 @@ class SynthesizeMorphologies:
     def __del__(self):
         """Close the internal client when the object is deleted."""
         try:
-            self._client.close()
+            self._close_parallel()
         except Exception:  # pylint: disable=broad-except ; # pragma: no cover
             pass
 
     def _init_parallel(self, mpi_only=False):
         """Initialize MPI workers if required or get the number of available processes."""
-        if self._client is not None:  # pragma: no cover
+        if self._parallel_client is not None:  # pragma: no cover
             return
 
         if self.with_mpi:  # pragma: no cover
@@ -360,13 +361,16 @@ class SynthesizeMorphologies:
             )
 
         # This is needed to make dask aware of the workers
-        self._client = dask.distributed.Client(**client_kwargs)
+        self._parallel_client = dask.distributed.Client(**client_kwargs)
 
     def _close_parallel(self):
-        LOGGER.debug("Closing the Dask client")
-        if not self.with_mpi:  # pragma: no cover
-            self._client.close()
-        self._client = None
+        if self._parallel_client is not None:
+            LOGGER.debug("Closing the Dask client")
+            self._parallel_client.retire_workers()
+            time.sleep(1)
+            self._parallel_client.shutdown()
+            self._parallel_client.close()
+            self._parallel_client = None
 
     def assign_atlas_data(self, min_depth=25, max_depth=5000):
         """Open an Atlas and compute depths and orientations according to the given positions."""

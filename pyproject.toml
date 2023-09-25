@@ -4,7 +4,6 @@ requires = [
 ]
 build-backend = "setuptools.build_meta"
 
-
 [tool.black]
 line-length = 100
 target-version = [
@@ -15,10 +14,8 @@ target-version = [
 ]
 
 [tool.pydocstyle]
-# ignore the following:
-#   - D107: Missing docstring in __init__
 add-ignore = [
-    "D107",
+    "D107",  # Missing docstring in __init__
 ]
 convention = "google"
 
@@ -31,6 +28,6 @@ force_single_line = true
 testpaths = [
     "tests",
 ]
-
-# filterwarnings =
-#     ignore:.*is a deprecated alias for the builtin.*:DeprecationWarning
+filterwarnings = [
+    "ignore:.*is a deprecated alias for .*:DeprecationWarning",
+]
