@@ -37,3 +37,10 @@ py38-MPI:
     TOXENV: py38-MPI
     bb5_ntasks: 5
     bb5_constraint: cpu
+
+py310-MPI:
+  extends: .tox-template
+  variables:
+    TOXENV: py310-MPI
+    bb5_ntasks: 5
+    bb5_constraint: cpu
