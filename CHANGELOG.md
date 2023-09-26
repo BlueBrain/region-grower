@@ -1,5 +1,21 @@
 # Changelog
 
+## [region-grower-v1.1.4](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.1.3...region-grower-v1.1.4)
+
+> 26 September 2023
+
+### New Features
+
+- The dask client is now initialized and closed only in the synthesize() method (Adrien Berchet - [9491081](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/9491081235b0e28375e818f3cf007e1f93916d5f))
+
+### Fixes
+
+- Shutdown dask at the end of the computation (Adrien Berchet - [2b3175f](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/2b3175f7e0dfd45bf884543d9330308577fb3883))
+
+### CI Improvements
+
+- Run the py310-MPI job in CI (Adrien Berchet - [6b9e7b6](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/6b9e7b6b79f7bcf076642a36b67c6c5d32ed0ad9))
+
 ## [region-grower-v1.1.3](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.1.2...region-grower-v1.1.3)
 
 > 21 September 2023
