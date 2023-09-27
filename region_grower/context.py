@@ -10,6 +10,7 @@ import os
 import json
 from collections import defaultdict
 from copy import deepcopy
+from functools import partial
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -85,6 +86,8 @@ class SpaceContext:
 
     layer_depths: List
     cortical_depths: List
+    soma_position: float
+    soma_depth: float
     boundaries: List = None
     directions: Dict = None
     atlas_info: Dict = {}  # voxel_dimensions, offset and shape from atlas for indices conversion
@@ -107,13 +110,30 @@ class SpaceContext:
         return result
 
     def get_direction(self, mtype):
+        directions = []
         for i, direction in enumerate(self.directions):
-            target_direction = direction["params"]["direction"]
-            strength = direction["params"]["strength"]
-            mode = direction["params"]["mode"]
+            mtypes = direction.pop("mtypes", None)
+            if mtypes is not None and mtype not in mtypes:
+                continue
 
-            def section_prob(seg_direction, current_point):
+            def section_prob(seg_direction, current_point, direction=None):
                 """Probability function for the sections."""
+
+                target_direction = direction["params"]["direction"]
+                strength = direction["params"]["strength"]
+                mode = direction["params"]["mode"]
+                layers = direction["params"].get("layers", [])
+                if layers:
+                    depth = self.soma_depth + (self.soma_position - current_point).dot(
+                        direction["pia_direction"]
+                    )
+                    in_layer = False
+                    for layer in layers:
+                        if self.layer_depths[layer - 1] < depth < self.layer_depths[layer]:
+                            in_layer = True
+                    if not in_layer:
+                        return 1.0
+
                 if mode == "parallel":
                     p = 1.0 - np.arccos(seg_direction.dot(target_direction)) * strength / np.pi
                 if mode == "perpendicular":
@@ -122,9 +142,9 @@ class SpaceContext:
                     )
                 return np.clip(p, 0, 1)
 
-            self.directions[i]["section_prob"] = section_prob
-
-        return self.directions
+            direction["section_prob"] = partial(section_prob, direction=direction)
+            directions.append(direction)
+        return directions
 
     def get_boundaries(self, mtype):
         """Returns a dict with boundaries data for NeuroTS."""
@@ -173,35 +193,34 @@ class SpaceContext:
             return np.clip(p, 0, 1)
 
         # add here necessary logic to convert raw config data to NeuroTS context data
-        boundaries = json.loads(self.boundaries)
-        for i, boundary in enumerate(boundaries):
+        all_boundaries = json.loads(self.boundaries)
+        boundaries = []
+        for i, boundary in enumerate(all_boundaries):
             mtypes = boundary.pop("mtypes", None)
             if mtypes is not None and mtype not in mtypes:
                 continue
 
             mesh = trimesh.load_mesh(boundary["path"])
+            mesh_type = boundary.get("mesh_type", "voxel")
 
             if "params_section" in boundary:
 
-                def section_prob(direction, current_point):
+                def section_prob(direction, current_point, mesh=None, mesh_type=None):
                     """Probability function for the sections."""
-                    dist = get_distance_to_mesh(
-                        mesh, current_point, direction, mesh_type=boundary.get("mesh_type", "voxel")
-                    )
+                    dist = get_distance_to_mesh(mesh, current_point, direction, mesh_type=mesh_type)
                     return _prob(dist, boundary["params_section"])
 
-                boundaries[i]["section_prob"] = section_prob
+                boundary["section_prob"] = partial(section_prob, mesh=mesh, mesh_type=mesh_type)
 
             if "params_trunk" in boundary:
 
-                def trunk_prob(direction, current_point):
+                def trunk_prob(direction, current_point, mesh=None, mesh_type=None):
                     """Probability function for the trunks."""
-                    dist = get_distance_to_mesh(
-                        mesh, current_point, direction, mesh_type=boundary.get("mesh_type", "voxel")
-                    )
+                    dist = get_distance_to_mesh(mesh, current_point, direction, mesh_type)
                     return _prob(dist, boundary["params_trunk"])
 
-                boundaries[i]["trunk_prob"] = trunk_prob
+                boundary["trunk_prob"] = partial(trunk_prob, mesh=mesh, mesh_type=mesh_type)
+            boundaries.append(boundary)
 
         return boundaries
 
@@ -309,6 +328,9 @@ class SpaceWorker:
                 self.context.directions[i]["params"]["direction"] = self.cell.lookup_orientation(
                     direction["params"]["direction"]
                 )
+                self.context.directions[i]["pia_direction"] = self.cell.lookup_orientation(
+                    PIA_DIRECTION
+                ).tolist()
 
         for neurite_type in params["grow_types"]:
             if isinstance(params[neurite_type]["orientation"], dict):
