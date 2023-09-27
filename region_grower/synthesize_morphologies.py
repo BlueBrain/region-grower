@@ -129,6 +129,8 @@ def _parallel_wrapper(
             directions=row["directions"] if "directions" in row else None,
             boundaries=row["boundaries"] if "boundaries" in row else None,
             atlas_info=json.loads(row["atlas_info"]) if "atlas_info" in row else None,
+            soma_position=current_cell.position,
+            soma_depth=row["current_depth"],
         )
 
         axon_scale = row.get("axon_scale", None)
