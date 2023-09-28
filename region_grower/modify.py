@@ -74,7 +74,8 @@ def input_scaling(
     params: Dict,
     reference_thickness: float,
     target_thickness: float,
-    apical_target_extent: Optional[float],
+    apical_target_extent: Optional[float] = None,
+    basal_target_extent: Optional[float] = None,
     debug_info: Optional[Dict] = None,
 ):
     """Modifies the input parameters so that grown cells fit into the volume.
@@ -87,21 +88,32 @@ def input_scaling(
         reference_thickness: the expected thickness of input data.
         target_thickness: the expected thickness that the synthesized cells should live in.
         apical_target_extent: the expected extent of the apical dendrite.
+        basal_target_extent: the expected extent of the basal dendrite.
         debug_info: a dictionary in which the debug info will be added.
     """
     for neurite_type in params["grow_types"]:
-        if neurite_type == "apical_dendrite" and apical_target_extent is not None:
-            apical_constraint = params["context_constraints"]["apical_dendrite"]["extent_to_target"]
-            linear_fit = np.poly1d((apical_constraint["slope"], apical_constraint["intercept"]))
-            target_path_distance = linear_fit(apical_target_extent)
+        if (neurite_type == "apical_dendrite" and apical_target_extent is not None) or (
+            neurite_type == "basal_dendrite" and basal_target_extent is not None
+        ):
+            constraint = params["context_constraints"][neurite_type]["extent_to_target"]
+            linear_fit = np.poly1d((constraint["slope"], constraint["intercept"]))
+            target_extent = (
+                apical_target_extent if neurite_type == "apical_dendrite" else basal_target_extent
+            )
+            target_extent_name = (
+                "apical_target_extent"
+                if neurite_type == "apical_dendrite"
+                else "basal_target_extent"
+            )
+            target_path_distance = linear_fit(target_extent)
             if debug_info is not None:
                 debug_info.update(
                     {
                         "target_func": {
                             "inputs": {
-                                "fit_slope": apical_constraint["slope"],
-                                "fit_intercept": apical_constraint["intercept"],
-                                "apical_target_extent": apical_target_extent,
+                                "fit_slope": constraint["slope"],
+                                "fit_intercept": constraint["intercept"],
+                                target_extent_name: target_extent,
                                 "target_path_distance": target_path_distance,
                                 "min_target_path_distance": MIN_TARGET_PATH_DISTANCE,
                             },
@@ -111,8 +123,8 @@ def input_scaling(
                 )
             if target_path_distance < MIN_TARGET_PATH_DISTANCE:
                 raise RegionGrowerError(
-                    f"The target path distance computed from the fit is {target_path_distance}"
-                    f" < {MIN_TARGET_PATH_DISTANCE}!"
+                    f"The target path distance computed for '{neurite_type}' from the fit is "
+                    f"{target_path_distance} < {MIN_TARGET_PATH_DISTANCE}!"
                 )
 
             params[neurite_type]["modify"] = {
@@ -122,7 +134,6 @@ def input_scaling(
                     "with_debug_info": debug_info is not None,
                 },
             }
-
         else:
             if debug_info is not None:
                 debug_info.update(

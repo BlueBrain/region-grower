@@ -287,6 +287,51 @@ class TestSpaceWorker:
             np.array([[-2.841851234436035, 67.96326446533203, 1.485908031463623]]),
         )
 
+        # Test with no hard limit scaling for basal
+        tmd_parameters["default"][mtype]["context_constraints"] = {
+            "basal_dendrite": {
+                "extent_to_target": {
+                    "slope": 0.5,
+                    "intercept": 1,
+                    "layer": 1,
+                    "fraction": 0.5,
+                }
+            }
+        }
+        result = small_context_worker.synthesize()
+
+        basal_expected_types = [
+            SectionType.basal_dendrite,
+            SectionType.basal_dendrite,
+            SectionType.apical_dendrite,
+            SectionType.basal_dendrite,
+        ]
+        assert [i.type for i in result.neuron.root_sections] == basal_expected_types
+        assert_array_almost_equal(
+            [  # Check only first and last points of neurites
+                np.around(np.array([neu.points[0], neu.points[-1]]), 6)
+                for neu in result.neuron.root_sections
+            ],
+            [
+                [
+                    [-1.883677, -3.876395, 6.303874],
+                    [-3.098316, -5.865378, 9.400189],
+                ],
+                [
+                    [7.384983, 1.059786, 1.628612],
+                    [14.03686, 1.485064, 3.365366],
+                ],
+                [
+                    [0.0, 7.636328, 0.0],
+                    [0.830408, 13.483992, -0.568914],
+                ],
+                [
+                    [-3.335297, 4.929316, 4.784468],
+                    [-13.890615, 18.832005, 19.1254],
+                ],
+            ],
+        )
+
         # Test with hard limit scale
         tmd_parameters["default"][mtype]["context_constraints"] = {
             "apical_dendrite": {

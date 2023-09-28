@@ -203,6 +203,20 @@ class SpaceWorker:
             debug_info=self.debug_infos["input_scaling"] if self.internals.debug_data else None,
         )
 
+        basal_target = (
+            params.get("context_constraints", {}).get("basal_dendrite", {}).get("extent_to_target")
+        )
+        if basal_target is not None:
+            modify.input_scaling(
+                params,
+                reference,
+                target,
+                basal_target_extent=self.context.distance_to_constraint(
+                    self.cell.depth, basal_target
+                ),
+                debug_info=self.debug_infos["input_scaling"] if self.internals.debug_data else None,
+            )
+
         return params
 
     def _post_growth_rescaling(self, grower: NeuronGrower, params: Dict) -> None:
