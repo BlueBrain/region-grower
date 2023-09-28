@@ -398,11 +398,13 @@ class SynthesizeMorphologies:
 
             self.cells_data.loc[region_mask, "current_depth"] = current_depths
             self.cells_data.loc[region_mask, "layer_depths"] = pd.Series(
-                data=layer_depths, index=self.cells_data.loc[region_mask].index
+                data=layer_depths, index=self.cells_data.loc[region_mask].index, dtype=float
             )
             orientations = self.atlas.orientations.lookup(positions)
             self.cells_data.loc[region_mask, "orientation"] = pd.Series(
-                data=orientations.tolist(), index=self.cells_data.loc[region_mask].index
+                data=orientations.tolist(),
+                index=self.cells_data.loc[region_mask].index,
+                dtype=object,
             )
 
     @property
