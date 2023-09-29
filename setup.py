@@ -37,7 +37,7 @@ mpi_extras = [
 
 doc_reqs = [
     "m2r2",
-    "sphinx<6",
+    "sphinx",
     "sphinx-bluebrain-theme",
     "sphinx-jsonschema",
     "sphinx-click",
@@ -48,6 +48,7 @@ test_reqs = [
     "dictdiffer>=0.9",
     "pytest>=6.2.5",
     "pytest-click>=1",
+    "pytest-console-scripts>=1.3",
     "pytest-cov>=3",
     "pytest-html>=2",
     "pytest-mock>=3.5",

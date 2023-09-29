@@ -8,6 +8,7 @@ from region_grower.utils import setup_logger
 
 
 @click.group()
+@click.version_option()
 def main():
     """A tool for space synthesis management."""
 

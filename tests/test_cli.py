@@ -209,3 +209,10 @@ class TestCli:
         expected_debug_data.drop(columns=cols, inplace=True)
 
         pd.testing.assert_frame_equal(debug_data, expected_debug_data, check_exact=False)
+
+    def test_entry_point(self, script_runner):
+        """Test the entry point."""
+        ret = script_runner.run("region-grower", "--version")
+        assert ret.success
+        assert ret.stdout.startswith("region-grower, version ")
+        assert ret.stderr == ""
