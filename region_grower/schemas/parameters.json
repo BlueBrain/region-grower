@@ -45,6 +45,47 @@
             },
             "title": "Hard limit",
             "type": "object"
+        },
+        "limits_with_extent": {
+            "additionalProperties": false,
+            "description": "Min and max of a hard limit with extent_to_target",
+            "properties": {
+                "extent_to_target": {
+                    "additionalProperties": false,
+                    "description": "The target depth given as a fraction of a layer and the properties of the fit of the Y extent relative to the path length",
+                    "properties": {
+                        "fraction": {
+                            "$ref": "#/definitions/fraction"
+                        },
+                        "intercept": {
+                            "type": "number"
+                        },
+                        "layer": {
+                            "$ref": "#/definitions/layer"
+                        },
+                        "slope": {
+                            "type": "number"
+                        }
+                    },
+                    "required": [
+                        "layer",
+                        "fraction",
+                        "intercept",
+                        "slope"
+                    ],
+                    "type": "object"
+                },
+                "hard_limit_max": {
+                    "$ref": "#/definitions/limit",
+                    "description": "The max of the hard limit"
+                },
+                "hard_limit_min": {
+                    "$ref": "#/definitions/limit",
+                    "description": "The min of the hard limit"
+                }
+            },
+            "title": "Hard limit with extent",
+            "type": "object"
         }
     },
     "description": "The TMD parameters used to synthesize the cells",
@@ -61,52 +102,16 @@
                             "description": "The constraints to obey in the given context",
                             "properties": {
                                 "apical_dendrite": {
-                                    "additionalProperties": false,
-                                    "description": "Specific constraints for apicals",
-                                    "properties": {
-                                        "extent_to_target": {
-                                            "additionalProperties": false,
-                                            "description": "The target depth given as a fraction of a layer and the properties of the fit of the Y extent relative to the path length",
-                                            "properties": {
-                                                "fraction": {
-                                                    "$ref": "#/definitions/fraction"
-                                                },
-                                                "intercept": {
-                                                    "type": "number"
-                                                },
-                                                "layer": {
-                                                    "$ref": "#/definitions/layer"
-                                                },
-                                                "slope": {
-                                                    "type": "number"
-                                                }
-                                            },
-                                            "required": [
-                                                "layer",
-                                                "fraction",
-                                                "intercept",
-                                                "slope"
-                                            ],
-                                            "type": "object"
-                                        },
-                                        "hard_limit_max": {
-                                            "$ref": "#/definitions/limit",
-                                            "description": "The max of the hard limit"
-                                        },
-                                        "hard_limit_min": {
-                                            "$ref": "#/definitions/limit",
-                                            "description": "The min of the hard limit"
-                                        }
-                                    },
-                                    "type": "object"
+                                    "$ref": "#/definitions/limits_with_extent",
+                                    "description": "Specific constraints for basals"
+                                },
+                                "basal_dendrite": {
+                                    "$ref": "#/definitions/limits_with_extent",
+                                    "description": "Specific constraints for basals"
                                 },
                                 "axon": {
                                     "$ref": "#/definitions/limits",
                                     "description": "Specific constraints for axons"
-                                },
-                                "basal_dendrite": {
-                                    "$ref": "#/definitions/limits",
-                                    "description": "Specific constraints for basals"
                                 }
                             },
                             "title": "Context constraints",
