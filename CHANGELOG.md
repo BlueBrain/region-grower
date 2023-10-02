@@ -1,5 +1,21 @@
 # Changelog
 
+## [region-grower-v1.2.0](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.1.4...region-grower-v1.2.0)
+
+> 2 October 2023
+
+### New Features
+
+- Extent scaling for basals (Alexis Arnaudon - [93faecd](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/93faecd205956b1f0f8eba87c413c85c14e62d52))
+
+### Fixes
+
+- Update parameter schema for basal (Alexis Arnaudon - [ce9c6b5](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/ce9c6b583c6fc1f224a3d566147943722e273e29))
+
+### Chores And Housekeeping
+
+- Remove some warnings (Adrien Berchet - [1267d7a](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/1267d7ab531a436cbdfb0c02dd7a763a2d19502b))
+
 ## [region-grower-v1.1.4](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.1.3...region-grower-v1.1.4)
 
 > 26 September 2023
