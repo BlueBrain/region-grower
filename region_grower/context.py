@@ -10,6 +10,7 @@ import os
 import json
 from collections import defaultdict
 from copy import deepcopy
+from pathlib import Path
 from functools import partial
 from typing import Dict
 from typing import List
@@ -120,7 +121,7 @@ class SpaceContext:
                 """Probability function for the sections."""
 
                 target_direction = direction["params"]["direction"]
-                strength = direction["params"]["strength"]
+                power = direction["params"].get("power", 1.0)
                 mode = direction["params"]["mode"]
                 layers = direction["params"].get("layers", [])
                 if layers:
@@ -135,11 +136,12 @@ class SpaceContext:
                         return 1.0
 
                 if mode == "parallel":
-                    p = 1.0 - np.arccos(seg_direction.dot(target_direction)) * strength / np.pi
+                    p = (1.0 - np.arccos(seg_direction.dot(target_direction)) / np.pi) ** power
                 if mode == "perpendicular":
-                    p = 1.0 - strength * abs(
-                        np.arccos(seg_direction.dot(target_direction)) / np.pi * 2.0 - 1.0
-                    )
+                    p = (
+                        1.0
+                        - abs(np.arccos(seg_direction.dot(target_direction)) / np.pi * 2.0 - 1.0)
+                    ) ** power
                 return np.clip(p, 0, 1)
 
             direction["section_prob"] = partial(section_prob, direction=direction)
@@ -183,15 +185,6 @@ class SpaceContext:
 
             return np.inf  # pragma: no cover
 
-        def _prob(dist, params):
-            """Probability function from distance to boundary."""
-            p = (dist - params.get("d_min", 0)) / (
-                params.get("d_max", 100) - params.get("d_min", 0)
-            ) ** params.get("power", 1.5)
-
-            # TODO: other variants for this function could be included here
-            return np.clip(p, 0, 1)
-
         # add here necessary logic to convert raw config data to NeuroTS context data
         all_boundaries = json.loads(self.boundaries)
         boundaries = []
@@ -200,26 +193,65 @@ class SpaceContext:
             if mtypes is not None and mtype not in mtypes:
                 continue
 
-            mesh = trimesh.load_mesh(boundary["path"])
+            meshes = []
+            if Path(boundary["path"]).is_dir():
+                for mesh_path in Path(boundary["path"]).iterdir():
+                    meshes.append(trimesh.load_mesh(mesh_path))
+                distances = [
+                    trimesh.proximity.closest_point(mesh, [self.soma_position])[1][0]
+                    for mesh in meshes
+                ]
+                mesh = meshes[np.argmin(distances)]
+
+            else:
+                mesh = trimesh.load_mesh(boundary["path"])
+
             mesh_type = boundary.get("mesh_type", "voxel")
+            mode = boundary.get("mode", "repulsive")
 
-            if "params_section" in boundary:
+            if mode == "repulsive":
 
-                def section_prob(direction, current_point, mesh=None, mesh_type=None):
+                def prob(direction, current_point, mesh=None, mesh_type=None, params=None):
                     """Probability function for the sections."""
                     dist = get_distance_to_mesh(mesh, current_point, direction, mesh_type=mesh_type)
-                    return _prob(dist, boundary["params_section"])
+                    p = (dist - params.get("d_min", 0)) / (
+                        params.get("d_max", 100) - params.get("d_min", 0)
+                    ) ** params.get("power", 1.5)
+                    return np.clip(p, 0, 1)
 
-                boundary["section_prob"] = partial(section_prob, mesh=mesh, mesh_type=mesh_type)
+            elif mode == "attractive":
+
+                def prob(direction, current_point, mesh=None, mesh_type=None, params=None):
+                    """Probability function for the sections."""
+                    closest_point = trimesh.proximity.closest_point(mesh, [current_point])[0][0]
+
+                    if mesh_type == "voxel":
+                        closest_point = self.indices_to_positions(closest_point)
+
+                    mesh_direction = closest_point - current_point
+                    distance = np.linalg.norm(mesh_direction)
+                    if params.get("d_min", 0) < distance < params.get("d_max", 100):
+                        if mesh_type == "voxel":
+                            current_point = self.positions_to_indices(current_point)
+                        p = (
+                            1 - np.arccos(direction.dot(mesh_direction) / distance) / np.pi
+                        ) ** params.get("power", 1.0)
+                        return np.clip(p, 0, 1)
+                    return 1.0
+
+            else:
+                raise ValueError(f"boundary mode {mode} not understood!")
+
+            if "params_section" in boundary:
+                boundary["section_prob"] = partial(
+                    prob, mesh=mesh, mesh_type=mesh_type, params=boundary["params_section"]
+                )
 
             if "params_trunk" in boundary:
+                boundary["trunk_prob"] = partial(
+                    prob, mesh=mesh, mesh_type=mesh_type, params=boundary["params_ trunk"]
+                )
 
-                def trunk_prob(direction, current_point, mesh=None, mesh_type=None):
-                    """Probability function for the trunks."""
-                    dist = get_distance_to_mesh(mesh, current_point, direction, mesh_type)
-                    return _prob(dist, boundary["params_trunk"])
-
-                boundary["trunk_prob"] = partial(trunk_prob, mesh=mesh, mesh_type=mesh_type)
             boundaries.append(boundary)
 
         return boundaries
