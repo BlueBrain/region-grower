@@ -26,6 +26,11 @@ def setup_logger(level="info", prefix="", suffix=""):
         level=levels[level],
     )
 
+    if levels[level] >= logging.INFO:  # pragma: no cover
+        logging.getLogger("distributed").level = max(
+            logging.getLogger("distributed").level, logging.WARNING
+        )
+
 
 class NumpyEncoder(json.JSONEncoder):
     """To encode numpy arrays."""

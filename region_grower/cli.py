@@ -154,7 +154,6 @@ def generate_distributions(
         "Path to output YAML apical file containing "
         "the coordinates where apical dendrites are tufting"
     ),
-    required=True,
 )
 @click.option(
     "--out-apical-nrn-sections",
@@ -163,7 +162,6 @@ def generate_distributions(
         " the neuron section ids where apical dendrites"
         " are tufting"
     ),
-    required=False,
 )
 @click.option("--out-morph-dir", help="Path to output morphology folder", default="out")
 @click.option(
@@ -243,14 +241,18 @@ def generate_distributions(
 @click.option(
     "--region-structure",
     help="Path to region structure file",
-    required=False,
     default="region_structure.yaml",
 )
 @click.option(
     "--container-path",
     help="Path to container file of all morphologies (if None, not container created)",
-    required=False,
     default=None,
+)
+@click.option(
+    "--hide-progress-bar",
+    help="Do not display the progress bar during the computation",
+    is_flag=True,
+    default=False,
 )
 def synthesize_morphologies(**kwargs):  # pylint: disable=too-many-arguments, too-many-locals
     """Synthesize morphologies."""

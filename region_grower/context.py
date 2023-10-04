@@ -6,6 +6,7 @@ synthesis tools (here NeutoTS) and the circuit building pipeline.
 TLDR: SpaceContext.synthesized() is being called by
 the placement_algorithm package to synthesize circuit morphologies.
 """
+import os
 from collections import defaultdict
 from copy import deepcopy
 from typing import Dict
@@ -13,29 +14,33 @@ from typing import List
 from typing import Optional
 from typing import Union
 
-import attr
-import morphio
-import numpy as np
-from diameter_synthesis import build_diameters
-from morph_tool import nrnhines
-from morph_tool import transform as mt
-from morph_tool.graft import graft_axon
-from neuroc.scale import RotationParameters
-from neuroc.scale import ScaleParameters
-from neuroc.scale import rotational_jitter
-from neuroc.scale import scale_morphology
-from neuroc.scale import scale_section
-from neurots import NeuronGrower
-from neurots import NeuroTSError
-from neurots.utils import PIA_DIRECTION
-from voxcell.cell_collection import CellCollection
+os.environ.setdefault("NEURON_MODULE_OPTIONS", "-nogui")  # suppress NEURON warning
+# This environment variable must be set before 'NEURON' is loaded in 'morph_tool.nrnhines'.
+# Note that if 'NEURON' was imported before it will not consider this environment variable.
 
-from region_grower import RegionGrowerError
-from region_grower import SkipSynthesisError
-from region_grower import modify
-from region_grower.morph_io import MorphLoader
-from region_grower.morph_io import MorphWriter
-from region_grower.utils import random_rotation_y
+import attr  # noqa: E402 ; pylint: disable=C0413
+import morphio  # noqa: E402 ; pylint: disable=C0413
+import numpy as np  # noqa: E402 ; pylint: disable=C0413
+from diameter_synthesis import build_diameters  # noqa: E402 ; pylint: disable=C0413
+from morph_tool import nrnhines  # noqa: E402 ; pylint: disable=C0413
+from morph_tool import transform as mt  # noqa: E402 ; pylint: disable=C0413
+from morph_tool.graft import graft_axon  # noqa: E402 ; pylint: disable=C0413
+from neuroc.scale import RotationParameters  # noqa: E402 ; pylint: disable=C0413
+from neuroc.scale import ScaleParameters  # noqa: E402 ; pylint: disable=C0413
+from neuroc.scale import rotational_jitter  # noqa: E402 ; pylint: disable=C0413
+from neuroc.scale import scale_morphology  # noqa: E402 ; pylint: disable=C0413
+from neuroc.scale import scale_section  # noqa: E402 ; pylint: disable=C0413
+from neurots import NeuronGrower  # noqa: E402 ; pylint: disable=C0413
+from neurots import NeuroTSError  # noqa: E402 ; pylint: disable=C0413
+from neurots.utils import PIA_DIRECTION  # noqa: E402 ; pylint: disable=C0413
+from voxcell.cell_collection import CellCollection  # noqa: E402 ; pylint: disable=C0413
+
+from region_grower import RegionGrowerError  # noqa: E402 ; pylint: disable=C0413
+from region_grower import SkipSynthesisError  # noqa: E402 ; pylint: disable=C0413
+from region_grower import modify  # noqa: E402 ; pylint: disable=C0413
+from region_grower.morph_io import MorphLoader  # noqa: E402 ; pylint: disable=C0413
+from region_grower.morph_io import MorphWriter  # noqa: E402 ; pylint: disable=C0413
+from region_grower.utils import random_rotation_y  # noqa: E402 ; pylint: disable=C0413
 
 Point = Union[List[float], np.array]
 Matrix = Union[List[List[float]], np.array]

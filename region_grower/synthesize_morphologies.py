@@ -51,6 +51,13 @@ LOGGER = logging.getLogger(__name__)
 
 morphio.set_maximum_warnings(0)  # suppress MorphIO warnings on writing files
 
+_SERIALIZED_COLUMNS = [
+    "layer_depths",
+    "orientation",
+    "tmd_parameters",
+    "tmd_distributions",
+]
+
 
 class RegionMapper:
     """Mapper between region acronyms and regions names in synthesis config files."""
@@ -85,6 +92,10 @@ def _parallel_wrapper(
     min_hard_scale,
 ):
     try:
+        # Deserialize values
+        for col in _SERIALIZED_COLUMNS:
+            row[col] = json.loads(row[col])
+
         current_cell = CellState(
             position=np.array([row["x"], row["y"], row["z"]]),
             orientation=np.array([row["orientation"]]),
@@ -188,7 +199,7 @@ class SynthesizeMorphologies:
         tmd_distributions,
         atlas,
         out_cells,
-        out_apical,
+        out_apical=None,
         out_morph_dir="out",
         out_morph_ext=None,
         morph_axon=None,
@@ -210,6 +221,7 @@ class SynthesizeMorphologies:
         min_hard_scale=0.2,
         region_structure=None,
         container_path=None,
+        hide_progress_bar=False,
     ):  # pylint: disable=too-many-arguments, too-many-locals, too-many-statements
         self.seed = seed
         self.scaling_jitter_std = scaling_jitter_std
@@ -229,6 +241,7 @@ class SynthesizeMorphologies:
             Atlas.open(atlas, cache_dir=atlas_cache), region_structure_path=region_structure
         )
         self.container_path = container_path
+        self._progress_bar = not bool(hide_progress_bar)
         self.with_mpi = with_mpi
         self.nb_processes = nb_processes
         self._parallel_client = None
@@ -331,6 +344,33 @@ class SynthesizeMorphologies:
         if self._parallel_client is not None:  # pragma: no cover
             return
 
+        _TMP = os.environ.get("TMPDIR", None)
+        dask_config = {
+            "temporary-directory": _TMP,
+            "distributed": {
+                "worker": {
+                    "use_file_locking": False,
+                    "memory": {
+                        "target": False,
+                        "spill": False,
+                        "pause": 0.8,
+                        "terminate": 0.95,
+                    },
+                    "profile": {
+                        "enabled": False,
+                        "interval": "10s",
+                        "cycle": "10m",
+                    },
+                },
+                "admin": {
+                    "tick": {
+                        "limit": "1h",
+                    },
+                },
+            },
+        }
+        dask.config.update_defaults(dask_config)
+
         if self.with_mpi:  # pragma: no cover
             # pylint: disable=import-outside-toplevel
             import dask_mpi
@@ -359,6 +399,8 @@ class SynthesizeMorphologies:
             LOGGER.debug(
                 "Initializing parallel workers using the following config: %s", client_kwargs
             )
+
+        LOGGER.debug("Using the following dask configuration: %s", json.dumps(dask.config.config))
 
         # This is needed to make dask aware of the workers
         self._parallel_client = dask.distributed.Client(**client_kwargs)
@@ -398,7 +440,7 @@ class SynthesizeMorphologies:
 
             self.cells_data.loc[region_mask, "current_depth"] = current_depths
             self.cells_data.loc[region_mask, "layer_depths"] = pd.Series(
-                data=layer_depths, index=self.cells_data.loc[region_mask].index, dtype=float
+                data=layer_depths, index=self.cells_data.loc[region_mask].index, dtype=object
             )
             orientations = self.atlas.orientations.lookup(positions)
             self.cells_data.loc[region_mask, "orientation"] = pd.Series(
@@ -487,15 +529,21 @@ class SynthesizeMorphologies:
             }
         )
 
+        # Serialize parameters and distributions
+        cells_data_copy = self.cells_data.copy(deep=False)
+        for col in _SERIALIZED_COLUMNS:
+            cells_data_copy[col] = cells_data_copy[col].apply(json.dumps)
+
         if self.nb_processes == 0:
-            computed = self.cells_data.apply(
+            computed = cells_data_copy.apply(
                 lambda row: _parallel_wrapper(row, **func_kwargs), axis=1
             )
         else:
-            ddf = dd.from_pandas(self.cells_data, npartitions=self.nb_processes)
+            ddf = dd.from_pandas(cells_data_copy, npartitions=self.nb_processes)
             future = ddf.apply(_parallel_wrapper, meta=meta, axis=1, **func_kwargs)
             future = future.persist()
-            dask.distributed.progress(future)
+            if self._progress_bar:
+                dask.distributed.progress(future)
             computed = future.compute()
 
         res = self.cells_data.drop(columns=["tmd_parameters", "tmd_distributions"]).join(computed)
@@ -530,12 +578,13 @@ class SynthesizeMorphologies:
             return None  # pragma: no cover
 
         with_apicals = result.loc[~result["apical_points"].isnull()]
-        LOGGER.info("Export apical points to %s...", self.out_apical)
-        with open(self.out_apical, "w", encoding="utf-8") as apical_file:
-            apical_data = with_apicals[["name"]].join(
-                with_apicals["apical_points"].apply(first_non_None)
-            )
-            yaml.dump(apical_data.set_index("name")["apical_points"].to_dict(), apical_file)
+        if self.out_apical is not None:
+            LOGGER.info("Export apical points to %s...", self.out_apical)
+            with open(self.out_apical, "w", encoding="utf-8") as apical_file:
+                apical_data = with_apicals[["name"]].join(
+                    with_apicals["apical_points"].apply(first_non_None)
+                )
+                yaml.dump(apical_data.set_index("name")["apical_points"].to_dict(), apical_file)
 
         if self.out_apical_nrn_sections is not None:
             LOGGER.info("Export apical Neuron sections to %s...", self.out_apical_nrn_sections)
@@ -580,6 +629,7 @@ class SynthesizeMorphologies:
         self._init_parallel()
         res = self.compute()
         self.finalize(res)
+        LOGGER.info("Synthesis complete")
         self._close_parallel()
         return res
 

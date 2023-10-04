@@ -175,6 +175,8 @@ def test_synthesize_skip_write(
     )
     args["skip_write"] = True
     args["nb_processes"] = nb_processes
+    args["hide_progress_bar"] = True
+    args["out_apical"] = None
 
     synthesizer = SynthesizeMorphologies(**args)
     res = synthesizer.synthesize()
@@ -210,9 +212,8 @@ def test_synthesize_skip_write(
 
     # Check that the morphologies were not written
     res_files = tmpdir.listdir()
-    assert len(res_files) == 5
+    assert len(res_files) == 4
     assert sorted(i.basename for i in res_files) == [
-        "apical.yaml",
         "apical_NRN_sections.yaml",
         "axon_morphs.tsv",
         "input_cells.mvd3",
