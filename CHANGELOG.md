@@ -1,5 +1,17 @@
 # Changelog
 
+## [region-grower-v1.2.1](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.2.0...region-grower-v1.2.1)
+
+> 5 October 2023
+
+### New Features
+
+- Update dask configuration and hide useless logger entries (Adrien Berchet - [50103f3](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/50103f358e05818b916af699212c2dfc50ed0517))
+
+### CI Improvements
+
+- Increase MPI launch timeout setting (Adrien Berchet - [4dc542e](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/4dc542e64bea6183f5128c5aecdc433cf4d74cbe))
+
 ## [region-grower-v1.2.0](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.1.4...region-grower-v1.2.0)
 
 > 2 October 2023
