@@ -1,5 +1,13 @@
 # Changelog
 
+## [region-grower-v1.2.2](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.2.1...region-grower-v1.2.2)
+
+> 7 October 2023
+
+### New Features
+
+- Improve the ways dask can be configured (Adrien Berchet - [18130c0](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/18130c0420f8be2725fd4b50e431216acc377c41))
+
 ## [region-grower-v1.2.1](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.2.0...region-grower-v1.2.1)
 
 > 5 October 2023
