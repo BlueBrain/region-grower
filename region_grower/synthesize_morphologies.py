@@ -222,6 +222,7 @@ class SynthesizeMorphologies:
         region_structure=None,
         container_path=None,
         hide_progress_bar=False,
+        dask_config=None,
     ):  # pylint: disable=too-many-arguments, too-many-locals, too-many-statements
         self.seed = seed
         self.scaling_jitter_std = scaling_jitter_std
@@ -244,6 +245,7 @@ class SynthesizeMorphologies:
         self._progress_bar = not bool(hide_progress_bar)
         self.with_mpi = with_mpi
         self.nb_processes = nb_processes
+        self.dask_config = dask_config
         self._parallel_client = None
         self._init_parallel(mpi_only=True)
 
@@ -344,9 +346,8 @@ class SynthesizeMorphologies:
         if self._parallel_client is not None:  # pragma: no cover
             return
 
-        _TMP = os.environ.get("TMPDIR", None)
-        dask_config = {
-            "temporary-directory": _TMP,
+        # Define a default configuration to disable some dask.distributed things
+        default_dask_config = {
             "distributed": {
                 "worker": {
                     "use_file_locking": False,
@@ -369,7 +370,21 @@ class SynthesizeMorphologies:
                 },
             },
         }
-        dask.config.update_defaults(dask_config)
+
+        # Merge the default config with the existing config (keep conflicting values from defaults)
+        dask_config = dask.config.merge(dask.config.config, default_dask_config)
+
+        # Get temporary-directory from environment variables
+        _TMP = os.environ.get("SHMDIR", None) or os.environ.get("TMPDIR", None)
+        if _TMP is not None:
+            dask_config["temporary-directory"] = _TMP
+
+        # Merge the config with the one given as argument
+        if self.dask_config is not None:
+            dask_config = dask.config.merge(dask_config, self.dask_config)
+
+        # Set the dask config
+        dask.config.set(dask_config)
 
         if self.with_mpi:  # pragma: no cover
             # pylint: disable=import-outside-toplevel

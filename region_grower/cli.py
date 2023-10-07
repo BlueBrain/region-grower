@@ -1,6 +1,10 @@
 """Command Line Interface for the region_grower package."""
 # pylint: disable=redefined-outer-name
+import json
+from pathlib import Path
+
 import click
+import yaml
 
 from region_grower import generate
 from region_grower.synthesize_morphologies import SynthesizeMorphologies
@@ -241,12 +245,13 @@ def generate_distributions(
 @click.option(
     "--region-structure",
     help="Path to region structure file",
+    type=str,
     default="region_structure.yaml",
 )
 @click.option(
     "--container-path",
     help="Path to container file of all morphologies (if None, not container created)",
-    default=None,
+    type=str,
 )
 @click.option(
     "--hide-progress-bar",
@@ -254,9 +259,30 @@ def generate_distributions(
     is_flag=True,
     default=False,
 )
+@click.option(
+    "--dask-config",
+    help="The Dask configuration given as a file path or a JSON string",
+    type=str,
+)
 def synthesize_morphologies(**kwargs):  # pylint: disable=too-many-arguments, too-many-locals
     """Synthesize morphologies."""
     setup_logger(kwargs.pop("log_level", "info"))
+
+    dask_config = kwargs.pop("dask_config", None)
+    if dask_config is not None:
+        dask_config_path = Path(dask_config)
+        if dask_config_path.exists():
+            with dask_config_path.open("r", encoding="utf-8") as file:
+                dask_config = yaml.safe_load(file)
+        else:
+            try:
+                dask_config = json.loads(dask_config)
+            except json.decoder.JSONDecodeError as exc:
+                raise ValueError(
+                    "The value for the --dask-config parameter is not an existing file path and "
+                    "could not be parsed as a JSON string"
+                ) from exc
+        kwargs["dask_config"] = dask_config
 
     SynthesizeMorphologies(**kwargs).synthesize()
 

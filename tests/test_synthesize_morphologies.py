@@ -9,6 +9,7 @@ from pathlib import Path
 from uuid import uuid4
 
 import attr
+import dask
 import jsonschema
 import neurots
 import pandas as pd
@@ -148,6 +149,63 @@ def test_synthesize(
     else:
         if with_NRN and with_axon:
             assert_allclose(max_y, 150.18933)
+
+
+@pytest.mark.parametrize("with_SHMDIR", [True, False])
+@pytest.mark.parametrize("with_TMPDIR", [True, False])
+@pytest.mark.parametrize("with_dask_config", [True, False])
+def test_synthesize_dask_config(
+    tmpdir,
+    small_O1_path,
+    input_cells,
+    with_SHMDIR,
+    with_TMPDIR,
+    with_dask_config,
+    monkeypatch,
+):  # pylint: disable=unused-argument
+    """Test morphology synthesis."""
+    tmp_folder = Path(tmpdir)
+
+    args = create_args(
+        False,
+        tmp_folder,
+        input_cells,
+        small_O1_path,
+        None,
+        None,
+        100,
+    )
+
+    custom_scratch_config = str(tmp_folder / "custom_scratch_config")
+    custom_scratch_env_SHMDIR = str(tmp_folder / "custom_scratch_SHMDIR")
+    custom_scratch_env_TMPDIR = str(tmp_folder / "custom_scratch_TMPDIR")
+    dask_config = None
+    if with_dask_config is not None:
+        dask_config = {"temporary-directory": custom_scratch_config}
+        args["dask_config"] = dask_config
+
+    current_config = deepcopy(dask.config.config)
+    with dask.config.set(current_config):
+        if with_SHMDIR:
+            monkeypatch.setenv("SHMDIR", custom_scratch_env_SHMDIR)
+        else:
+            monkeypatch.delenv("SHMDIR", raising=False)
+        if with_TMPDIR:
+            monkeypatch.setenv("TMPDIR", custom_scratch_env_TMPDIR)
+        else:
+            monkeypatch.delenv("TMPDIR", raising=False)
+
+        synthesizer = SynthesizeMorphologies(**args)
+        synthesizer._init_parallel(mpi_only=True)  # pylint: disable=protected-access
+
+        if dask_config is not None:
+            assert dask.config.get("temporary-directory", None) == custom_scratch_config
+        elif with_TMPDIR:
+            assert dask.config.get("temporary-directory", None) == custom_scratch_env_TMPDIR
+        elif with_SHMDIR:
+            assert dask.config.get("temporary-directory", None) == custom_scratch_env_SHMDIR
+        else:
+            assert dask.config.get("temporary-directory", None) is None
 
 
 @pytest.mark.parametrize("nb_processes", [0, 2, None])

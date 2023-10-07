@@ -1,9 +1,14 @@
 """Tests for the region_grower.cli module."""
 # pylint: disable=missing-function-docstring
+import json
 from pathlib import Path
 
+import dask
 import dictdiffer
 import pandas as pd
+import pytest
+import yaml
+from voxcell import CellCollection
 
 from region_grower.cli import main
 
@@ -209,6 +214,105 @@ class TestCli:
         expected_debug_data.drop(columns=cols, inplace=True)
 
         pd.testing.assert_frame_equal(debug_data, expected_debug_data, check_exact=False)
+
+    def test_dask_config(self, tmpdir, cli_runner, small_O1_path, input_cells):
+        """Test the dask config update when using the 'synthesize-morphologies' command."""
+        # Reduce the number of cells
+        cell_collection = CellCollection.load_mvd3(input_cells)
+        cells_df = cell_collection.as_dataframe()
+        cell_collection = CellCollection.from_dataframe(cells_df.drop(cells_df.index[4:]))
+        cell_collection.save_mvd3(input_cells)
+
+        # fmt: off
+        params = [
+            "synthesize-morphologies",
+            "--input-cells", str(input_cells),
+            "--tmd-parameters", str(DATA / "parameters.json"),
+            "--tmd-distributions", str(DATA / "distributions.json"),
+            "--base-morph-dir", str(DATA / "input-cells"),
+            "--atlas", str(small_O1_path),
+            "--seed", 0,
+            "--out-cells", str(tmpdir / "test_cells.mvd3"),
+            "--out-apical", str(tmpdir / "apical.yaml"),
+            "--out-apical-nrn-sections", str(tmpdir / "apical_NRN_sections.yaml"),
+            "--out-morph-dir", str(tmpdir),
+            "--out-debug-data", str(tmpdir / "debug_data.pkl"),
+            "--overwrite",
+            "--out-morph-ext", "h5",
+            "--out-morph-ext", "swc",
+            "--out-morph-ext", "asc",
+            "--max-drop-ratio", 0.5,
+            "--scaling-jitter-std", 0.5,
+            "--rotational-jitter-std", 10,
+            "--nb-processes", 2,
+            "--region-structure", str(DATA / "region_structure.yaml"),
+            "--log-level", "debug",
+        ]
+        # fmt: on
+
+        # Test with JSON string
+        cli_runner.invoke(
+            main,
+            params
+            + [
+                "--dask-config",
+                json.dumps({"temporary-directory": str(tmpdir / "custom_scratch_1")}),
+            ],
+            catch_exceptions=False,
+        )
+
+        assert Path(tmpdir / "custom_scratch_1").exists()
+
+        # Test with path to YAML file
+        dask.config.refresh()
+        dask_config_path = Path(tmpdir) / "dask_config.yaml"
+        with dask_config_path.open("w", encoding="utf-8") as file:
+            yaml.dump({"temporary-directory": str(tmpdir / "custom_scratch_2")}, file)
+        cli_runner.invoke(
+            main,
+            params + ["--dask-config", dask_config_path],
+            catch_exceptions=False,
+        )
+
+        assert Path(tmpdir / "custom_scratch_2").exists()
+
+        # Test temporary-directory using $SHMDIR
+        dask.config.defaults = [dask.config.defaults[0]]
+        dask.config.refresh()
+        cli_runner.invoke(
+            main,
+            params,
+            env={"SHMDIR": str(tmpdir / "custom_scratch_3")},
+            catch_exceptions=False,
+        )
+
+        assert Path(tmpdir / "custom_scratch_3").exists()
+
+        # Test temporary-directory using $SHMDIR
+        dask.config.defaults = [dask.config.defaults[0]]
+        dask.config.refresh()
+        cli_runner.invoke(
+            main,
+            params,
+            env={"TMPDIR": str(tmpdir / "custom_scratch_4")},
+            catch_exceptions=False,
+        )
+
+        assert Path(tmpdir / "custom_scratch_4").exists()
+
+        # Test invalid dask-config parameter
+        with pytest.raises(
+            ValueError,
+            match=(
+                r"The value for the --dask-config parameter is not an existing file path and could "
+                r"not be parsed as a JSON string"
+            ),
+        ):
+            cli_runner.invoke(
+                main,
+                params + ["--dask-config", "INVALID PARAMETER"],
+                catch_exceptions=False,
+            )
 
     def test_entry_point(self, script_runner):
         """Test the entry point."""
