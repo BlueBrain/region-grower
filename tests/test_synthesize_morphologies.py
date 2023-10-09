@@ -2,6 +2,7 @@
 # pylint: disable=missing-function-docstring
 import json
 import logging
+import os
 import shutil
 from copy import deepcopy
 from itertools import combinations
@@ -235,6 +236,8 @@ def test_synthesize_skip_write(
     args["nb_processes"] = nb_processes
     args["hide_progress_bar"] = True
     args["out_apical"] = None
+
+    print("Number of available CPUs", os.cpu_count())
 
     synthesizer = SynthesizeMorphologies(**args)
     res = synthesizer.synthesize()

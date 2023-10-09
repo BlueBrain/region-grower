@@ -1,11 +1,11 @@
 """Command Line Interface for the region_grower package."""
 # pylint: disable=redefined-outer-name
+import importlib.metadata
 import json
 import logging
 from pathlib import Path
 
 import click
-import pkg_resources
 import yaml
 
 from region_grower import generate
@@ -294,10 +294,12 @@ def synthesize_morphologies(**kwargs):  # pylint: disable=too-many-arguments, to
 
     show_pip_freeze = kwargs.pop("show_pip_freeze", False)
     if show_pip_freeze:
-        installed_packages = list(pkg_resources.working_set)
-        installed_packages_list = sorted([f"{i.key}=={i.version}" for i in installed_packages])
+        installed_packages = sorted(
+            (f"{i.name}=={i.version}" for i in importlib.metadata.Distribution.discover()),
+            key=lambda x: x.lower(),
+        )
         LOGGER = logging.getLogger(__name__)
-        LOGGER.info("Using the following package versions: %s", installed_packages_list)
+        LOGGER.info("Using the following package versions: %s", installed_packages)
 
     SynthesizeMorphologies(**kwargs).synthesize()
 
