@@ -401,8 +401,9 @@ class SynthesizeMorphologies:
         elif mpi_only:
             return
         else:
-            self.nb_processes = (
-                self.nb_processes if self.nb_processes is not None else os.cpu_count()
+            self.nb_processes = min(
+                self.nb_processes if self.nb_processes is not None else os.cpu_count(),
+                len(self.cells_data),
             )
 
             if self.with_NRN_sections:
@@ -437,6 +438,8 @@ class SynthesizeMorphologies:
             region_mask = self.cells_data.region == region
             positions = self.cells.positions[region_mask]
 
+            LOGGER.debug("Extract atlas data for %s region", _region)
+
             if (
                 _region in self.atlas.regions
                 and self.atlas.region_structure[_region]["thicknesses"] is not None
@@ -457,6 +460,8 @@ class SynthesizeMorphologies:
             self.cells_data.loc[region_mask, "layer_depths"] = pd.Series(
                 data=layer_depths, index=self.cells_data.loc[region_mask].index, dtype=object
             )
+
+            LOGGER.debug("Extract orientations data for %s region", _region)
             orientations = self.atlas.orientations.lookup(positions)
             self.cells_data.loc[region_mask, "orientation"] = pd.Series(
                 data=orientations.tolist(),
@@ -483,6 +488,7 @@ class SynthesizeMorphologies:
 
     def check_context_consistency(self):
         """Check that the context_constraints entries in TMD parameters are consistent."""
+        LOGGER.debug("Check context consistency")
         has_context_constraints = self.cells_data.apply(
             lambda row: bool(row["tmd_parameters"].get("context_constraints", {})),
             axis=1,
@@ -504,6 +510,7 @@ class SynthesizeMorphologies:
 
     def compute(self):
         """Run synthesis for all GIDs."""
+        LOGGER.debug("Prepare parameters")
         computation_parameters = ComputationParameters(
             morph_writer=self.morph_writer,
             morph_loader=self.morph_loader,
@@ -545,15 +552,18 @@ class SynthesizeMorphologies:
         )
 
         # Serialize parameters and distributions
+        LOGGER.info("Serialize data")
         cells_data_copy = self.cells_data.copy(deep=False)
         for col in _SERIALIZED_COLUMNS:
             cells_data_copy[col] = cells_data_copy[col].apply(json.dumps)
 
         if self.nb_processes == 0:
+            LOGGER.info("Start computation")
             computed = cells_data_copy.apply(
                 lambda row: _parallel_wrapper(row, **func_kwargs), axis=1
             )
         else:
+            LOGGER.info("Start parallel computation")
             ddf = dd.from_pandas(cells_data_copy, npartitions=self.nb_processes)
             future = ddf.apply(_parallel_wrapper, meta=meta, axis=1, **func_kwargs)
             future = future.persist()
@@ -561,6 +571,7 @@ class SynthesizeMorphologies:
                 dask.distributed.progress(future)
             computed = future.compute()
 
+        LOGGER.info("Format results")
         res = self.cells_data.drop(columns=["tmd_parameters", "tmd_distributions"]).join(computed)
         return res
 
@@ -642,6 +653,7 @@ class SynthesizeMorphologies:
     def synthesize(self):
         """Execute the complete synthesis process and export the results."""
         self._init_parallel()
+        LOGGER.info("Start synthesis")
         res = self.compute()
         self.finalize(res)
         LOGGER.info("Synthesis complete")
