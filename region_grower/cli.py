@@ -1,9 +1,11 @@
 """Command Line Interface for the region_grower package."""
 # pylint: disable=redefined-outer-name
 import json
+import logging
 from pathlib import Path
 
 import click
+import pkg_resources
 import yaml
 
 from region_grower import generate
@@ -264,6 +266,12 @@ def generate_distributions(
     help="The Dask configuration given as a file path or a JSON string",
     type=str,
 )
+@click.option(
+    "--show-pip-freeze",
+    help="Display the versions of all the accessible modules in a logger entry",
+    is_flag=True,
+    default=False,
+)
 def synthesize_morphologies(**kwargs):  # pylint: disable=too-many-arguments, too-many-locals
     """Synthesize morphologies."""
     setup_logger(kwargs.pop("log_level", "info"))
@@ -283,6 +291,13 @@ def synthesize_morphologies(**kwargs):  # pylint: disable=too-many-arguments, to
                     "could not be parsed as a JSON string"
                 ) from exc
         kwargs["dask_config"] = dask_config
+
+    show_pip_freeze = kwargs.pop("show_pip_freeze", False)
+    if show_pip_freeze:
+        installed_packages = list(pkg_resources.working_set)
+        installed_packages_list = sorted([f"{i.key}=={i.version}" for i in installed_packages])
+        LOGGER = logging.getLogger(__name__)
+        LOGGER.info("Using the following package versions: %s", installed_packages_list)
 
     SynthesizeMorphologies(**kwargs).synthesize()
 

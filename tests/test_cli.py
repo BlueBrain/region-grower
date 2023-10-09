@@ -247,6 +247,7 @@ class TestCli:
             "--nb-processes", 2,
             "--region-structure", str(DATA / "region_structure.yaml"),
             "--log-level", "debug",
+            "--show-pip-freeze",
         ]
         # fmt: on
 
