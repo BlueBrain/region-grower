@@ -1,5 +1,14 @@
 # Changelog
 
+## [region-grower-v1.2.4](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.2.3...region-grower-v1.2.4)
+
+> 9 October 2023
+
+### Chores And Housekeeping
+
+- Add logger entries and ensure nb processes &lt;= nb cells (Adrien Berchet - [95e2d00](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/95e2d00291cb4c42b8c509f5bfda1a1f80666bfa))
+- Use importlib instead of pkg_resources which is deprecated (Adrien Berchet - [7c4c5cc](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/7c4c5cc79adedd5f56550fe6b34cae13b36d27f7))
+
 ## [region-grower-v1.2.3](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.2.2...region-grower-v1.2.3)
 
 > 9 October 2023
