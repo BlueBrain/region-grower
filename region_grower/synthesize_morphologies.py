@@ -488,7 +488,7 @@ class SynthesizeMorphologies:
 
     def check_context_consistency(self):
         """Check that the context_constraints entries in TMD parameters are consistent."""
-        LOGGER.debug("Check context consistency")
+        LOGGER.info("Check context consistency")
         has_context_constraints = self.cells_data.apply(
             lambda row: bool(row["tmd_parameters"].get("context_constraints", {})),
             axis=1,
@@ -510,7 +510,7 @@ class SynthesizeMorphologies:
 
     def compute(self):
         """Run synthesis for all GIDs."""
-        LOGGER.debug("Prepare parameters")
+        LOGGER.info("Prepare parameters")
         computation_parameters = ComputationParameters(
             morph_writer=self.morph_writer,
             morph_loader=self.morph_loader,
@@ -555,6 +555,7 @@ class SynthesizeMorphologies:
         LOGGER.info("Serialize data")
         cells_data_copy = self.cells_data.copy(deep=False)
         for col in _SERIALIZED_COLUMNS:
+            LOGGER.debug("Serialize data for col '%s'", col)
             cells_data_copy[col] = cells_data_copy[col].apply(json.dumps)
 
         if self.nb_processes == 0:

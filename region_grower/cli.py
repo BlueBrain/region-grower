@@ -8,6 +8,13 @@ from pathlib import Path
 import click
 import yaml
 
+try:
+    from mpi4py import MPI
+
+    mpi_enabled = True
+except ImportError:  # pragma: no cover
+    mpi_enabled = False
+
 from region_grower import generate
 from region_grower.synthesize_morphologies import SynthesizeMorphologies
 from region_grower.utils import setup_logger
@@ -274,7 +281,13 @@ def generate_distributions(
 )
 def synthesize_morphologies(**kwargs):  # pylint: disable=too-many-arguments, too-many-locals
     """Synthesize morphologies."""
-    setup_logger(kwargs.pop("log_level", "info"))
+    if mpi_enabled and kwargs.get("with_mpi", False):  # pragma: no cover
+        COMM = MPI.COMM_WORLD  # pylint: disable=c-extension-no-member
+        rank = COMM.Get_rank()
+        prefix = f"#{rank} - "
+    else:
+        prefix = ""
+    setup_logger(kwargs.pop("log_level", "info"), prefix=prefix)
 
     dask_config = kwargs.pop("dask_config", None)
     if dask_config is not None:
