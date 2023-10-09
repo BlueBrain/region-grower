@@ -1,5 +1,13 @@
 # Changelog
 
+## [region-grower-v1.2.3](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.2.2...region-grower-v1.2.3)
+
+> 9 October 2023
+
+### New Features
+
+- Add a logger entry for pip freeze (Adrien Berchet - [d0d97b5](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/d0d97b5c28ead6231dd33d4c4e3063656c93ecf6))
+
 ## [region-grower-v1.2.2](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.2.1...region-grower-v1.2.2)
 
 > 7 October 2023
