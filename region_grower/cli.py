@@ -284,6 +284,12 @@ def generate_distributions(
     is_flag=True,
     default=False,
 )
+@click.option(
+    "--synthesize-axons",
+    help="Display the versions of all the accessible modules in a logger entry",
+    is_flag=True,
+    default=False,
+)
 def synthesize_morphologies(**kwargs):  # pylint: disable=too-many-arguments, too-many-locals
     """Synthesize morphologies."""
     if mpi_enabled and kwargs.get("with_mpi", False):  # pragma: no cover
