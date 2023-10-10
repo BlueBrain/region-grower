@@ -201,6 +201,7 @@ class SynthesizeMorphologies:
             should be used to graft the axon on each synthesized morphology.
         base_morph_dir: the path containing the morphologies listed in the TSV file given in
             ``morph_axon``.
+        synthesize_axons: set to True to synthesize axons instead of grafting
         atlas_cache: the path to the directory used for the atlas cache.
         seed: the starting seed to use (note that the GID of each cell is added to this seed
             to ensure all cells has different seeds).
@@ -254,6 +255,7 @@ class SynthesizeMorphologies:
         hide_progress_bar=False,
         dask_config=None,
         chunksize=None,
+        synthesize_axons=False,
     ):  # pylint: disable=too-many-arguments, too-many-locals, too-many-statements
         self.seed = seed
         self.scaling_jitter_std = scaling_jitter_std
@@ -303,6 +305,13 @@ class SynthesizeMorphologies:
         with open(tmd_distributions, "r", encoding="utf-8") as f:
             self.tmd_distributions = convert_from_legacy_neurite_type(json.load(f))
 
+        for region, params in self.tmd_parameters.items():
+            for param in params.values():
+                if synthesize_axons:
+                    assert "axon" in param["grow_types"]
+                elif "axon" in param["grow_types"]:
+                    param["grow_types"].remove("axon")
+
         # Set default values to tmd_parameters and tmd_distributions
         self.set_default_params_and_distrs()
 
@@ -336,7 +345,7 @@ class SynthesizeMorphologies:
         LOGGER.info("Fetching atlas data from %s", atlas)
         self.assign_atlas_data(min_depth, max_depth)
 
-        if morph_axon is not None:
+        if morph_axon is not None and not synthesize_axons:
             LOGGER.info("Loading axon morphologies from %s", morph_axon)
             self.axon_morph_list = load_morphology_list(morph_axon, self.task_ids)
             check_na_morphologies(
