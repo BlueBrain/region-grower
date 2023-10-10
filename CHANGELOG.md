@@ -1,5 +1,13 @@
 # Changelog
 
+## [region-grower-v1.2.5](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.2.4...region-grower-v1.2.5)
+
+> 10 October 2023
+
+### New Features
+
+- Improve logger for MPI (Adrien Berchet - [71c24fb](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/71c24fbc4e58a0d9c3ee9509b6bc6816152522af))
+
 ## [region-grower-v1.2.4](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.2.3...region-grower-v1.2.4)
 
 > 9 October 2023
