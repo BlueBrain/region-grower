@@ -90,12 +90,11 @@ def _parallel_wrapper(
     rotational_jitter_std,
     scaling_jitter_std,
     min_hard_scale,
+    tmd_parameters,
+    tmd_distributions,
 ):
+    # pylint: disable=too-many-locals
     try:
-        # Deserialize values
-        for col in _SERIALIZED_COLUMNS:
-            row[col] = json.loads(row[col])
-
         current_cell = CellState(
             position=np.array([row["x"], row["y"], row["z"]]),
             orientation=np.array([row["orientation"]]),
@@ -111,8 +110,8 @@ def _parallel_wrapper(
         if axon_scale is not None and np.isnan(axon_scale):
             axon_scale = None
         current_synthesis_parameters = SynthesisParameters(
-            tmd_distributions=row["tmd_distributions"],
-            tmd_parameters=row["tmd_parameters"],
+            tmd_distributions=tmd_distributions[row["synthesis_region"]][row["mtype"]],
+            tmd_parameters=tmd_parameters[row["synthesis_region"]][row["mtype"]],
             axon_morph_name=row.get("axon_name", None),
             axon_morph_scale=axon_scale,
             rotational_jitter_std=rotational_jitter_std,
@@ -490,7 +489,11 @@ class SynthesizeMorphologies:
         """Check that the context_constraints entries in TMD parameters are consistent."""
         LOGGER.info("Check context consistency")
         has_context_constraints = self.cells_data.apply(
-            lambda row: bool(row["tmd_parameters"].get("context_constraints", {})),
+            lambda row: bool(
+                self.tmd_parameters[row["synthesis_region"]][row["mtype"]].get(
+                    "context_constraints", {}
+                )
+            ),
             axis=1,
         ).rename("has_context_constraints")
         df = self.cells_data[["synthesis_region", "mtype"]].join(has_context_constraints)
@@ -518,14 +521,6 @@ class SynthesizeMorphologies:
             retries=self.MAX_SYNTHESIS_ATTEMPTS_COUNT,
             debug_data=self.out_debug_data is not None,
         )
-        self.cells_data["tmd_parameters"] = self.cells_data.apply(
-            lambda row: self.tmd_parameters[row["synthesis_region"]][row["mtype"]],
-            axis=1,
-        )
-        self.cells_data["tmd_distributions"] = self.cells_data.apply(
-            lambda row: self.tmd_distributions[row["synthesis_region"]][row["mtype"]],
-            axis=1,
-        )
         self.cells_data["seed"] = (self.seed + self.cells_data.index) % (1 << 32)
 
         self.check_context_consistency()
@@ -536,6 +531,8 @@ class SynthesizeMorphologies:
             "rotational_jitter_std": self.rotational_jitter_std,
             "scaling_jitter_std": self.scaling_jitter_std,
             "min_hard_scale": self.min_hard_scale,
+            "tmd_parameters": self.tmd_parameters,
+            "tmd_distributions": self.tmd_distributions,
         }
 
         meta = pd.DataFrame(
@@ -551,21 +548,14 @@ class SynthesizeMorphologies:
             }
         )
 
-        # Serialize parameters and distributions
-        LOGGER.info("Serialize data")
-        cells_data_copy = self.cells_data.copy(deep=False)
-        for col in _SERIALIZED_COLUMNS:
-            LOGGER.debug("Serialize data for col '%s'", col)
-            cells_data_copy[col] = cells_data_copy[col].apply(json.dumps)
-
         if self.nb_processes == 0:
             LOGGER.info("Start computation")
-            computed = cells_data_copy.apply(
+            computed = self.cells_data.apply(
                 lambda row: _parallel_wrapper(row, **func_kwargs), axis=1
             )
         else:
             LOGGER.info("Start parallel computation")
-            ddf = dd.from_pandas(cells_data_copy, npartitions=self.nb_processes)
+            ddf = dd.from_pandas(self.cells_data, npartitions=self.nb_processes)
             future = ddf.apply(_parallel_wrapper, meta=meta, axis=1, **func_kwargs)
             future = future.persist()
             if self._progress_bar:
@@ -573,7 +563,7 @@ class SynthesizeMorphologies:
             computed = future.compute()
 
         LOGGER.info("Format results")
-        res = self.cells_data.drop(columns=["tmd_parameters", "tmd_distributions"]).join(computed)
+        res = self.cells_data.join(computed)
         return res
 
     def finalize(self, result: pd.DataFrame):
