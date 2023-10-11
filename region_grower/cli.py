@@ -274,6 +274,11 @@ def generate_distributions(
     type=str,
 )
 @click.option(
+    "--chunksize",
+    help="The chunk size used by Dask",
+    type=click.IntRange(min=1),
+)
+@click.option(
     "--show-pip-freeze",
     help="Display the versions of all the accessible modules in a logger entry",
     is_flag=True,

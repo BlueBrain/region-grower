@@ -222,6 +222,7 @@ class SynthesizeMorphologies:
         container_path=None,
         hide_progress_bar=False,
         dask_config=None,
+        chunksize=None,
     ):  # pylint: disable=too-many-arguments, too-many-locals, too-many-statements
         self.seed = seed
         self.scaling_jitter_std = scaling_jitter_std
@@ -245,6 +246,7 @@ class SynthesizeMorphologies:
         self.with_mpi = with_mpi
         self.nb_processes = nb_processes
         self.dask_config = dask_config
+        self.chunksize = chunksize
         self._parallel_client = None
         self._init_parallel(mpi_only=True)
 
@@ -554,8 +556,12 @@ class SynthesizeMorphologies:
                 lambda row: _parallel_wrapper(row, **func_kwargs), axis=1
             )
         else:
-            LOGGER.info("Start parallel computation")
-            ddf = dd.from_pandas(self.cells_data, npartitions=self.nb_processes)
+            if self.chunksize is None or len(self.cells_data) <= self.chunksize:
+                dd_kwargs = {"npartitions": self.nb_processes}
+            else:
+                dd_kwargs = {"chunksize": self.chunksize}
+            LOGGER.info("Start parallel computation using %s", dd_kwargs)
+            ddf = dd.from_pandas(self.cells_data, **dd_kwargs)
             future = ddf.apply(_parallel_wrapper, meta=meta, axis=1, **func_kwargs)
             future = future.persist()
             if self._progress_bar:

@@ -315,6 +315,17 @@ class TestCli:
                 catch_exceptions=False,
             )
 
+        # Test invalid chunksize parameter
+        result = cli_runner.invoke(
+            main,
+            params + ["--chunksize", "-1"],
+            catch_exceptions=False,
+        )
+        assert result.exit_code == 2
+        assert (
+            "Error: Invalid value for '--chunksize': -1 is not in the range x>=1" in result.output
+        )
+
     def test_entry_point(self, script_runner):
         """Test the entry point."""
         ret = script_runner.run("region-grower", "--version")

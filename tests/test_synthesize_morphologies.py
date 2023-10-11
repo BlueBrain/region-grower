@@ -210,12 +210,14 @@ def test_synthesize_dask_config(
 
 
 @pytest.mark.parametrize("nb_processes", [0, 2, None])
+@pytest.mark.parametrize("chunksize", [1, 5, 999])
 def test_synthesize_skip_write(
     tmpdir,
     small_O1_path,
     input_cells,
     axon_morph_tsv,
     nb_processes,
+    chunksize,
 ):  # pylint: disable=unused-argument
     """Test morphology synthesis but skip write step."""
     with_axon = True
@@ -236,6 +238,7 @@ def test_synthesize_skip_write(
     args["nb_processes"] = nb_processes
     args["hide_progress_bar"] = True
     args["out_apical"] = None
+    args["chunksize"] = chunksize
 
     print("Number of available CPUs", os.cpu_count())
 
