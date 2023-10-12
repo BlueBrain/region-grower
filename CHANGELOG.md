@@ -1,5 +1,17 @@
 # Changelog
 
+## [region-grower-v1.2.6](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.2.5...region-grower-v1.2.6)
+
+> 12 October 2023
+
+### New Features
+
+- Add chunksize parameter (Adrien Berchet - [46444cc](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/46444cc077cd25ea35de2d3e91a712254f1dc07c))
+
+### Performance Improvements
+
+- Remove serialization and simplify the code (Adrien Berchet - [6851a2f](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/6851a2fffa8b2e20c6e569c6ef498acd7248a94c))
+
 ## [region-grower-v1.2.5](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.2.4...region-grower-v1.2.5)
 
 > 10 October 2023
