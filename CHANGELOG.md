@@ -1,5 +1,13 @@
 # Changelog
 
+## [region-grower-v1.2.8](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.2.7...region-grower-v1.2.8)
+
+> 13 October 2023
+
+### Performance Improvements
+
+- Significantly reduce memory consumption for atlas computations (Adrien Berchet - [e50d1b0](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/e50d1b06dafefdfd53d046a54001430d2b6d5451))
+
 ## [region-grower-v1.2.7](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.2.6...region-grower-v1.2.7)
 
 > 13 October 2023
