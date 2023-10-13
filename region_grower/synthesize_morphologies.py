@@ -238,17 +238,28 @@ class SynthesizeMorphologies:
         self.out_apical = out_apical
         self.out_debug_data = out_debug_data
         self.min_hard_scale = min_hard_scale
-        self.atlas = AtlasHelper(
-            Atlas.open(atlas, cache_dir=atlas_cache), region_structure_path=region_structure
-        )
         self.container_path = container_path
         self._progress_bar = not bool(hide_progress_bar)
+        self.atlas = None
         self.with_mpi = with_mpi
         self.nb_processes = nb_processes
         self.dask_config = dask_config
         self.chunksize = chunksize
         self._parallel_client = None
         self._init_parallel(mpi_only=True)
+
+        LOGGER.info(
+            "Loading atlas from '%s' using the following cache dir: '%s' and the following "
+            "region_structure file: '%s'",
+            atlas,
+            atlas_cache,
+            region_structure,
+        )
+        # The atlas is loaded after the self._init_parallel() call so that when using MPI the atlas
+        # is loaded only in the scheduler process
+        self.atlas = AtlasHelper(
+            Atlas.open(atlas, cache_dir=atlas_cache), region_structure_path=region_structure
+        )
 
         LOGGER.info("Loading CellCollection from %s", input_cells)
         self.cells = CellCollection.load(input_cells)
