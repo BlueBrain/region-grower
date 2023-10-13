@@ -2,15 +2,14 @@
 
 This helper allows simple lookups without having to reason in term of [PH][1-6] and [PH]y.
 """
-import operator
 from pathlib import Path
 from typing import List
+from typing import Optional
 from typing import Union
 
 import numpy as np
 import yaml
 from voxcell import OrientationField
-from voxcell import VoxelData
 from voxcell.nexus.voxelbrain import Atlas
 
 Point = Union[List[float], np.array]
@@ -33,26 +32,15 @@ class AtlasHelper:
         else:
             raise ValueError("Please provide an existing region_structure file.")
 
-        self.layers = {}
-        self.thicknesses = {}
-        self.depths = {}
         self.regions = list(self.region_structure.keys())
+        self.layers = {}
         for region in self.regions:
             self.layers[region] = self.region_structure[region]["layers"]
-            if self.layers[region]:
-                self.thicknesses[region] = [
-                    self.layer_thickness(layer) for layer in self.layers[region]
-                ]
-                self.depths[region] = VoxelData.reduce(
-                    operator.sub, [self.pia_coord(region), atlas.load_data("[PH]y")]
-                )
-            else:  # pragma: no cover
-                self.thicknesses[region] = None
-                self.depths[region] = None
+        self.y = atlas.load_data("[PH]y")
         self.brain_regions = atlas.load_data("brain_regions")
         self.orientations = atlas.load_data("orientation", cls=OrientationField)
 
-    def layer_thickness(self, layer: int) -> Atlas:
+    def layer_thickness(self, layer: Union[int, str]) -> Atlas:
         """Returns an atlas of the layer thickness."""
         layer_bounds = self.atlas.load_data(f"[PH]{layer}")
         return layer_bounds.with_data(layer_bounds.raw[..., 1] - layer_bounds.raw[..., 0])
@@ -62,15 +50,15 @@ class AtlasHelper:
         top_layer = self.atlas.load_data(f"[PH]{self.layers[region][0]}")
         return top_layer.with_data(top_layer.raw[..., 1])
 
-    def get_layer_boundary_depths(self, position: Point, region: str) -> np.array:
+    def get_layer_boundary_depths(self, position: Point, thicknesses: Optional[Atlas]) -> np.array:
         """Return layer depths at the given position.
 
         Args:
             position: the position of a neuron in the atlas
-            region: name of the region to consider
+            thicknesses: the thicknesses in the layers
         """
         pos = np.array(position, ndmin=2)
-        result = np.zeros((len(self.thicknesses[region]) + 1, pos.shape[0]))
-        all_thicknesses = [thickness.lookup(pos) for thickness in self.thicknesses[region]]
+        result = np.zeros((len(thicknesses) + 1, pos.shape[0]))
+        all_thicknesses = [thickness.lookup(pos) for thickness in thicknesses]
         result[1:, :] = np.cumsum(all_thicknesses, axis=0)
         return result

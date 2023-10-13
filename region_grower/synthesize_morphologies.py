@@ -8,6 +8,7 @@
 """
 import json
 import logging
+import operator
 import os
 import subprocess
 import time
@@ -30,6 +31,7 @@ from neurots.validator import validate_neuron_distribs
 from neurots.validator import validate_neuron_params
 from pkg_resources import resource_stream
 from voxcell import RegionMap
+from voxcell import VoxelData
 from voxcell.cell_collection import CellCollection
 from voxcell.nexus.voxelbrain import Atlas
 
@@ -72,11 +74,16 @@ class RegionMapper:
         self.region_map = region_map
         self.synthesis_regions = synthesis_regions
         self._mapper = {}
+        self._inverse_mapper = {}
         for synthesis_region in self.synthesis_regions:
             for region_id in self.region_map.find(
                 synthesis_region, attr="acronym", with_descendants=True
             ):
-                self._mapper[self.region_map.get(region_id, "acronym")] = synthesis_region
+                region_acronym = self.region_map.get(region_id, "acronym")
+                self._mapper[region_acronym] = synthesis_region
+                if synthesis_region not in self._inverse_mapper:
+                    self._inverse_mapper[synthesis_region] = []
+                self._inverse_mapper[synthesis_region].append(region_acronym)
 
     def __getitem__(self, key):
         """Make this class behave like a dict with a default value."""
@@ -444,22 +451,40 @@ class SynthesizeMorphologies:
 
     def assign_atlas_data(self, min_depth=25, max_depth=5000):
         """Open an Atlas and compute depths and orientations according to the given positions."""
-        for region in self.cells_data.region.unique():
-            _region = self.region_mapper[region]
+        # pylint: disable=protected-access
+        # TODO: Make this cleaner
+        if "default" not in self.region_mapper._inverse_mapper:  # pragma: no cover
+            self.region_mapper._inverse_mapper["default"] = []
+        self.region_mapper._inverse_mapper["default"].extend(
+            set(self.cells_data.region.unique()).difference(self.region_mapper._mapper.keys())
+        )
 
-            region_mask = self.cells_data.region == region
+        for _region, regions in self.region_mapper._inverse_mapper.items():
+            region_mask = self.cells_data.region.isin(regions)
+
+            if not region_mask.any():  # pragma: no cover
+                # If there is no cell in this region we can continue
+                continue
+
             positions = self.cells.positions[region_mask]
 
             LOGGER.debug("Extract atlas data for %s region", _region)
 
             if (
                 _region in self.atlas.regions
-                and self.atlas.region_structure[_region]["thicknesses"] is not None
+                and self.atlas.region_structure[_region].get("thicknesses", None) is not None
+                and self.atlas.region_structure[_region].get("layers", None) is not None
             ):
-                layer_depths = self.atlas.get_layer_boundary_depths(positions, _region).T.tolist()
-                current_depths = np.clip(
-                    self.atlas.depths[_region].lookup(positions), min_depth, max_depth
+                layers = self.atlas.layers[_region]
+                thicknesses = [self.atlas.layer_thickness(layer) for layer in layers]
+                depths = VoxelData.reduce(
+                    operator.sub, [self.atlas.pia_coord(_region), self.atlas.y]
                 )
+
+                layer_depths = self.atlas.get_layer_boundary_depths(
+                    positions, thicknesses
+                ).T.tolist()
+                current_depths = np.clip(depths.lookup(positions), min_depth, max_depth)
             else:
                 LOGGER.warning(
                     "We are not able to synthesize the region %s, we fallback to 'default' region",
