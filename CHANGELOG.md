@@ -1,5 +1,13 @@
 # Changelog
 
+## [region-grower-v1.2.7](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.2.6...region-grower-v1.2.7)
+
+> 13 October 2023
+
+### Performance Improvements
+
+- Dramatically reduce memory consumption when using MPI (Adrien Berchet - [38c50c1](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/38c50c1dba12898ecf86502f953684ef284eae22))
+
 ## [region-grower-v1.2.6](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.2.5...region-grower-v1.2.6)
 
 > 12 October 2023
