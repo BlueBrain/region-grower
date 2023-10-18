@@ -193,26 +193,39 @@ class SpaceContext:
             if mtypes is not None and mtype not in mtypes:
                 continue
 
+            mesh_type = boundary.get("mesh_type", "voxel")
+            mode = boundary.get("mode", "repulsive")
+
             meshes = []
             if Path(boundary["path"]).is_dir():
-                for mesh_path in Path(boundary["path"]).iterdir():
-                    meshes.append(trimesh.load_mesh(mesh_path))
-                distances = [
-                    trimesh.proximity.closest_point(mesh, [self.soma_position])[1][0]
-                    for mesh in meshes
-                ]
-                mesh = meshes[np.argmin(distances)]
+                soma_position = self.soma_position
+                if mesh_type == "voxel":
+                    soma_position = self.positions_to_indices(soma_position)
+
+                if boundary.get("multimesh_mode", "closest") == "closest":
+                    for mesh_path in Path(boundary["path"]).iterdir():
+                        meshes.append(trimesh.load_mesh(mesh_path))
+                        distances = [
+                            trimesh.proximity.closest_point(mesh, [soma_position])[1][0]
+                            for mesh in meshes
+                        ]
+                    mesh = meshes[np.argmin(distances)]
+
+                if boundary.get("multimesh_mode", "closest") == "inside":
+                    mesh = None
+                    for mesh_path in Path(boundary["path"]).iterdir():
+                        _mesh = trimesh.load_mesh(mesh_path)
+                        if _mesh.contains([soma_position])[0]:
+                            mesh = _mesh
+                            break
 
             else:
                 mesh = trimesh.load_mesh(boundary["path"])
 
-            mesh_type = boundary.get("mesh_type", "voxel")
-            mode = boundary.get("mode", "repulsive")
-
             if mode == "repulsive":
 
                 def prob(direction, current_point, mesh=None, mesh_type=None, params=None):
-                    """Probability function for the sections."""
+                    """Probability function for repulsive mode."""
                     dist = get_distance_to_mesh(mesh, current_point, direction, mesh_type=mesh_type)
                     p = (dist - params.get("d_min", 0)) / (
                         params.get("d_max", 100) - params.get("d_min", 0)
@@ -222,7 +235,7 @@ class SpaceContext:
             elif mode == "attractive":
 
                 def prob(direction, current_point, mesh=None, mesh_type=None, params=None):
-                    """Probability function for the sections."""
+                    """Probability function for attractive mode."""
                     closest_point = trimesh.proximity.closest_point(mesh, [current_point])[0][0]
 
                     if mesh_type == "voxel":
@@ -242,15 +255,16 @@ class SpaceContext:
             else:
                 raise ValueError(f"boundary mode {mode} not understood!")
 
-            if "params_section" in boundary:
-                boundary["section_prob"] = partial(
-                    prob, mesh=mesh, mesh_type=mesh_type, params=boundary["params_section"]
-                )
+            if mesh is not None:
+                if "params_section" in boundary:
+                    boundary["section_prob"] = partial(
+                        prob, mesh=mesh, mesh_type=mesh_type, params=boundary["params_section"]
+                    )
 
-            if "params_trunk" in boundary:
-                boundary["trunk_prob"] = partial(
-                    prob, mesh=mesh, mesh_type=mesh_type, params=boundary["params_ trunk"]
-                )
+                if "params_trunk" in boundary:
+                    boundary["trunk_prob"] = partial(
+                        prob, mesh=mesh, mesh_type=mesh_type, params=boundary["params_trunk"]
+                    )
 
             boundaries.append(boundary)
 
