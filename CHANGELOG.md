@@ -1,5 +1,13 @@
 # Changelog
 
+## [region-grower-v1.2.9](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.2.8...region-grower-v1.2.9)
+
+> 31 October 2023
+
+### Refactoring and Updates
+
+- Clean RegionMapper (Adrien Berchet - [afc802d](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/afc802d8137a20b4c929b91d981940caa88b7178))
+
 ## [region-grower-v1.2.8](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.2.7...region-grower-v1.2.8)
 
 > 13 October 2023
