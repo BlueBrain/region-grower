@@ -8,7 +8,6 @@
 """
 import json
 import logging
-import operator
 import os
 import subprocess
 import time
@@ -31,7 +30,6 @@ from neurots.validator import validate_neuron_distribs
 from neurots.validator import validate_neuron_params
 from pkg_resources import resource_stream
 from voxcell import RegionMap
-from voxcell import VoxelData
 from voxcell.cell_collection import CellCollection
 from voxcell.nexus.voxelbrain import Atlas
 
@@ -64,12 +62,13 @@ _SERIALIZED_COLUMNS = [
 class RegionMapper:
     """Mapper between region acronyms and regions names in synthesis config files."""
 
-    def __init__(self, synthesis_regions, region_map):
+    def __init__(self, synthesis_regions, region_map, known_regions=None):
         """Constructor.
 
         Args:
-            synthesis_regions (list): list of regions available from synthesis
+            synthesis_regions (list[str]): list of regions available from synthesis
             region_map (voxcell.RegionMap): RegionMap object related to hierarchy.json
+            known_regions (list[str]): the list of all the known regions
         """
         self.region_map = region_map
         self.synthesis_regions = synthesis_regions
@@ -82,12 +81,29 @@ class RegionMapper:
                 region_acronym = self.region_map.get(region_id, "acronym")
                 self._mapper[region_acronym] = synthesis_region
                 if synthesis_region not in self._inverse_mapper:
-                    self._inverse_mapper[synthesis_region] = []
-                self._inverse_mapper[synthesis_region].append(region_acronym)
+                    self._inverse_mapper[synthesis_region] = set()
+                self._inverse_mapper[synthesis_region].add(region_acronym)
+
+        if known_regions is not None:
+            self._inverse_mapper["default"] = set(
+                sorted(set(known_regions).difference(self._mapper.keys()))
+            )
+        if "default" not in self._inverse_mapper:
+            self._inverse_mapper["default"] = set()
 
     def __getitem__(self, key):
         """Make this class behave like a dict with a default value."""
         return self._mapper.get(key, "default")
+
+    @property
+    def mapper(self):
+        """Access the internal mapper."""
+        return self._mapper
+
+    @property
+    def inverse_mapper(self):
+        """Access the internal inverse mapper."""
+        return self._inverse_mapper
 
 
 def _parallel_wrapper(
@@ -285,13 +301,6 @@ class SynthesizeMorphologies:
         self.regions = [r for r in self.tmd_parameters if r != "default"]
         self.set_cortical_depths()
 
-        self.region_mapper = RegionMapper(
-            self.regions, RegionMap.load_json(Path(atlas) / "hierarchy.json")
-        )
-
-        LOGGER.info("Checking TMD parameters and distributions according to cells mtypes")
-        self.verify()
-
         LOGGER.info("Preparing morphology output folder in %s", out_morph_dir)
         self.morph_writer = MorphWriter(out_morph_dir, out_morph_ext or ["swc"], skip_write)
         self.morph_writer.prepare(
@@ -300,11 +309,21 @@ class SynthesizeMorphologies:
             overwrite=overwrite,
         )
 
+        LOGGER.info("Preparing internal representation of cells")
         self.cells_data = self.cells.as_dataframe()
         self.cells_data.index -= 1  # Index must start from 0
+
+        self.region_mapper = RegionMapper(
+            self.regions,
+            RegionMap.load_json(Path(atlas) / "hierarchy.json"),
+            self.cells_data["region"].unique(),
+        )
         self.cells_data["synthesis_region"] = self.cells_data["region"].apply(
             lambda region: self.region_mapper[region]
         )
+
+        LOGGER.info("Checking TMD parameters and distributions according to cells mtypes")
+        self.verify()
 
         LOGGER.info("Fetching atlas data from %s", atlas)
         self.assign_atlas_data(min_depth, max_depth)
@@ -451,15 +470,7 @@ class SynthesizeMorphologies:
 
     def assign_atlas_data(self, min_depth=25, max_depth=5000):
         """Open an Atlas and compute depths and orientations according to the given positions."""
-        # pylint: disable=protected-access
-        # TODO: Make this cleaner
-        if "default" not in self.region_mapper._inverse_mapper:  # pragma: no cover
-            self.region_mapper._inverse_mapper["default"] = []
-        self.region_mapper._inverse_mapper["default"].extend(
-            set(self.cells_data.region.unique()).difference(self.region_mapper._mapper.keys())
-        )
-
-        for _region, regions in self.region_mapper._inverse_mapper.items():
+        for _region, regions in self.region_mapper.inverse_mapper.items():
             region_mask = self.cells_data.region.isin(regions)
 
             if not region_mask.any():  # pragma: no cover
@@ -477,10 +488,7 @@ class SynthesizeMorphologies:
             ):
                 layers = self.atlas.layers[_region]
                 thicknesses = [self.atlas.layer_thickness(layer) for layer in layers]
-                depths = VoxelData.reduce(
-                    operator.sub, [self.atlas.pia_coord(_region), self.atlas.y]
-                )
-
+                depths = self.atlas.compute_region_depth(_region)
                 layer_depths = self.atlas.get_layer_boundary_depths(
                     positions, thicknesses
                 ).T.tolist()

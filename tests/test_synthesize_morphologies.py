@@ -499,7 +499,7 @@ def test_RegionMapper(small_O1_path):
         ["O0", "UNKNOWN"], RegionMap.load_json(Path(small_O1_path) / "hierarchy.json")
     )
     # pylint: disable=protected-access
-    assert region_mapper._mapper == {
+    assert region_mapper.mapper == {
         "mc0_Column": "O0",
         "mc0;6": "O0",
         "mc0;5": "O0",
@@ -508,6 +508,10 @@ def test_RegionMapper(small_O1_path):
         "mc0;2": "O0",
         "mc0;1": "O0",
         "O0": "O0",
+    }
+    assert region_mapper.inverse_mapper == {
+        "O0": set(["mc0_Column", "mc0;1", "mc0;2", "mc0;3", "mc0;4", "mc0;5", "mc0;6", "O0"]),
+        "default": set(),
     }
 
     assert region_mapper["O0"] == "O0"

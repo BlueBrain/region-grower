@@ -2,6 +2,7 @@
 
 This helper allows simple lookups without having to reason in term of [PH][1-6] and [PH]y.
 """
+import operator
 from pathlib import Path
 from typing import List
 from typing import Optional
@@ -10,6 +11,7 @@ from typing import Union
 import numpy as np
 import yaml
 from voxcell import OrientationField
+from voxcell import VoxelData
 from voxcell.nexus.voxelbrain import Atlas
 
 Point = Union[List[float], np.array]
@@ -62,3 +64,11 @@ class AtlasHelper:
         all_thicknesses = [thickness.lookup(pos) for thickness in thicknesses]
         result[1:, :] = np.cumsum(all_thicknesses, axis=0)
         return result
+
+    def compute_region_depth(self, region: str) -> VoxelData:
+        """Compute the depth in all voxels of a given region.
+
+        Args:
+            region: the name of the region
+        """
+        return VoxelData.reduce(operator.sub, [self.pia_coord(region), self.y])
