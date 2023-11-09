@@ -137,11 +137,13 @@ class SpaceContext:
 
                 if mode == "parallel":
                     p = (1.0 - np.arccos(seg_direction.dot(target_direction)) / np.pi) ** power
-                if mode == "perpendicular":
+                elif mode == "perpendicular":
                     p = (
                         1.0
                         - abs(np.arccos(seg_direction.dot(target_direction)) / np.pi * 2.0 - 1.0)
                     ) ** power
+                else:
+                    raise ValueError(f"mode {mode} not understood for direction probability")
                 return np.clip(p, 0, 1)
 
             direction["section_prob"] = partial(section_prob, direction=direction)
@@ -228,7 +230,7 @@ class SpaceContext:
                     """Probability function for repulsive mode."""
                     dist = get_distance_to_mesh(mesh, current_point, direction, mesh_type=mesh_type)
                     p = (dist - params.get("d_min", 0)) / (
-                        params.get("d_max", 100) - params.get("d_min", 0)
+                        params.get("d_max", 100) - max(0, params.get("d_min", 0))
                     ) ** params.get("power", 1.5)
                     return np.clip(p, 0, 1)
 
@@ -246,6 +248,7 @@ class SpaceContext:
                     if params.get("d_min", 0) < distance < params.get("d_max", 100):
                         if mesh_type == "voxel":
                             current_point = self.positions_to_indices(current_point)
+
                         p = (
                             1 - np.arccos(direction.dot(mesh_direction) / distance) / np.pi
                         ) ** params.get("power", 1.0)
