@@ -182,7 +182,7 @@ def generate_distributions(
     help="Morphology export format(s)",
     type=click.Choice(["swc", "asc", "h5"]),
     multiple=True,
-    default=["swc"],
+    default=["h5"],
 )
 @click.option(
     "--max-files-per-dir",

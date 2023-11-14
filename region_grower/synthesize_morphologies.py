@@ -132,9 +132,14 @@ def _parallel_wrapper(
         axon_scale = row.get("axon_scale", None)
         if axon_scale is not None and np.isnan(axon_scale):
             axon_scale = None
+        region = (
+            row["synthesis_region"]
+            if row["synthesis_region"] in tmd_distributions
+            else row["region"]
+        )
         current_synthesis_parameters = SynthesisParameters(
-            tmd_distributions=tmd_distributions[row["synthesis_region"]][row["mtype"]],
-            tmd_parameters=tmd_parameters[row["synthesis_region"]][row["mtype"]],
+            tmd_distributions=tmd_distributions[region][row["mtype"]],
+            tmd_parameters=tmd_parameters[region][row["mtype"]],
             axon_morph_name=row.get("axon_name", None),
             axon_morph_scale=axon_scale,
             rotational_jitter_std=rotational_jitter_std,
@@ -298,7 +303,7 @@ class SynthesizeMorphologies:
         # Set default values to tmd_parameters and tmd_distributions
         self.set_default_params_and_distrs()
 
-        self.regions = [r for r in self.tmd_parameters if r != "default"]
+        self.regions = [r for r in self.atlas.region_structure if r != "default"]
         self.set_cortical_depths()
 
         LOGGER.info("Preparing morphology output folder in %s", out_morph_dir)
@@ -351,7 +356,7 @@ class SynthesizeMorphologies:
             if (
                 region not in self.atlas.region_structure
                 or self.atlas.region_structure[region]["thicknesses"] is None
-            ):
+            ):  # pragma: no cover
                 self.cortical_depths[region] = self.cortical_depths["default"]
             else:
                 self.cortical_depths[region] = np.cumsum(
@@ -480,7 +485,6 @@ class SynthesizeMorphologies:
             positions = self.cells.positions[region_mask]
 
             LOGGER.debug("Extract atlas data for %s region", _region)
-
             if (
                 _region in self.atlas.regions
                 and self.atlas.region_structure[_region].get("thicknesses", None) is not None
@@ -534,11 +538,15 @@ class SynthesizeMorphologies:
     def check_context_consistency(self):
         """Check that the context_constraints entries in TMD parameters are consistent."""
         LOGGER.info("Check context consistency")
+        region = "synthesis_region"
+        if (
+            self.cells_data.loc[0, "synthesis_region"] not in self.tmd_parameters
+        ):  # pragma: no cover
+            region = "region"
+
         has_context_constraints = self.cells_data.apply(
             lambda row: bool(
-                self.tmd_parameters[row["synthesis_region"]][row["mtype"]].get(
-                    "context_constraints", {}
-                )
+                self.tmd_parameters[row[region]][row["mtype"]].get("context_constraints", {})
             ),
             axis=1,
         ).rename("has_context_constraints")
@@ -713,6 +721,9 @@ class SynthesizeMorphologies:
 
         for region in self.cells.properties["region"].unique():
             _region = self.region_mapper[region]
+            if _region not in self.tmd_distributions:  # pragma: no cover
+                _region = region
+
             for mtype in self.cells.properties[self.cells.properties["region"] == region][
                 "mtype"
             ].unique():
