@@ -308,7 +308,10 @@ class SynthesizeMorphologies:
         for region, params in self.tmd_parameters.items():
             for param in params.values():
                 if synthesize_axons:
-                    assert "axon" in param["grow_types"]
+                    if "axon" not in param["grow_types"]:
+                        LOGGER.warning(
+                            "No axon data, but axon synthesis requested, you will not have axons"
+                        )
                 elif "axon" in param["grow_types"]:
                     param["grow_types"].remove("axon")
 
@@ -368,7 +371,7 @@ class SynthesizeMorphologies:
         for region in self.regions:
             if (
                 region not in self.atlas.region_structure
-                or self.atlas.region_structure[region]["thicknesses"] is None
+                or self.atlas.region_structure[region].get("thicknesses") is None
             ):  # pragma: no cover
                 self.cortical_depths[region] = self.cortical_depths["default"]
             else:
@@ -507,8 +510,8 @@ class SynthesizeMorphologies:
             LOGGER.debug("Extract atlas data for %s region", _region)
             if (
                 _region in self.atlas.regions
-                and self.atlas.region_structure[_region].get("thicknesses", None) is not None
-                and self.atlas.region_structure[_region].get("layers", None) is not None
+                and self.atlas.region_structure[_region].get("thicknesses") is not None
+                and self.atlas.region_structure[_region].get("layers") is not None
             ):
                 layers = self.atlas.layers[_region]
                 thicknesses = [self.atlas.layer_thickness(layer) for layer in layers]
@@ -519,8 +522,7 @@ class SynthesizeMorphologies:
                 current_depths = np.clip(depths.lookup(positions), min_depth, max_depth)
             else:
                 LOGGER.warning(
-                    "We are not able to synthesize the region %s, we fallback to 'default' region",
-                    _region,
+                    "We are not able to synthesize the region %s with thicknesses", _region
                 )
                 layer_depths = None
                 current_depths = None
