@@ -14,7 +14,6 @@
                         0.0
                     ]
                 ],
-                "radius": 0.3,
                 "randomness": 0.15,
                 "step_size": {
                     "norm": {
@@ -32,7 +31,6 @@
                 "metric": "path_distances",
                 "modify": null,
                 "orientation": null,
-                "radius": 0.3,
                 "randomness": 0.15,
                 "step_size": {
                     "norm": {
@@ -44,7 +42,10 @@
                 "tree_type": 3
             },
             "diameter_params": {
-                "method": "default"
+                "method": "uniform",
+                    "basal_dendrite": 0.6,
+                    "apical_dendrite": 0.6,
+                    "axon": 0.6
             },
             "grow_types": [
                 "basal_dendrite",
@@ -72,7 +73,6 @@
                         0.0
                     ]
                 ],
-                "radius": 0.3,
                 "randomness": 0.15,
                 "step_size": {
                     "norm": {
@@ -90,7 +90,6 @@
                 "metric": "path_distances",
                 "modify": null,
                 "orientation": null,
-                "radius": 0.3,
                 "randomness": 0.15,
                 "step_size": {
                     "norm": {
@@ -102,7 +101,10 @@
                 "tree_type": 3
             },
             "diameter_params": {
-                "method": "default"
+                "method": "uniform",
+                    "basal_dendrite": 0.6,
+                    "apical_dendrite": 0.6,
+                    "axon": 0.6
             },
             "grow_types": [
                 "basal_dendrite",
@@ -130,7 +132,6 @@
                         0.0
                     ]
                 ],
-                "radius": 0.3,
                 "randomness": 0.15,
                 "step_size": {
                     "norm": {
@@ -148,7 +149,6 @@
                 "metric": "path_distances",
                 "modify": null,
                 "orientation": null,
-                "radius": 0.3,
                 "randomness": 0.15,
                 "step_size": {
                     "norm": {
@@ -160,7 +160,10 @@
                 "tree_type": 3
             },
             "diameter_params": {
-                "method": "default"
+                "method": "uniform",
+                    "basal_dendrite": 0.6,
+                    "apical_dendrite": 0.6,
+                    "axon": 0.6
             },
             "grow_types": [
                 "basal_dendrite",

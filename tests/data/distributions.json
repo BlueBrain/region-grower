@@ -1445,7 +1445,7 @@
                 }
             },
             "diameter": {
-                "method": "default"
+                "method": "uniform"
             },
             "soma": {
                 "size": {
@@ -2903,7 +2903,7 @@
                 }
             },
             "diameter": {
-                "method": "default"
+                "method": "uniform"
             },
             "soma": {
                 "size": {
