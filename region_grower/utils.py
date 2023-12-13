@@ -137,3 +137,5 @@ def assign_morphologies(cells, morphologies):
             np.count_nonzero(na_mask),
         )
         cells.remove_unassigned_cells()
+
+    cells.properties["morphology_producer"] = "synthesis"
