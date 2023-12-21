@@ -486,11 +486,11 @@ class SynthesizeMorphologies:
     def _close_parallel(self):
         if self._parallel_client is not None:
             LOGGER.debug("Closing the Dask client")
-            self._parallel_client.retire_workers()
-            time.sleep(1)
-            self._parallel_client.shutdown()
+            #self._parallel_client.retire_workers()
+            #time.sleep(1)
+            #self._parallel_client.shutdown()
             self._parallel_client.close()
-            self._parallel_client = None
+            #self._parallel_client = None
 
     def assign_atlas_data(self, min_depth=25, max_depth=5000):
         """Open an Atlas and compute depths and orientations according to the given positions."""
