@@ -122,7 +122,7 @@ class SpaceContext:
 
                 target_direction = direction["params"]["direction"]
                 power = direction["params"].get("power", 1.0)
-                mode = direction["params"]["mode"]
+                mode = direction["params"].get("mode", "parallel")
                 layers = direction["params"].get("layers", [])
                 if layers:
                     depth = self.soma_depth + (self.soma_position - current_point).dot(
