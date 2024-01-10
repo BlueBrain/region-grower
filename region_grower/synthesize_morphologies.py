@@ -412,6 +412,9 @@ class SynthesizeMorphologies:
                     },
                 },
             },
+            "dataframe": {
+                "convert_string": False,
+            },
         }
 
         # Merge the default config with the existing config (keep conflicting values from defaults)
