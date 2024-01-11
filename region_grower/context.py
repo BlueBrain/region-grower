@@ -205,13 +205,16 @@ class SpaceContext:
                     soma_position = self.positions_to_indices(soma_position)
 
                 if boundary.get("multimesh_mode", "closest") == "closest":
-                    for mesh_path in Path(boundary["path"]).iterdir():
+                    mesh_paths = list(Path(boundary["path"]).iterdir())
+                    for mesh_path in mesh_paths:
                         meshes.append(trimesh.load_mesh(mesh_path))
                         distances = [
                             trimesh.proximity.closest_point(mesh, [soma_position])[1][0]
                             for mesh in meshes
                         ]
-                    mesh = meshes[np.argmin(distances)]
+                    mesh_id = np.argmin(distances)
+                    boundary["mesh_name"] = Path(mesh_paths[mesh_id]).stem
+                    mesh = meshes[mesh_id]
 
                 if boundary.get("multimesh_mode", "closest") == "inside":
                     mesh = None
@@ -530,6 +533,8 @@ class SpaceWorker:
             if "constraints" not in context:
                 context["constraints"] = []
             context["constraints"] += self.context.get_boundaries(mtype=self.cell.mtype)
+            if context["constraints"] and "mesh_name" in context["constraints"][-1]:
+                self.debug_infos["mesh_name"] = context["constraints"][-1]["mesh_name"]
 
         grower = NeuronGrower(
             input_parameters=params,
