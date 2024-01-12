@@ -6,11 +6,11 @@
 - assign identity cell rotations to MVD3/sonata
 - optional axon grafting "on-the-fly"
 """
+
 import json
 import logging
 import os
 import subprocess
-import time
 from pathlib import Path
 from shutil import which
 from typing import Optional
@@ -486,11 +486,11 @@ class SynthesizeMorphologies:
     def _close_parallel(self):
         if self._parallel_client is not None:
             LOGGER.debug("Closing the Dask client")
-            #self._parallel_client.retire_workers()
-            #time.sleep(1)
-            #self._parallel_client.shutdown()
+            # self._parallel_client.retire_workers()
+            # time.sleep(1)
+            # self._parallel_client.shutdown()
             self._parallel_client.close()
-            #self._parallel_client = None
+            # self._parallel_client = None
 
     def assign_atlas_data(self, min_depth=25, max_depth=5000):
         """Open an Atlas and compute depths and orientations according to the given positions."""
@@ -639,6 +639,9 @@ class SynthesizeMorphologies:
             }
         )
 
+        # shuffle rows to get more even loads on tasks
+        self.cells_data = self.cells_data.sample(frac=1.0).reset_index()
+
         if self.nb_processes == 0:
             LOGGER.info("Start computation")
             computed = self.cells_data.apply(
@@ -658,8 +661,7 @@ class SynthesizeMorphologies:
             computed = future.compute()
 
         LOGGER.info("Format results")
-        res = self.cells_data.join(computed)
-        return res
+        return self.cells_data.join(computed).sort_values(by="index").set_index("index")
 
     def finalize(self, result: pd.DataFrame):
         """Finalize master work.
