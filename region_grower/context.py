@@ -216,6 +216,22 @@ class SpaceContext:
                     boundary["mesh_name"] = Path(mesh_paths[mesh_id]).stem
                     mesh = meshes[mesh_id]
 
+                if boundary.get("multimesh_mode", "closest") == "closest_y":
+                    mesh_paths = list(Path(boundary["path"]).iterdir())
+                    meshes = [trimesh.load_mesh(mesh_path) for mesh_path in mesh_paths]
+                    # this is assuming the original direction can be used
+                    # as straight line, refinement would be to follow the vector field
+                    distances = [
+                        np.linalg.norm(
+                            np.cross(soma_position - mesh.center_mass, boundary["direction"])
+                        )
+                        for mesh in meshes
+                    ]
+
+                    mesh_id = np.argmin(distances)
+                    boundary["mesh_name"] = Path(mesh_paths[mesh_id]).stem
+                    mesh = meshes[mesh_id]
+
                 if boundary.get("multimesh_mode", "closest") == "inside":
                     mesh = None
                     for mesh_path in Path(boundary["path"]).iterdir():
@@ -303,7 +319,7 @@ class SpaceContext:
             # we round to avoid being outside due to numerical precision
             if np.round(depth, 3) <= np.round(layer_depth, 3):
                 return layer_depth, cortical_depth
-
+        print(depth, self.layer_depths, self.cortical_depths)
         raise RegionGrowerError(f"Current depth ({depth}) is outside of circuit boundaries")
 
     def distance_to_constraint(self, depth: float, constraint: Dict) -> Optional[float]:
@@ -383,6 +399,13 @@ class SpaceWorker:
                 self.context.directions[i]["pia_direction"] = self.cell.lookup_orientation(
                     PIA_DIRECTION
                 ).tolist()
+
+        if self.context.boundaries is not None:
+            boundaries = json.loads(self.context.boundaries)
+            for boundary in boundaries:
+                if boundary.get("multimesh_mode", "closest") == "closest_y":
+                    boundary["direction"] = self.cell.lookup_orientation(PIA_DIRECTION).tolist()
+            self.context.boundaries = json.dumps(boundaries)
 
         for neurite_type in params["grow_types"]:
             if isinstance(params[neurite_type]["orientation"], dict):
