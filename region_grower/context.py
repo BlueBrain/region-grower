@@ -6,16 +6,18 @@ synthesis tools (here NeutoTS) and the circuit building pipeline.
 TLDR: SpaceContext.synthesized() is being called by
 the placement_algorithm package to synthesize circuit morphologies.
 """
-import os
+
 import json
+import os
 from collections import defaultdict
 from copy import deepcopy
-from pathlib import Path
 from functools import partial
+from pathlib import Path
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
+
 import trimesh
 
 os.environ.setdefault("NEURON_MODULE_OPTIONS", "-nogui")  # suppress NEURON warning
@@ -111,15 +113,15 @@ class SpaceContext:
         return result
 
     def get_direction(self, mtype):
+        """Get direction data for the given mtype."""
         directions = []
-        for i, direction in enumerate(self.directions):
+        for direction in self.directions:
             mtypes = direction.pop("mtypes", None)
             if mtypes is not None and mtype not in mtypes:
                 continue
 
             def section_prob(seg_direction, current_point, direction=None):
                 """Probability function for the sections."""
-
                 target_direction = direction["params"]["direction"]
                 power = direction["params"].get("power", 1.0)
                 mode = direction["params"].get("mode", "parallel")
@@ -150,7 +152,9 @@ class SpaceContext:
             directions.append(direction)
         return directions
 
-    def get_boundaries(self, mtype):
+    def get_boundaries(
+        self, mtype
+    ):  # pylint: disable=too-many-locals,too-many-statements,too-many-branches
         """Returns a dict with boundaries data for NeuroTS."""
 
         def get_distance_to_mesh(mesh, ray_origin, ray_direction, mesh_type):
@@ -190,7 +194,7 @@ class SpaceContext:
         # add here necessary logic to convert raw config data to NeuroTS context data
         all_boundaries = json.loads(self.boundaries)
         boundaries = []
-        for i, boundary in enumerate(all_boundaries):
+        for boundary in all_boundaries:
             mtypes = boundary.pop("mtypes", None)
             if mtypes is not None and mtype not in mtypes:
                 continue
@@ -319,7 +323,6 @@ class SpaceContext:
             # we round to avoid being outside due to numerical precision
             if np.round(depth, 3) <= np.round(layer_depth, 3):
                 return layer_depth, cortical_depth
-        print(depth, self.layer_depths, self.cortical_depths)
         raise RegionGrowerError(f"Current depth ({depth}) is outside of circuit boundaries")
 
     def distance_to_constraint(self, depth: float, constraint: Dict) -> Optional[float]:
