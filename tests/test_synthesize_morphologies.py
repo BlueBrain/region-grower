@@ -178,6 +178,7 @@ def test_synthesize_dask_config(
         None,
         None,
         100,
+        DATA / "region_structure.yaml",
     )
 
     custom_scratch_config = str(tmp_folder / "custom_scratch_config")
@@ -299,7 +300,7 @@ def test_synthesize_boundary(
     mesh,
     with_sections,
     with_trunks,
-):  # pylint: disable=unused-argument
+):  # pylint: disable=unused-argument,too-many-locals
     """Test morphology synthesis but skip write step."""
     with_axon = True
     with_NRN = True
@@ -716,6 +717,7 @@ def test_inconsistent_params(
         axon_morph_tsv,
         "apical_NRN_sections.yaml",
         min_depth,
+        DATA / "region_structure.yaml",
     )
     args["out_morph_ext"] = ["h5"]
 
@@ -748,6 +750,7 @@ def test_inconsistent_context(
         axon_morph_tsv,
         "apical_NRN_sections.yaml",
         min_depth,
+        DATA / "region_structure.yaml",
     )
     args["nb_processes"] = 0
 
