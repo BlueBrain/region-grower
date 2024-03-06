@@ -110,6 +110,7 @@ class RegionMapper:
 def _parallel_wrapper(
     row,
     computation_parameters,
+    cortical_depths,
     rotational_jitter_std,
     scaling_jitter_std,
     min_hard_scale,
@@ -126,7 +127,7 @@ def _parallel_wrapper(
         )
         current_space_context = SpaceContext(
             layer_depths=row["layer_depths"],
-            cortical_depths=row["cortical_depths"],
+            cortical_depths=cortical_depths[row["synthesis_region"]],
             directions=row["directions"] if "directions" in row else None,
             boundaries=row["boundaries"] if "boundaries" in row else None,
             atlas_info=json.loads(row["atlas_info"]) if "atlas_info" in row else None,
@@ -621,6 +622,7 @@ class SynthesizeMorphologies:
         func_kwargs = {
             "computation_parameters": computation_parameters,
             "rotational_jitter_std": self.rotational_jitter_std,
+            "cortical_depths": self.cortical_depths,
             "scaling_jitter_std": self.scaling_jitter_std,
             "min_hard_scale": self.min_hard_scale,
             "tmd_parameters": self.tmd_parameters,
