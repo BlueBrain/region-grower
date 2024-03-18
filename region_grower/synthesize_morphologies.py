@@ -478,6 +478,10 @@ class SynthesizeMorphologies:
 
     def assign_atlas_data(self, min_depth=25, max_depth=5000):
         """Open an Atlas and compute depths and orientations according to the given positions."""
+        self.cells_data.loc[:, "current_depth"] = np.nan
+        self.cells_data.loc[:, "layer_depths"] = pd.Series(
+            np.nan, index=self.cells_data.index.copy(), dtype=object
+        )
         for _region, regions in self.region_mapper.inverse_mapper.items():
             region_mask = self.cells_data.region.isin(regions)
 
