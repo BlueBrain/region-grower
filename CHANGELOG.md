@@ -1,5 +1,30 @@
 # Changelog
 
+## [region-grower-v1.3.0](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.2.9...region-grower-v1.3.0)
+
+> 18 March 2024
+
+### New Features
+
+- Add morphology_producer column (Alexis Arnaudon - [6ec1f98](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/6ec1f98e34e1d522604d5c5e97692d7d24613a7c))
+
+### Fixes
+
+- Allow for different region names between parameters and region_structure (Alexis Arnaudon - [aad0232](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/aad0232c29b22646c0e4818a392cd7606d14f1ec))
+
+### Chores And Housekeeping
+
+- Create empty columns before filling them (Adrien Berchet - [c2cab98](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/c2cab9827ebaa19fd1105720ccbe9c9592ab17cb))
+- Configure dask-dataframe to be compatible with pyarrow (Adrien Berchet - [2652ee0](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/2652ee0014a24297e5c921d5628f86e5af5709b3))
+
+### Changes to Test Assests
+
+- Bump NeuroTS and update the tests (Adrien Berchet - [ef6d3e3](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/ef6d3e3e917fd49b8b03b4655bdeacc7863565ce))
+
+### CI Improvements
+
+- Fix gitlab config (Adrien Berchet - [f06d3f6](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/f06d3f6eb29ad995e6efb48ddf5b0fde40b597ea))
+
 ## [region-grower-v1.2.9](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.2.8...region-grower-v1.2.9)
 
 > 31 October 2023
