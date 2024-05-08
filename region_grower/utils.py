@@ -48,10 +48,10 @@ class NumpyEncoder(json.JSONEncoder):
 
 def create_morphologies_dict(dat_file, morph_path, ext=".asc"):
     """Create dict to load the morphologies from a directory, with dat file."""
-    morph_name = pd.read_csv(dat_file, sep=" ")
+    morph_name = pd.read_csv(dat_file, sep=" ", dtype={0: object})
     name_dict = defaultdict(list)
     for morph in morph_name.values:
-        name_dict[morph[2]].append(os.path.join(morph_path, morph[0] + ext))
+        name_dict[morph[2]].append(os.path.join(morph_path, str(morph[0]) + ext))
     return name_dict
 
 
