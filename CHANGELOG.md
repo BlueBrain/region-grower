@@ -1,5 +1,21 @@
 # Changelog
 
+## [region-grower-v1.3.1](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.3.0...region-grower-v1.3.1)
+
+> 8 May 2024
+
+### Build
+
+- Freeze docutils version to be compatible with m2r2 (Adrien Berchet - [254da98](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/254da98fbc54c8e166452d38dd71a63c53530a06))
+
+### Chores And Housekeeping
+
+- Ensure the morphology names are not considered as numbers (Adrien Berchet - [b7af19a](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/b7af19a50795b6301026947c1246a717f512c808))
+
+### Documentation Changes
+
+- Remove deprecated example (Adrien Berchet - [10b4148](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/10b4148faf18b95c8b1897a6810365244fbafad2))
+
 ## [region-grower-v1.3.0](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.2.9...region-grower-v1.3.0)
 
 > 18 March 2024
