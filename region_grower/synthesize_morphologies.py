@@ -218,6 +218,13 @@ class SynthesizeMorphologies:
     """
 
     MAX_SYNTHESIS_ATTEMPTS_COUNT = 10
+    NEW_COLUMNS = [
+        "name",
+        "apical_points",
+        "apical_sections",
+        "apical_NRN_sections",
+        "debug_infos",
+    ]
 
     def __init__(
         self,
@@ -291,6 +298,8 @@ class SynthesizeMorphologies:
 
         LOGGER.info("Loading CellCollection from %s", input_cells)
         self.cells = CellCollection.load(input_cells)
+        if self.cells.size() == 0:
+            LOGGER.info("The CellCollection is empty, synthesis will create empty results")
 
         LOGGER.info("Loading TMD parameters from %s", tmd_parameters)
         with open(tmd_parameters, "r", encoding="utf-8") as f:
@@ -478,8 +487,8 @@ class SynthesizeMorphologies:
 
     def assign_atlas_data(self, min_depth=25, max_depth=5000):
         """Open an Atlas and compute depths and orientations according to the given positions."""
-        self.cells_data.loc[:, "current_depth"] = np.nan
-        self.cells_data.loc[:, "layer_depths"] = pd.Series(
+        self.cells_data["current_depth"] = np.nan
+        self.cells_data["layer_depths"] = pd.Series(
             np.nan, index=self.cells_data.index.copy(), dtype=object
         )
         for _region, regions in self.region_mapper.inverse_mapper.items():
@@ -596,18 +605,7 @@ class SynthesizeMorphologies:
             "tmd_distributions": self.tmd_distributions,
         }
 
-        meta = pd.DataFrame(
-            {
-                name: pd.Series(dtype="object")
-                for name in [
-                    "name",
-                    "apical_points",
-                    "apical_sections",
-                    "apical_NRN_sections",
-                    "debug_infos",
-                ]
-            }
-        )
+        meta = pd.DataFrame({name: pd.Series(dtype="object") for name in self.NEW_COLUMNS})
 
         if self.nb_processes == 0:
             LOGGER.info("Start computation")
@@ -706,8 +704,25 @@ class SynthesizeMorphologies:
             ) as proc:
                 LOGGER.debug(proc.communicate()[0].decode())
 
+    def export_empty_results(self):
+        """Create result DataFrame for empty population."""
+        res = self.cells_data.join(
+            pd.DataFrame(
+                index=[],
+                columns=self.NEW_COLUMNS,
+                dtype=object,
+            ),
+        )
+
+        LOGGER.info("Export CellCollection to %s...", self.out_cells)
+        self.cells.save(self.out_cells)
+        return res
+
     def synthesize(self):
         """Execute the complete synthesis process and export the results."""
+        if self.cells_data.empty:
+            LOGGER.warning("The population to synthesize is empty!")
+            return self.export_empty_results()
         self._init_parallel()
         LOGGER.info("Start synthesis")
         res = self.compute()

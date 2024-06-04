@@ -152,6 +152,35 @@ def test_synthesize(
             assert_allclose(max_y, 149.30412)
 
 
+def test_synthesize_empty_population(
+    tmp_path,
+    small_O1_path,
+    input_cells,
+):
+    """Test morphology synthesis."""
+    args = create_args(
+        False,
+        tmp_path,
+        input_cells,
+        small_O1_path,
+        None,
+        None,
+        25,
+    )
+    # Update population to make it empty
+    cells = CellCollection.load(args["input_cells"])
+    cells_df = cells.as_dataframe()
+    empty_cells = CellCollection.from_dataframe(pd.DataFrame().reindex_like(cells_df.iloc[:0, :]))
+    empty_cells.save(args["input_cells"])
+
+    synthesizer = SynthesizeMorphologies(**args)
+    synthesizer.synthesize()
+
+    # Check results
+    assert len(list(iter_morphology_files(tmp_path))) == 0
+    assert Path(args["out_cells"]).exists()
+
+
 @pytest.mark.parametrize("with_SHMDIR", [True, False])
 @pytest.mark.parametrize("with_TMPDIR", [True, False])
 @pytest.mark.parametrize("with_dask_config", [True, False])
