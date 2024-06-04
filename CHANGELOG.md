@@ -1,5 +1,17 @@
 # Changelog
 
+## [region-grower-v1.4.0](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.3.1...region-grower-v1.4.0)
+
+> 4 June 2024
+
+### Build
+
+- Bump NeuroTS and update the tests (Adrien Berchet - [66caf20](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/66caf20b4ae48081243c7caa9586089e0d0dd549))
+
+### New Features
+
+- Add support for empty population (Adrien Berchet - [fb0c830](https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/fb0c8305594f1a07868527531fe6dc9216f14533))
+
 ## [region-grower-v1.3.1](https://bbpgitlab.epfl.ch/neuromath/region-grower/compare/region-grower-v1.3.0...region-grower-v1.3.1)
 
 > 8 May 2024
