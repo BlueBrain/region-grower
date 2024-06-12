@@ -2,6 +2,7 @@
 
 This helper allows simple lookups without having to reason in term of [PH][1-6] and [PH]y.
 """
+
 import operator
 from pathlib import Path
 from typing import List
@@ -39,9 +40,16 @@ class AtlasHelper:
         self.layers = {}
         for region in self.regions:
             self.layers[region] = self.region_structure[region]["layers"]
-        self.y = atlas.load_data("[PH]y")
+        try:
+            self.y = atlas.load_data("[PH]y")
+        except:
+            self.y = None
+
         self.brain_regions = atlas.load_data("brain_regions")
-        self.orientations = atlas.load_data("orientation", cls=OrientationField)
+        try:
+            self.orientations = atlas.load_data("orientation", cls=OrientationField)
+        except:
+            self.orientations = None
 
     def layer_thickness(self, layer: Union[int, str]) -> Atlas:
         """Returns an atlas of the layer thickness."""
