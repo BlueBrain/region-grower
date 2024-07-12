@@ -1,6 +1,6 @@
 # Changes here will be overwritten by Copier
 
-_commit: 0.1.52
+_commit: 0.1.59
 _src_path: git@bbpgitlab.epfl.ch:neuromath/python-template.git
 author_email: bbp-ou-cells@groupes.epfl.ch
 author_name: bbp-ou-cells
@@ -9,7 +9,6 @@ copyright_year: '2022'
 distribution_name: region-grower
 download_url: https://bbpgitlab.epfl.ch/neuromath/region-grower
 init_git: false
-maintainer: null
 package_name: region_grower
 project_description: Synthesize cells in a given spatial context.
 project_name: Region Grower

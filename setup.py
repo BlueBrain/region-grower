@@ -20,7 +20,7 @@ reqs = [
     "diameter-synthesis>=0.5.4,<1",
     "morphio>=3.3.6,<4",
     "morph-tool[nrn]>=2.9,<3",
-    "neuroc>=0.2.8,<1",
+    "neuroc>=0.3,<1",
     "neurom>=3,<4",
     "neurots>=3.6,<4",
     "numpy>=1.22",
@@ -45,7 +45,7 @@ doc_reqs = [
 ]
 
 test_reqs = [
-    "brainbuilder>=0.18.3",
+    "brainbuilder>=0.20",
     "dictdiffer>=0.9",
     "pytest>=6.2.5",
     "pytest-click>=1",
@@ -70,7 +70,7 @@ setup(
     },
     license="BBP-internal-confidential",
     packages=find_namespace_packages(include=["region_grower*"]),
-    python_requires=">=3.8",
+    python_requires=">=3.9",
     version=VERSION,
     install_requires=reqs,
     extras_require={
@@ -90,10 +90,10 @@ setup(
         "Intended Audience :: Science/Research",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
     ],
 )

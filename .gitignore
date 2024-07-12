@@ -6,6 +6,7 @@
 *py~
 *~
 *.egg-info
+*.txt
 
 # Mac related stuff
 .DS_Store

@@ -4,7 +4,7 @@
     "tagPrefix": "region-grower-v",
     "commitLimit": false,
     "backfillLimit": false,
-    "ignoreCommitPattern": "^Release:? [0-9]+\\.[0-9]+\\.[0-9]+$|^Update CHANGELOG.*|.*\\[skip-changelog\\].*|^\\[pre-commit.ci\\]|^\\(dependabot\\) .*",
+    "ignoreCommitPattern": "^Release:? [0-9]+\\.[0-9]+\\.[0-9]+( ?\\(#[0-9]+\\))?$|^Update CHANGELOG.*|.*\\[skip-changelog\\].*|^\\[pre-commit.ci\\]|^\\(dependabot\\) .*",
     "commitUrl": "https://bbpgitlab.epfl.ch/neuromath/region-grower/commit/{id}",
     "issueUrl": "https://bbpgitlab.epfl.ch/neuromath/region-grower/issues/{id}",
     "mergeUrl": "https://bbpgitlab.epfl.ch/neuromath/region-grower/merge_requests/{id}",
