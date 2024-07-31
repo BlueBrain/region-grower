@@ -74,6 +74,7 @@ class CellState:
     orientation: Matrix
     mtype: str
     depth: float
+    other_parameters: Dict
 
     def lookup_orientation(self, vector: Optional[Point] = None) -> np.array:
         """Returns the looked-up orientation for the given position.
@@ -112,12 +113,16 @@ class SpaceContext:
         result[result >= self.atlas_info["shape"]] = -1
         return result
 
-    def get_direction(self, mtype):
+    def get_direction(self, cell):
         """Get direction data for the given mtype."""
         directions = []
         for direction in self.directions:
             mtypes = direction.pop("mtypes", None)
-            if mtypes is not None and mtype not in mtypes:
+            if mtypes is not None and cell.mtype not in mtypes:
+                continue
+            # specific for barrel cortex
+            mclasses = direction.pop("mclass", None)
+            if mclasses is not None and cell.other_parameters["mclass"] not in mclasses:
                 continue
 
             def section_prob(seg_direction, current_point, direction=None):
@@ -153,7 +158,7 @@ class SpaceContext:
         return directions
 
     def get_boundaries(
-        self, mtype
+        self, cell
     ):  # pylint: disable=too-many-locals,too-many-statements,too-many-branches
         """Returns a dict with boundaries data for NeuroTS."""
 
@@ -196,7 +201,11 @@ class SpaceContext:
         boundaries = []
         for boundary in all_boundaries:
             mtypes = boundary.pop("mtypes", None)
-            if mtypes is not None and mtype not in mtypes:
+            if mtypes is not None and cell.mtype not in mtypes:
+                continue
+            # specific for barrel cortex
+            mclasses = boundary.pop("mclass", None)
+            if mclasses is not None and cell.other_parameters["mclass"] not in mclasses:
                 continue
 
             mesh_type = boundary.get("mesh_type", "voxel")
@@ -554,11 +563,11 @@ class SpaceWorker:
         if self.context.directions is not None:
             if "constraints" not in context:
                 context["constraints"] = []
-            context["constraints"] += self.context.get_direction(mtype=self.cell.mtype)
+            context["constraints"] += self.context.get_direction(self.cell)
         if self.context.boundaries is not None:
             if "constraints" not in context:
                 context["constraints"] = []
-            context["constraints"] += self.context.get_boundaries(mtype=self.cell.mtype)
+            context["constraints"] += self.context.get_boundaries(self.cell)
             if context["constraints"] and "mesh_name" in context["constraints"][-1]:
                 self.debug_infos["mesh_name"] = context["constraints"][-1]["mesh_name"]
 

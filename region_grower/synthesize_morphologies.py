@@ -125,6 +125,11 @@ def _parallel_wrapper(
             orientation=np.array([row["orientation"]]),
             mtype=row["mtype"],
             depth=row["current_depth"],
+            other_parameters={
+                p: row[p]
+                for p in row.keys()
+                if p not in ["x", "y", "z", "orientation", "mtype", "current_depth"]
+            },
         )
         current_space_context = SpaceContext(
             layer_depths=row["layer_depths"],
@@ -309,6 +314,10 @@ class SynthesizeMorphologies:
 
         LOGGER.info("Loading CellCollection from %s", input_cells)
         self.cells = CellCollection.load(input_cells)
+        df = self.cells.as_dataframe()
+        df = df[df.mtype == "L4_SSC"].reset_index()
+        df.index += 1
+        self.cells = CellCollection.from_dataframe(df)
 
         LOGGER.info("Loading TMD parameters from %s", tmd_parameters)
         with open(tmd_parameters, "r", encoding="utf-8") as f:
