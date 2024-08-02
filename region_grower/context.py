@@ -122,7 +122,7 @@ class SpaceContext:
                 continue
             # specific for barrel cortex
             mclasses = direction.pop("mclass", None)
-            if mclasses is not None and cell.other_parameters["mclass"] not in mclasses:
+            if mclasses is not None and cell.other_parameters.get("mclass", None) not in mclasses:
                 continue
 
             def section_prob(seg_direction, current_point, direction=None):
@@ -205,7 +205,7 @@ class SpaceContext:
                 continue
             # specific for barrel cortex
             mclasses = boundary.pop("mclass", None)
-            if mclasses is not None and cell.other_parameters["mclass"] not in mclasses:
+            if mclasses is not None and cell.other_parameters.get("mclass", None) not in mclasses:
                 continue
 
             mesh_type = boundary.get("mesh_type", "voxel")
