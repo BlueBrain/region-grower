@@ -3,14 +3,11 @@
 import json
 import logging
 import os
-import shutil
 from copy import deepcopy
 from itertools import combinations
 from pathlib import Path
-from uuid import uuid4
 
 import attr
-import dask
 import jsonschema
 import neurots
 import pandas as pd
@@ -25,6 +22,8 @@ from voxcell import RegionMap
 from region_grower import RegionGrowerError
 from region_grower.synthesize_morphologies import RegionMapper
 from region_grower.synthesize_morphologies import SynthesizeMorphologies
+from region_grower.utils import close_parallel_client
+from region_grower.utils import initialize_parallel_client
 
 DATA = Path(__file__).parent / "data"
 
@@ -56,6 +55,7 @@ def create_args(
 ):
     """Create the arguments used for tests."""
     args = {}
+    parallel_args = {}
 
     # Circuit
     args["input_cells"] = input_cells
@@ -77,12 +77,14 @@ def create_args(
     args["out_cells"] = str(tmp_folder / "test_cells.mvd3")
     if out_apical_NRN_sections:
         args["out_apical_nrn_sections"] = tmp_folder / out_apical_NRN_sections
+        parallel_args["no_daemon"] = True
     else:
         args["out_apical_nrn_sections"] = None
+        parallel_args["no_daemon"] = False
     if with_mpi:
-        args["with_mpi"] = with_mpi
+        parallel_args["with_mpi"] = with_mpi
     else:
-        args["nb_processes"] = 2
+        parallel_args["nb_processes"] = 2
 
     # Axons
     args["base_morph_dir"] = str(DATA / "input-cells")
@@ -92,7 +94,7 @@ def create_args(
     args["scaling_jitter_std"] = 0.5
     args["region_structure"] = DATA / "region_structure.yaml"
 
-    return args
+    return args, parallel_args
 
 
 @pytest.mark.parametrize("min_depth", [25, 800])
@@ -110,7 +112,7 @@ def test_synthesize(
     """Test morphology synthesis."""
     tmp_folder = Path(tmpdir)
 
-    args = create_args(
+    args, parallel_args = create_args(
         False,
         tmp_folder,
         input_cells,
@@ -120,6 +122,7 @@ def test_synthesize(
         min_depth,
     )
 
+    parallel_client, args["nb_workers"] = initialize_parallel_client(**parallel_args)
     synthesizer = SynthesizeMorphologies(**args)
     synthesizer.synthesize()
 
@@ -151,6 +154,8 @@ def test_synthesize(
         if with_NRN and with_axon:
             assert_allclose(max_y, 149.30412)
 
+    close_parallel_client(parallel_client)
+
 
 def test_synthesize_empty_population(
     tmp_path,
@@ -158,7 +163,7 @@ def test_synthesize_empty_population(
     input_cells,
 ):
     """Test morphology synthesis."""
-    args = create_args(
+    args, parallel_args = create_args(
         False,
         tmp_path,
         input_cells,
@@ -173,6 +178,7 @@ def test_synthesize_empty_population(
     empty_cells = CellCollection.from_dataframe(pd.DataFrame().reindex_like(cells_df.iloc[:0, :]))
     empty_cells.save(args["input_cells"])
 
+    parallel_client, args["nb_workers"] = initialize_parallel_client(**parallel_args)
     synthesizer = SynthesizeMorphologies(**args)
     synthesizer.synthesize()
 
@@ -180,62 +186,7 @@ def test_synthesize_empty_population(
     assert len(list(iter_morphology_files(tmp_path))) == 0
     assert Path(args["out_cells"]).exists()
 
-
-@pytest.mark.parametrize("with_SHMDIR", [True, False])
-@pytest.mark.parametrize("with_TMPDIR", [True, False])
-@pytest.mark.parametrize("with_dask_config", [True, False])
-def test_synthesize_dask_config(
-    tmpdir,
-    small_O1_path,
-    input_cells,
-    with_SHMDIR,
-    with_TMPDIR,
-    with_dask_config,
-    monkeypatch,
-):  # pylint: disable=unused-argument
-    """Test morphology synthesis."""
-    tmp_folder = Path(tmpdir)
-
-    args = create_args(
-        False,
-        tmp_folder,
-        input_cells,
-        small_O1_path,
-        None,
-        None,
-        100,
-    )
-
-    custom_scratch_config = str(tmp_folder / "custom_scratch_config")
-    custom_scratch_env_SHMDIR = str(tmp_folder / "custom_scratch_SHMDIR")
-    custom_scratch_env_TMPDIR = str(tmp_folder / "custom_scratch_TMPDIR")
-    dask_config = None
-    if with_dask_config is not None:
-        dask_config = {"temporary-directory": custom_scratch_config}
-        args["dask_config"] = dask_config
-
-    current_config = deepcopy(dask.config.config)
-    with dask.config.set(current_config):
-        if with_SHMDIR:
-            monkeypatch.setenv("SHMDIR", custom_scratch_env_SHMDIR)
-        else:
-            monkeypatch.delenv("SHMDIR", raising=False)
-        if with_TMPDIR:
-            monkeypatch.setenv("TMPDIR", custom_scratch_env_TMPDIR)
-        else:
-            monkeypatch.delenv("TMPDIR", raising=False)
-
-        synthesizer = SynthesizeMorphologies(**args)
-        synthesizer._init_parallel(mpi_only=True)  # pylint: disable=protected-access
-
-        if dask_config is not None:
-            assert dask.config.get("temporary-directory", None) == custom_scratch_config
-        elif with_TMPDIR:
-            assert dask.config.get("temporary-directory", None) == custom_scratch_env_TMPDIR
-        elif with_SHMDIR:
-            assert dask.config.get("temporary-directory", None) == custom_scratch_env_SHMDIR
-        else:
-            assert dask.config.get("temporary-directory", None) is None
+    close_parallel_client(parallel_client)
 
 
 @pytest.mark.parametrize("nb_processes", [0, 2, None])
@@ -249,28 +200,27 @@ def test_synthesize_skip_write(
     chunksize,
 ):  # pylint: disable=unused-argument
     """Test morphology synthesis but skip write step."""
-    with_axon = True
-    with_NRN = True
-    min_depth = 25
     tmp_folder = Path(tmpdir)
 
-    args = create_args(
+    args, parallel_args = create_args(
         False,
         tmp_folder,
         input_cells,
         small_O1_path,
-        axon_morph_tsv if with_axon else None,
-        "apical_NRN_sections.yaml" if with_NRN else None,
-        min_depth,
+        axon_morph_tsv,
+        "apical_NRN_sections.yaml",
+        min_depth=25,
     )
     args["skip_write"] = True
-    args["nb_processes"] = nb_processes
     args["hide_progress_bar"] = True
     args["out_apical"] = None
     args["chunksize"] = chunksize
+    args["skip_checks"] = True
+    parallel_args["nb_processes"] = nb_processes
 
     print("Number of available CPUs", os.cpu_count())
 
+    parallel_client, args["nb_workers"] = initialize_parallel_client(**parallel_args)
     synthesizer = SynthesizeMorphologies(**args)
     res = synthesizer.synthesize()
 
@@ -278,7 +228,7 @@ def test_synthesize_skip_write(
     assert (res["y"] == 200).all()
     assert (res["z"] == 200).all()
 
-    assert res["name"].tolist() == [
+    assert list(res["name"]) == [
         "e3e70682c2094cac629f6fbed82c07cd",
         None,
         "216363698b529b4a97b750923ceb3ffd",
@@ -290,7 +240,7 @@ def test_synthesize_skip_write(
         "87751d4ca8501e2c44dcda6a797d76de",
         "e8d79f49af6d114c4a6f188a424e617b",
     ]
-    assert [[i[0].tolist()] if i else i for i in res["apical_points"].tolist()] == [
+    assert [[list(i[0])] if i else i for i in list(res["apical_points"])] == [
         [[-5.780806541442871, 164.6251678466797, 0.9229676723480225]],
         None,
         [[-4.380718231201172, 116.65441131591797, 6.396718978881836]],
@@ -313,78 +263,7 @@ def test_synthesize_skip_write(
         "test_cells.mvd3",
     ]
 
-
-def run_with_mpi():
-    """Test morphology synthesis with MPI."""
-    # pylint: disable=import-outside-toplevel, too-many-locals, import-error
-    from data_factories import generate_axon_morph_tsv
-    from data_factories import generate_cell_collection
-    from data_factories import generate_cells_df
-    from data_factories import generate_input_cells
-    from data_factories import generate_small_O1
-    from data_factories import input_cells_path
-    from mpi4py import MPI
-
-    from region_grower.utils import setup_logger
-
-    COMM = MPI.COMM_WORLD  # pylint: disable=c-extension-no-member
-    rank = COMM.Get_rank()
-    MASTER_RANK = 0
-    is_master = rank == MASTER_RANK
-
-    tmp_folder = Path("/tmp/test-run-synthesis_" + str(uuid4()))
-    tmp_folder = COMM.bcast(tmp_folder, root=MASTER_RANK)
-    input_cells = input_cells_path(tmp_folder)
-    small_O1_path = str(tmp_folder / "atlas")
-
-    args = create_args(
-        True,
-        tmp_folder,
-        input_cells,
-        small_O1_path,
-        tmp_folder / "axon_morphs.tsv",
-        "apical_NRN_sections.yaml",
-        min_depth=25,
-    )
-
-    setup_logger("debug", prefix=f"Rank = {rank} - ")
-    logging.getLogger("distributed").setLevel(logging.ERROR)
-
-    if is_master:
-        tmp_folder.mkdir(exist_ok=True)
-        print(f"============= #{rank}: Create data")
-        cells_raw_data = generate_cells_df()
-        cell_collection = generate_cell_collection(cells_raw_data)
-        generate_input_cells(cell_collection, tmp_folder)
-        generate_small_O1(small_O1_path)
-        generate_axon_morph_tsv(tmp_folder)
-
-        for dest in range(1, COMM.Get_size()):
-            req = COMM.isend("done", dest=dest)
-    else:
-        print(f"============= #{rank}: Waiting for initialization")
-        req = COMM.irecv(source=0)
-        req.wait()
-
-    synthesizer = SynthesizeMorphologies(**args)
-    try:
-        print(f"============= #{rank}: Start synthesize")
-        synthesizer.synthesize()
-
-        # Check results
-        print(f"============= #{rank}: Checking results")
-        expected_size = 18
-        assert len(list(iter_morphology_files(tmp_folder))) == expected_size
-
-        check_yaml(DATA / ("apical.yaml"), args["out_apical"])
-        check_yaml(
-            DATA / ("apical_NRN_sections.yaml"),
-            args["out_apical_nrn_sections"],
-        )
-    finally:
-        # Clean the directory
-        print(f"============= #{rank}: Cleaning")
-        shutil.rmtree(tmp_folder)
+    close_parallel_client(parallel_client)
 
 
 def test_verify(cell_collection, tmd_distributions, tmd_parameters, small_O1_path):
@@ -399,6 +278,7 @@ def test_verify(cell_collection, tmd_distributions, tmd_parameters, small_O1_pat
         tmd_parameters: dict
         cells: CellCollection
         region_mapper: dict
+        skip_checks: bool = False
 
     region_mapper = RegionMapper(
         ["test"], RegionMap.load_json(Path(small_O1_path) / "hierarchy.json")
@@ -558,7 +438,7 @@ def test_inconsistent_params(
     min_depth = 25
     tmp_folder = Path(tmpdir)
 
-    args = create_args(
+    args, _ = create_args(
         False,
         tmp_folder,
         input_cells,
@@ -590,7 +470,7 @@ def test_inconsistent_context(
     min_depth = 25
     tmp_folder = Path(tmpdir)
 
-    args = create_args(
+    args, parallel_args = create_args(
         False,
         tmp_folder,
         input_cells,
@@ -599,7 +479,7 @@ def test_inconsistent_context(
         "apical_NRN_sections.yaml",
         min_depth,
     )
-    args["nb_processes"] = 0
+    parallel_args["nb_processes"] = 0
 
     with args["tmd_parameters"].open("r", encoding="utf-8") as f:
         tmd_parameters = json.load(f)
@@ -619,7 +499,9 @@ def test_inconsistent_context(
     with args["tmd_parameters"].open("w", encoding="utf-8") as f:
         json.dump(tmd_parameters, f)
 
+    parallel_client, args["nb_workers"] = initialize_parallel_client(**parallel_args)
     synthesizer = SynthesizeMorphologies(**args)
+
     caplog.set_level(logging.WARNING)
     caplog.clear()
     synthesizer.synthesize()
@@ -630,6 +512,4 @@ def test_inconsistent_context(
         "constraints: [('default', 'L2_TPC:A')]",
     )
 
-
-if __name__ == "__main__":  # pragma: no cover
-    run_with_mpi()
+    close_parallel_client(parallel_client)

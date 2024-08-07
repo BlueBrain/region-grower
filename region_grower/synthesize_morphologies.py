@@ -10,7 +10,7 @@ import json
 import logging
 import os
 import subprocess
-import time
+import tempfile
 from pathlib import Path
 from shutil import which
 from typing import Optional
@@ -23,7 +23,6 @@ import pandas as pd
 import yaml
 from diameter_synthesis.validators import validate_model_params
 from jsonschema import validate
-from morph_tool.exceptions import NoDendriteException
 from morphio.mut import Morphology
 from neurots.utils import convert_from_legacy_neurite_type
 from neurots.validator import validate_neuron_distribs
@@ -34,7 +33,6 @@ from voxcell.cell_collection import CellCollection
 from voxcell.nexus.voxelbrain import Atlas
 
 from region_grower import RegionGrowerError
-from region_grower import SkipSynthesisError
 from region_grower.atlas_helper import AtlasHelper
 from region_grower.context import CellState
 from region_grower.context import ComputationParameters
@@ -43,8 +41,10 @@ from region_grower.context import SpaceWorker
 from region_grower.context import SynthesisParameters
 from region_grower.morph_io import MorphLoader
 from region_grower.morph_io import MorphWriter
+from region_grower.utils import NumpyEncoder
 from region_grower.utils import assign_morphologies
 from region_grower.utils import check_na_morphologies
+from region_grower.utils import cols_from_json
 from region_grower.utils import load_morphology_list
 
 LOGGER = logging.getLogger(__name__)
@@ -57,6 +57,8 @@ _SERIALIZED_COLUMNS = [
     "tmd_parameters",
     "tmd_distributions",
 ]
+
+_ORIENTATION_COLS = [f"orientation_{i}{j}" for i in range(3) for j in range(3)]
 
 
 class RegionMapper:
@@ -106,7 +108,7 @@ class RegionMapper:
         return self._inverse_mapper
 
 
-def _parallel_wrapper(
+def synthesize_one_cell(
     row,
     computation_parameters,
     cortical_depths,
@@ -116,16 +118,17 @@ def _parallel_wrapper(
     tmd_parameters,
     tmd_distributions,
 ):
+    """Synthesize one morphology."""
     # pylint: disable=too-many-locals
     try:
         current_cell = CellState(
             position=np.array([row["x"], row["y"], row["z"]]),
-            orientation=np.array([row["orientation"]]),
+            orientation=np.array([row[col] for col in _ORIENTATION_COLS]).reshape((1, 3, 3)),
             mtype=row["mtype"],
             depth=row["current_depth"],
         )
         current_space_context = SpaceContext(
-            layer_depths=row["layer_depths"],
+            layer_depths=json.loads(row["layer_depths"]),
             cortical_depths=cortical_depths[row["synthesis_region"]],
         )
 
@@ -157,9 +160,17 @@ def _parallel_wrapper(
         new_cell = space_worker.synthesize()
         res = space_worker.completion(new_cell)
 
-        res["debug_infos"] = dict(space_worker.debug_infos)
-    except (SkipSynthesisError, RegionGrowerError, NoDendriteException) as exc:  # pragma: no cover
-        LOGGER.error("Skip %s because of the following error: %s", row.name, exc)
+        # Serialize to help dask
+        res["apical_points"] = json.dumps(list(res["apical_points"]), cls=NumpyEncoder)
+        res["apical_sections"] = json.dumps(list(res["apical_sections"]), cls=NumpyEncoder)
+        if res["apical_NRN_sections"] is not None:
+            res["apical_NRN_sections"] = json.dumps(
+                list(res["apical_NRN_sections"]), cls=NumpyEncoder
+            )
+        res["debug_infos"] = json.dumps(dict(space_worker.debug_infos), cls=NumpyEncoder)
+    except Exception:
+        error_msg = "Skip %s because of the following error. The row was: %s"
+        LOGGER.exception(error_msg, row.name, row.to_dict())
         res = {
             "name": None,
             "apical_points": None,
@@ -168,6 +179,126 @@ def _parallel_wrapper(
             "debug_infos": None,
         }
     return pd.Series(res)
+
+
+def _partition_wrapper(
+    df: pd.DataFrame,
+    params_file: str,
+    distrs_file: str,
+    tmp_outputs=None,
+    **func_kwargs,
+) -> None:
+    """Wrapper to process dask partitions."""
+    # Load params and distrs for this partition
+    with open(params_file, encoding="utf-8") as f:
+        tmd_parameters = json.load(f)
+    with open(distrs_file, encoding="utf-8") as f:
+        tmd_distributions = json.load(f)
+
+    func_kwargs["tmd_parameters"] = tmd_parameters
+    func_kwargs["tmd_distributions"] = tmd_distributions
+
+    res = df.apply(lambda row: synthesize_one_cell(row, **func_kwargs), axis=1)
+    filename = Path(tmp_outputs) / f"{df.index[0]}.parquet"
+    LOGGER.info("Export partition to %s", filename)
+    res.to_parquet(filename, index=True)
+
+
+def _run_parallel_computation(
+    cells_data,
+    tmd_parameters,
+    tmd_distributions,
+    chunksize,
+    new_columns,
+    func_kwargs,
+    nb_workers,
+    progress_bar=False,
+):
+    """Wrapper to run the computation."""
+    # pylint: disable=too-many-locals
+    with tempfile.TemporaryDirectory(
+        dir=os.environ.get("REGION_GROWER_TMPDIR", os.environ.get("TMPDIR", None))
+    ) as tmp_dest:
+        LOGGER.info("Export tmd_parameters.json and tmd_distributions.json to %s", tmp_dest)
+        tmd_parameters_tmp = Path(tmp_dest) / "tmd_parameters.json"
+        tmd_distributions_tmp = Path(tmp_dest) / "tmd_distributions.json"
+        with tmd_parameters_tmp.open("w", encoding="utf-8") as f:
+            json.dump(tmd_parameters, f)
+        with tmd_distributions_tmp.open("w", encoding="utf-8") as f:
+            json.dump(tmd_distributions, f)
+
+        exported_cols = [
+            "synthesis_region",
+            "mtype",
+            "region",
+            "x",
+            "y",
+            "z",
+            *_ORIENTATION_COLS,
+            "current_depth",
+            "layer_depths",
+            "seed",
+        ]
+        for col in ["axon_name", "axon_scale"]:
+            if col in cells_data.columns:
+                exported_cols.append(col)
+
+        tmp_inputs = Path(tmp_dest) / "inputs"
+        tmp_inputs.mkdir(parents=True, exist_ok=True)
+
+        tmp_outputs = Path(
+            os.environ.get(
+                "REGION_GROWER_TMP_PARTITION_DATA",
+                Path(tmp_dest) / "outputs",
+            )
+        )
+        tmp_outputs.mkdir(parents=True, exist_ok=True)
+
+        tmp_file_path = str(tmp_inputs / "cells_data.parquet")
+
+        LOGGER.info("Export DF to %s", tmp_file_path)
+        cells_data[exported_cols].to_parquet(tmp_file_path, index=True)
+
+        LOGGER.info("Read the parquet files from %s", tmp_dest)
+        ddf = dd.read_parquet(
+            tmp_file_path,
+            columns=exported_cols,
+        )
+
+        # Repartition if needed
+        nb_partitions = None
+        if chunksize is None:
+            if ddf.npartitions < nb_workers:  # pragma: no branch
+                nb_partitions = nb_workers
+        else:
+            nb_partitions = max(nb_workers, int(len(cells_data) / chunksize))
+        if nb_partitions is not None:  # pragma: no branch
+            nb_partitions = min(nb_partitions, len(cells_data))
+            LOGGER.info(
+                "Repartition the dataframe into %s partitions (chunksize=%s)",
+                nb_partitions,
+                chunksize,
+            )
+            ddf = ddf.repartition(npartitions=nb_partitions)
+
+        LOGGER.info("Start actual computation with %s partitions", ddf.npartitions)
+        future = ddf.map_partitions(
+            _partition_wrapper,
+            meta=pd.DataFrame({name: pd.Series(dtype="object") for name in new_columns}),
+            enforce_metadata=False,
+            transform_divisions=False,
+            params_file=tmd_parameters_tmp,
+            distrs_file=tmd_distributions_tmp,
+            tmp_outputs=tmp_outputs,
+            **func_kwargs,
+        )
+        future = future.persist()
+        if progress_bar:
+            dask.distributed.progress(future)
+        else:
+            dask.distributed.wait(future)
+
+        return pd.read_parquet(str(tmp_outputs))
 
 
 class SynthesizeMorphologies:
@@ -247,8 +378,6 @@ class SynthesizeMorphologies:
         scaling_jitter_std=None,
         rotational_jitter_std=None,
         out_debug_data=None,
-        nb_processes=None,
-        with_mpi=False,
         min_depth=25,
         max_depth=5000,
         skip_write=False,
@@ -256,7 +385,8 @@ class SynthesizeMorphologies:
         region_structure=None,
         container_path=None,
         hide_progress_bar=False,
-        dask_config=None,
+        skip_checks=False,
+        nb_workers=None,
         chunksize=None,
     ):  # pylint: disable=too-many-arguments, too-many-locals, too-many-statements
         self.seed = seed
@@ -276,13 +406,11 @@ class SynthesizeMorphologies:
         self.container_path = container_path
         self._progress_bar = not bool(hide_progress_bar)
         self.atlas = None
-        self.with_mpi = with_mpi
-        self.nb_processes = nb_processes
-        self.dask_config = dask_config
-        self.chunksize = chunksize
-        self._parallel_client = None
-        self._init_parallel(mpi_only=True)
+        self.chunksize = chunksize if chunksize is None or chunksize > 0 else 1
+        self.skip_checks = skip_checks
+        self.nb_workers = nb_workers
 
+        # Load the Atlas
         LOGGER.info(
             "Loading atlas from '%s' using the following cache dir: '%s' and the following "
             "region_structure file: '%s'",
@@ -290,8 +418,6 @@ class SynthesizeMorphologies:
             atlas_cache,
             region_structure,
         )
-        # The atlas is loaded after the self._init_parallel() call so that when using MPI the atlas
-        # is loaded only in the scheduler process
         self.atlas = AtlasHelper(
             Atlas.open(atlas, cache_dir=atlas_cache), region_structure_path=region_structure
         )
@@ -336,7 +462,7 @@ class SynthesizeMorphologies:
             lambda region: self.region_mapper[region]
         )
 
-        LOGGER.info("Checking TMD parameters and distributions according to cells mtypes")
+        # Check TMD parameters and distributions
         self.verify()
 
         LOGGER.info("Fetching atlas data from %s", atlas)
@@ -386,110 +512,12 @@ class SynthesizeMorphologies:
         set_default_values(self.tmd_parameters)
         set_default_values(self.tmd_distributions)
 
-    def __del__(self):
-        """Close the internal client when the object is deleted."""
-        try:
-            self._close_parallel()
-        except Exception:  # pylint: disable=broad-except ; # pragma: no cover
-            pass
-
-    def _init_parallel(self, mpi_only=False):
-        """Initialize MPI workers if required or get the number of available processes."""
-        if self._parallel_client is not None:  # pragma: no cover
-            return
-
-        # Define a default configuration to disable some dask.distributed things
-        default_dask_config = {
-            "distributed": {
-                "worker": {
-                    "use_file_locking": False,
-                    "memory": {
-                        "target": False,
-                        "spill": False,
-                        "pause": 0.8,
-                        "terminate": 0.95,
-                    },
-                    "profile": {
-                        "enabled": False,
-                        "interval": "10s",
-                        "cycle": "10m",
-                    },
-                },
-                "admin": {
-                    "tick": {
-                        "limit": "1h",
-                    },
-                },
-            },
-            "dataframe": {
-                "convert_string": False,
-            },
-        }
-
-        # Merge the default config with the existing config (keep conflicting values from defaults)
-        dask_config = dask.config.merge(dask.config.config, default_dask_config)
-
-        # Get temporary-directory from environment variables
-        _TMP = os.environ.get("SHMDIR", None) or os.environ.get("TMPDIR", None)
-        if _TMP is not None:
-            dask_config["temporary-directory"] = _TMP
-
-        # Merge the config with the one given as argument
-        if self.dask_config is not None:
-            dask_config = dask.config.merge(dask_config, self.dask_config)
-
-        # Set the dask config
-        dask.config.set(dask_config)
-
-        if self.with_mpi:  # pragma: no cover
-            # pylint: disable=import-outside-toplevel
-            import dask_mpi
-            from mpi4py import MPI
-
-            dask_mpi.initialize(dashboard=False)
-            comm = MPI.COMM_WORLD  # pylint: disable=c-extension-no-member
-            self.nb_processes = comm.Get_size()
-            client_kwargs = {}
-            LOGGER.debug(
-                "Initializing parallel workers using MPI (%s workers found)", self.nb_processes
-            )
-        elif mpi_only:
-            return
-        else:
-            self.nb_processes = min(
-                self.nb_processes if self.nb_processes is not None else os.cpu_count(),
-                len(self.cells_data),
-            )
-
-            if self.with_NRN_sections:
-                dask.config.set({"distributed.worker.daemon": False})
-            client_kwargs = {
-                "n_workers": self.nb_processes,
-                "dashboard_address": None,
-            }
-            LOGGER.debug(
-                "Initializing parallel workers using the following config: %s", client_kwargs
-            )
-
-        LOGGER.debug("Using the following dask configuration: %s", json.dumps(dask.config.config))
-
-        # This is needed to make dask aware of the workers
-        self._parallel_client = dask.distributed.Client(**client_kwargs)
-
-    def _close_parallel(self):
-        if self._parallel_client is not None:
-            LOGGER.debug("Closing the Dask client")
-            self._parallel_client.retire_workers()
-            time.sleep(1)
-            self._parallel_client.shutdown()
-            self._parallel_client.close()
-            self._parallel_client = None
-
     def assign_atlas_data(self, min_depth=25, max_depth=5000):
         """Open an Atlas and compute depths and orientations according to the given positions."""
         self.cells_data["current_depth"] = np.nan
+        self.cells_data[_ORIENTATION_COLS] = [np.nan] * len(_ORIENTATION_COLS)
         self.cells_data["layer_depths"] = pd.Series(
-            np.nan, index=self.cells_data.index.copy(), dtype=object
+            index=self.cells_data.index.copy(), dtype=object
         )
         for _region, regions in self.region_mapper.inverse_mapper.items():
             region_mask = self.cells_data.region.isin(regions)
@@ -514,10 +542,12 @@ class SynthesizeMorphologies:
                 ).T.tolist()
                 current_depths = np.clip(depths.lookup(positions), min_depth, max_depth)
             else:
-                LOGGER.warning(
-                    "We are not able to synthesize the region %s, we fallback to 'default' region",
-                    _region,
-                )
+                if _region != "default":
+                    LOGGER.warning(  # pragma: no cover
+                        "We are not able to synthesize the region %s, we fallback to 'default' "
+                        "region",
+                        _region,
+                    )
                 layer_depths = None
                 current_depths = None
 
@@ -528,11 +558,14 @@ class SynthesizeMorphologies:
 
             LOGGER.debug("Extract orientations data for %s region", _region)
             orientations = self.atlas.orientations.lookup(positions)
-            self.cells_data.loc[region_mask, "orientation"] = pd.Series(
-                data=orientations.tolist(),
-                index=self.cells_data.loc[region_mask].index,
-                dtype=object,
-            )
+            self.cells_data.loc[
+                region_mask,
+                _ORIENTATION_COLS,
+            ] = orientations.reshape((len(orientations), len(_ORIENTATION_COLS)))
+        self.cells_data.loc[self.cells_data["layer_depths"].isnull(), "layer_depths"] = None
+        self.cells_data["layer_depths"] = self.cells_data["layer_depths"].apply(
+            json.dumps
+        )  # Serialize to make it easier for dask
 
     @property
     def task_ids(self):
@@ -553,6 +586,8 @@ class SynthesizeMorphologies:
 
     def check_context_consistency(self):
         """Check that the context_constraints entries in TMD parameters are consistent."""
+        if self.skip_checks:
+            return
         LOGGER.info("Check context consistency")
         region = "synthesis_region"
         if (
@@ -601,31 +636,36 @@ class SynthesizeMorphologies:
             "rotational_jitter_std": self.rotational_jitter_std,
             "scaling_jitter_std": self.scaling_jitter_std,
             "min_hard_scale": self.min_hard_scale,
-            "tmd_parameters": self.tmd_parameters,
-            "tmd_distributions": self.tmd_distributions,
         }
 
-        meta = pd.DataFrame({name: pd.Series(dtype="object") for name in self.NEW_COLUMNS})
+        nb_cells = len(self.cells_data)
 
-        if self.nb_processes == 0:
-            LOGGER.info("Start computation")
+        if self.nb_workers is None:
+            LOGGER.info("Start computation for %s cells", nb_cells)
+            func_kwargs["tmd_parameters"] = self.tmd_parameters
+            func_kwargs["tmd_distributions"] = self.tmd_distributions
             computed = self.cells_data.apply(
-                lambda row: _parallel_wrapper(row, **func_kwargs), axis=1
+                lambda row: synthesize_one_cell(row, **func_kwargs), axis=1
             )
         else:
-            if self.chunksize is None or len(self.cells_data) <= self.chunksize:
-                dd_kwargs = {"npartitions": self.nb_processes}
-            else:
-                dd_kwargs = {"chunksize": self.chunksize}
-            LOGGER.info("Start parallel computation using %s", dd_kwargs)
-            ddf = dd.from_pandas(self.cells_data, **dd_kwargs)
-            future = ddf.apply(_parallel_wrapper, meta=meta, axis=1, **func_kwargs)
-            future = future.persist()
-            if self._progress_bar:
-                dask.distributed.progress(future)
-            computed = future.compute()
+            LOGGER.info(
+                "Start parallel computation for %s cells using %s workers",
+                nb_cells,
+                self.nb_workers,
+            )
+            computed = _run_parallel_computation(
+                self.cells_data,
+                self.tmd_parameters,
+                self.tmd_distributions,
+                self.chunksize,
+                self.NEW_COLUMNS,
+                func_kwargs,
+                self.nb_workers,
+                progress_bar=self._progress_bar,
+            )
 
         LOGGER.info("Format results")
+        computed = cols_from_json(computed, [i for i in self.NEW_COLUMNS if i != "name"])
         res = self.cells_data.join(computed)
         return res
 
@@ -654,7 +694,7 @@ class SynthesizeMorphologies:
             """Returns the first non None apical coordinates."""
             for coord in apical_points:
                 if coord is not None:  # pragma: no cover
-                    return coord.tolist()
+                    return list(coord)
             return None  # pragma: no cover
 
         with_apicals = result.loc[~result["apical_points"].isnull()]
@@ -723,16 +763,18 @@ class SynthesizeMorphologies:
         if self.cells_data.empty:
             LOGGER.warning("The population to synthesize is empty!")
             return self.export_empty_results()
-        self._init_parallel()
         LOGGER.info("Start synthesis")
         res = self.compute()
         self.finalize(res)
         LOGGER.info("Synthesis complete")
-        self._close_parallel()
         return res
 
     def verify(self) -> None:
         """Check that context has distributions / parameters for all given regions and mtypes."""
+        if self.skip_checks:
+            return
+
+        LOGGER.info("Checking TMD parameters and distributions according to cells mtypes")
         with resource_stream("region_grower", "schemas/distributions.json") as distr_file:
             distributions_schema = json.load(distr_file)
         validate(self.tmd_distributions, distributions_schema)

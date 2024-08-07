@@ -8,15 +8,12 @@ from pathlib import Path
 import click
 import yaml
 
-try:
-    from mpi4py import MPI
-
-    mpi_enabled = True
-except ImportError:  # pragma: no cover
-    mpi_enabled = False
-
 from region_grower import generate
 from region_grower.synthesize_morphologies import SynthesizeMorphologies
+from region_grower.utils import HAS_MPI
+from region_grower.utils import NissingMpiError
+from region_grower.utils import close_parallel_client
+from region_grower.utils import initialize_parallel_client
 from region_grower.utils import setup_logger
 
 
@@ -284,20 +281,26 @@ def generate_distributions(
     is_flag=True,
     default=False,
 )
+@click.option(
+    "--skip-checks",
+    help="Skip the consistency checks before starting synthesis",
+    is_flag=True,
+    default=False,
+)
 def synthesize_morphologies(**kwargs):  # pylint: disable=too-many-arguments, too-many-locals
     """Synthesize morphologies."""
-    if mpi_enabled and kwargs.get("with_mpi", False):  # pragma: no cover
-        COMM = MPI.COMM_WORLD  # pylint: disable=c-extension-no-member
-        rank = COMM.Get_rank()
-        prefix = f"#{rank} - "
-    else:
-        prefix = ""
-    setup_logger(kwargs.pop("log_level", "info"), prefix=prefix)
+    if kwargs.get("with_mpi", False) and not HAS_MPI:  # pragma: no cover
+        raise NissingMpiError()
+    setup_logger(kwargs.pop("log_level", "info"), set_worker_prefix=True)
 
     dask_config = kwargs.pop("dask_config", None)
     if dask_config is not None:
         dask_config_path = Path(dask_config)
-        if dask_config_path.exists():
+        try:
+            dask_config_file_exists = dask_config_path.exists()
+        except OSError:
+            dask_config_file_exists = False
+        if dask_config_file_exists:
             with dask_config_path.open("r", encoding="utf-8") as file:
                 dask_config = yaml.safe_load(file)
         else:
@@ -316,10 +319,19 @@ def synthesize_morphologies(**kwargs):  # pylint: disable=too-many-arguments, to
             (f"{i.name}=={i.version}" for i in importlib.metadata.Distribution.discover()),
             key=lambda x: x.lower(),
         )
-        LOGGER = logging.getLogger(__name__)
-        LOGGER.info("Using the following package versions: %s", installed_packages)
+        logger = logging.getLogger(__name__)
+        logger.info("Using the following package versions: %s", installed_packages)
 
-    SynthesizeMorphologies(**kwargs).synthesize()
+    parallel_kwargs = {}
+    parallel_kwargs["nb_processes"] = kwargs.pop("nb_processes", None)
+    parallel_kwargs["with_mpi"] = kwargs.pop("with_mpi", None)
+    parallel_kwargs["dask_config"] = kwargs.pop("dask_config", None)
+    parallel_kwargs["no_daemon"] = kwargs.get("out_apical_nrn_sections", False)
+    parallel_client, nb_workers = initialize_parallel_client(**parallel_kwargs)
+
+    SynthesizeMorphologies(nb_workers=nb_workers, **kwargs).synthesize()
+
+    close_parallel_client(parallel_client)
 
 
 if __name__ == "__main__":  # pragma: no cover

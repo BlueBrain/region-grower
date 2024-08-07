@@ -315,6 +315,20 @@ class TestCli:
                 catch_exceptions=False,
             )
 
+        # Test invalid dask-config parameter
+        with pytest.raises(
+            ValueError,
+            match=(
+                r"The value for the --dask-config parameter is not an existing file path and could "
+                r"not be parsed as a JSON string"
+            ),
+        ):
+            cli_runner.invoke(
+                main,
+                params + ["--dask-config", "-FILE_NAME_TOO_LONG-" * 1000],
+                catch_exceptions=False,
+            )
+
         # Test invalid chunksize parameter
         result = cli_runner.invoke(
             main,

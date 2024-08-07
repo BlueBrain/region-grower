@@ -2,8 +2,11 @@
 # pylint: disable=missing-function-docstring
 import json
 import logging
+import os
+from copy import deepcopy
 from pathlib import Path
 
+import dask
 import numpy as np
 import pandas as pd
 import pytest
@@ -11,6 +14,10 @@ from numpy.testing import assert_almost_equal
 from voxcell import CellCollection
 
 from region_grower import utils
+from region_grower.utils import NissingMpiError
+from region_grower.utils import close_parallel_client
+from region_grower.utils import initialize_parallel_client
+from region_grower.utils import setup_logger
 
 DATA = Path(__file__).parent / "data"
 
@@ -216,3 +223,77 @@ class TestAssignMorphologies:
             cells.as_dataframe().equals(expected.drop(3))
         else:
             cells.as_dataframe().equals(expected)
+
+
+@pytest.mark.parametrize("with_SHMDIR", [True, False])
+@pytest.mark.parametrize("with_TMPDIR", [True, False])
+@pytest.mark.parametrize("with_dask_config", [True, False])
+def test_dask_config(
+    tmpdir,
+    with_SHMDIR,
+    with_TMPDIR,
+    with_dask_config,
+    monkeypatch,
+):
+    """Test morphology synthesis."""
+    tmp_folder = Path(tmpdir)
+
+    parallel_args = {"nb_processes": 2}
+
+    custom_scratch_config = str(tmp_folder / "custom_scratch_config")
+    custom_scratch_env_SHMDIR = str(tmp_folder / "custom_scratch_SHMDIR")
+    custom_scratch_env_TMPDIR = str(tmp_folder / "custom_scratch_TMPDIR")
+    dask_config = None
+    if with_dask_config is not None:
+        dask_config = {"temporary-directory": custom_scratch_config}
+        parallel_args["dask_config"] = dask_config
+
+    current_config = deepcopy(dask.config.config)
+    with dask.config.set(current_config):
+        if with_SHMDIR:
+            monkeypatch.setenv("SHMDIR", custom_scratch_env_SHMDIR)
+        else:
+            monkeypatch.delenv("SHMDIR", raising=False)
+        if with_TMPDIR:
+            monkeypatch.setenv("TMPDIR", custom_scratch_env_TMPDIR)
+        else:
+            monkeypatch.delenv("TMPDIR", raising=False)
+
+        parallel_client = initialize_parallel_client(**parallel_args)
+
+        if dask_config is not None:
+            assert dask.config.get("temporary-directory", None) == custom_scratch_config
+        elif with_TMPDIR:
+            assert dask.config.get("temporary-directory", None) == custom_scratch_env_TMPDIR
+        elif with_SHMDIR:
+            assert dask.config.get("temporary-directory", None) == custom_scratch_env_SHMDIR
+        else:
+            assert dask.config.get("temporary-directory", None) is None
+
+        close_parallel_client(parallel_client)
+
+
+def test_no_mpi():
+    """Test client initialization with missing MPI libraries."""
+    with pytest.raises(NissingMpiError):
+        initialize_parallel_client(with_mpi=True)
+
+
+@pytest.mark.parametrize("expected_nb_workers", [None, 0, 1, 2])
+def test_nb_workers(expected_nb_workers):
+    """Test client initialization with missing MPI libraries."""
+    parallel_client, nb_workers = initialize_parallel_client(nb_processes=expected_nb_workers)
+    try:
+        if expected_nb_workers is None:
+            assert nb_workers is None
+        elif expected_nb_workers == 0:
+            assert nb_workers == os.cpu_count()
+        else:
+            assert nb_workers == expected_nb_workers
+    finally:
+        close_parallel_client(parallel_client)
+
+
+def test_setup_logger():
+    """Test setup_logger with default params."""
+    setup_logger()
