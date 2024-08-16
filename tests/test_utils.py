@@ -14,7 +14,7 @@ from numpy.testing import assert_almost_equal
 from voxcell import CellCollection
 
 from region_grower import utils
-from region_grower.utils import NissingMpiError
+from region_grower.utils import MissingMpiError
 from region_grower.utils import close_parallel_client
 from region_grower.utils import initialize_parallel_client
 from region_grower.utils import setup_logger
@@ -275,7 +275,7 @@ def test_dask_config(
 
 def test_no_mpi():
     """Test client initialization with missing MPI libraries."""
-    with pytest.raises(NissingMpiError):
+    with pytest.raises(MissingMpiError):
         initialize_parallel_client(with_mpi=True)
 
 

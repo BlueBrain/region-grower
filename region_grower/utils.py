@@ -24,7 +24,7 @@ except ImportError:
 LOGGER = logging.getLogger(__name__)
 
 
-class NissingMpiError(RuntimeError):
+class MissingMpiError(RuntimeError):
     """Exception for missing MPI libraries."""
 
     default_msg = (
@@ -245,7 +245,7 @@ def initialize_parallel_client(
 
     if with_mpi:  # pragma: no cover
         if not HAS_MPI:
-            raise NissingMpiError()
+            raise MissingMpiError()
         dask_mpi.initialize()
         comm = MPI.COMM_WORLD  # pylint: disable=c-extension-no-member
         # The number of processes is computed considering that the two first processes are the main

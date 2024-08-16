@@ -11,7 +11,7 @@ import yaml
 from region_grower import generate
 from region_grower.synthesize_morphologies import SynthesizeMorphologies
 from region_grower.utils import HAS_MPI
-from region_grower.utils import NissingMpiError
+from region_grower.utils import MissingMpiError
 from region_grower.utils import close_parallel_client
 from region_grower.utils import initialize_parallel_client
 from region_grower.utils import setup_logger
@@ -290,7 +290,7 @@ def generate_distributions(
 def synthesize_morphologies(**kwargs):  # pylint: disable=too-many-arguments, too-many-locals
     """Synthesize morphologies."""
     if kwargs.get("with_mpi", False) and not HAS_MPI:  # pragma: no cover
-        raise NissingMpiError()
+        raise MissingMpiError()
     setup_logger(kwargs.pop("log_level", "info"), set_worker_prefix=True)
 
     dask_config = kwargs.pop("dask_config", None)
