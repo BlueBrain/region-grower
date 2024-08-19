@@ -205,7 +205,10 @@ def initialize_parallel_client(
     # Define a default configuration to disable some dask.distributed things
     default_dask_config = {
         "distributed": {
-            "scheduler": {"work-stealing-interval": "1000ms"},
+            "scheduler": {
+                "work-stealing-interval": "1000ms",
+                "worker-saturation": 1,
+            },
             "worker": {
                 "use_file_locking": False,
                 "memory": {
