@@ -120,11 +120,12 @@ class SpaceContext:
         """Get direction data for the given mtype."""
         directions = []
         for direction in self.directions:
-            mtypes = direction.pop("mtypes", None)
+            mtypes = direction.get("mtypes", None)
             if mtypes is not None and cell.mtype not in mtypes:
                 continue
+
             # specific for barrel cortex
-            mclasses = direction.pop("mclass", None)
+            mclasses = direction.get("mclass", None)
             if mclasses is not None and cell.other_parameters.get("mclass", None) not in mclasses:
                 continue
 
@@ -220,11 +221,12 @@ class SpaceContext:
         all_boundaries = json.loads(self.boundaries)
         boundaries = []
         for boundary in all_boundaries:
-            mtypes = boundary.pop("mtypes", None)
+            mtypes = boundary.get("mtypes", None)
             if mtypes is not None and cell.mtype not in mtypes:
                 continue
+
             # specific for barrel cortex
-            mclasses = boundary.pop("mclass", None)
+            mclasses = boundary.get("mclass", None)
             if mclasses is not None and cell.other_parameters.get("mclass", None) not in mclasses:
                 continue
 
@@ -274,10 +276,12 @@ class SpaceContext:
                             break
 
                 if boundary.get("multimesh_mode", "closest") == "territories":
-                    mesh = trimesh.load_mesh(
-                        Path(boundary["path"])
-                        / f"glomeruli_{int(cell.other_parameters['glomerulus_id']):03d}.obj"
-                    )
+                    glom_id = int(cell.other_parameters["glomerulus_id"])
+                    mesh = None
+                    if glom_id >= 0:
+                        mesh = trimesh.load_mesh(
+                            Path(boundary["path"]) / f"glomeruli_{glom_id:03d}.obj"
+                        )
 
             else:
                 mesh = trimesh.load_mesh(boundary["path"])
@@ -433,7 +437,8 @@ class SpaceWorker:
         """Return a copy of the parameter with the correct orientation and scaling."""
         params = deepcopy(params_orig)
         if self.context.directions is not None:
-            self.context.directions = json.loads(self.context.directions)
+            if isinstance(self.context.directions, str):
+                self.context.directions = json.loads(self.context.directions)
             for i, direction in enumerate(self.context.directions):
                 self.context.directions[i]["pia_direction"] = self.cell.lookup_orientation(
                     PIA_DIRECTION
@@ -544,7 +549,10 @@ class SpaceWorker:
         for _ in range(self.internals.retries):
             try:
                 return self._synthesize_once(rng)
-            except NeuroTSError:
+            except (
+                NeuroTSError,
+                ValueError,
+            ):  # value error is raised when nan in orientation results in soma generation error
                 pass
 
         raise SkipSynthesisError(
@@ -564,6 +572,11 @@ class SpaceWorker:
             apical_NRN_sections = self._convert_apical_sections_to_NRN_sections(
                 synthesized.apical_points, morph_path
             )
+
+        # enforce freeing memory of orientation nrrd data
+        if hasattr(self.context, "orientations"):
+            if self.context.orientations is not None:
+                del self.context.orientations
 
         return {
             "name": morph_name,

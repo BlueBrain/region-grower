@@ -175,7 +175,6 @@ def _parallel_wrapper(
         else:
             new_cell = space_worker.synthesize()
         res = space_worker.completion(new_cell)
-
         res["debug_infos"] = dict(space_worker.debug_infos)
     except (SkipSynthesisError, RegionGrowerError, NoDendriteException) as exc:  # pragma: no cover
         LOGGER.error("Skip %s because of the following error: %s", row.name, exc)
@@ -564,7 +563,9 @@ class SynthesizeMorphologies:
                     if boundary.get("multimesh_mode", "closest") == "territories":
                         territories = self.atlas.atlas.load_data("glomerular_territories")
                         pos = self.cells_data.loc[region_mask, ["x", "y", "z"]].to_numpy()
-                        self.cells_data.loc[region_mask, "glomerulus_id"] = territories.lookup(pos)
+                        self.cells_data.loc[region_mask, "glomerulus_id"] = territories.lookup(
+                            pos, outer_value=-1
+                        )
 
                 self.cells_data.loc[region_mask, "boundaries"] = json.dumps(boundaries)
             if (
