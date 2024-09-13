@@ -567,6 +567,10 @@ class SynthesizeMorphologies:
                         self.cells_data.loc[region_mask, "glomerulus_id"] = territories.lookup(pos)
 
                 self.cells_data.loc[region_mask, "boundaries"] = json.dumps(boundaries)
+            if (
+                "directions" in self.atlas.region_structure[_region]
+                or "boundaries" in self.atlas.region_structure[_region]
+            ):
                 self.cells_data.loc[region_mask, "atlas_info"] = json.dumps(
                     {
                         "voxel_dimensions": self.atlas.brain_regions.voxel_dimensions.tolist(),

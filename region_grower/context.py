@@ -41,6 +41,7 @@ from neurots import NeuroTSError  # noqa: E402 ; pylint: disable=C0413
 from neurots.utils import PIA_DIRECTION  # noqa: E402 ; pylint: disable=C0413
 from voxcell.cell_collection import CellCollection  # noqa: E402 ; pylint: disable=C0413
 from voxcell.voxel_data import OrientationField
+from voxcell import VoxcellError
 
 from region_grower import RegionGrowerError  # noqa: E402 ; pylint: disable=C0413
 from region_grower import SkipSynthesisError  # noqa: E402 ; pylint: disable=C0413
@@ -96,7 +97,7 @@ class SpaceContext:
     boundaries: List = None
     directions: Dict = None
     atlas_info: Dict = {}  # voxel_dimensions, offset and shape from atlas for indices conversion
-    _orientations = None
+    orientations = None
 
     def indices_to_positions(self, indices):
         """Local version of voxcel's function to prevent atlas loading."""
@@ -129,21 +130,22 @@ class SpaceContext:
 
             def section_prob(seg_direction, current_point, direction=None):
                 """Probability function for the sections."""
-                if self._orientations is None:
-                    self._orientations = OrientationField.load_nrrd(
+                if self.orientations is None:
+                    self.orientations = OrientationField.load_nrrd(
                         self.atlas_info["direction_nrrd_path"]
                     )
                 try:
                     target_direction = np.dot(
-                        self._orientations.lookup(current_point), direction["params"]["direction"]
+                        self.orientations.lookup(current_point), direction["params"]["direction"]
                     )[0]
-                except:
+                except VoxcellError:
                     # if we are outside, we do nothing
                     return 1.0
                 power = direction["params"].get("power", 1.0)
                 mode = direction["params"].get("mode", "parallel")
                 layers = direction["params"].get("layers", [])
                 if layers:
+                    # this does not work well in curved atlas
                     depth = self.soma_depth + (self.soma_position - current_point).dot(
                         direction["pia_direction"]
                     )
@@ -168,6 +170,7 @@ class SpaceContext:
                 if np.isnan(p):
                     # sometimes we get nan from this computation, to check why
                     return 1.0
+
                 return np.clip(p, 0, 1)
 
             direction["section_prob"] = partial(section_prob, direction=direction)
