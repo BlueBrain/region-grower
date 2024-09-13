@@ -40,6 +40,7 @@ from neurots import NeuronGrower  # noqa: E402 ; pylint: disable=C0413
 from neurots import NeuroTSError  # noqa: E402 ; pylint: disable=C0413
 from neurots.utils import PIA_DIRECTION  # noqa: E402 ; pylint: disable=C0413
 from voxcell.cell_collection import CellCollection  # noqa: E402 ; pylint: disable=C0413
+from voxcell.voxel_data import OrientationField
 
 from region_grower import RegionGrowerError  # noqa: E402 ; pylint: disable=C0413
 from region_grower import SkipSynthesisError  # noqa: E402 ; pylint: disable=C0413
@@ -95,6 +96,7 @@ class SpaceContext:
     boundaries: List = None
     directions: Dict = None
     atlas_info: Dict = {}  # voxel_dimensions, offset and shape from atlas for indices conversion
+    _orientations = None
 
     def indices_to_positions(self, indices):
         """Local version of voxcel's function to prevent atlas loading."""
@@ -127,7 +129,17 @@ class SpaceContext:
 
             def section_prob(seg_direction, current_point, direction=None):
                 """Probability function for the sections."""
-                target_direction = direction["params"]["direction"]
+                if self._orientations is None:
+                    self._orientations = OrientationField.load_nrrd(
+                        self.atlas_info["direction_nrrd_path"]
+                    )
+                try:
+                    target_direction = np.dot(
+                        self._orientations.lookup(current_point), direction["params"]["direction"]
+                    )[0]
+                except:
+                    # if we are outside, we do nothing
+                    return 1.0
                 power = direction["params"].get("power", 1.0)
                 mode = direction["params"].get("mode", "parallel")
                 layers = direction["params"].get("layers", [])
@@ -149,8 +161,13 @@ class SpaceContext:
                         1.0
                         - abs(np.arccos(seg_direction.dot(target_direction)) / np.pi * 2.0 - 1.0)
                     ) ** power
+
                 else:
                     raise ValueError(f"mode {mode} not understood for direction probability")
+
+                if np.isnan(p):
+                    # sometimes we get nan from this computation, to check why
+                    return 1.0
                 return np.clip(p, 0, 1)
 
             direction["section_prob"] = partial(section_prob, direction=direction)
@@ -253,6 +270,12 @@ class SpaceContext:
                             mesh = _mesh
                             break
 
+                if boundary.get("multimesh_mode", "closest") == "territories":
+                    mesh = trimesh.load_mesh(
+                        Path(boundary["path"])
+                        / f"glomeruli_{int(cell.other_parameters['glomerulus_id']):03d}.obj"
+                    )
+
             else:
                 mesh = trimesh.load_mesh(boundary["path"])
 
@@ -270,17 +293,22 @@ class SpaceContext:
 
                 def prob(direction, current_point, mesh=None, mesh_type=None, params=None):
                     """Probability function for attractive mode."""
-                    closest_point = trimesh.proximity.closest_point(mesh, [current_point])[0][0]
+                    if mesh_type == "voxel":
+                        current_point_id = self.positions_to_indices(current_point)
+                    else:
+                        current_point_id = current_point
 
+                    if mesh.contains([current_point_id])[0]:
+                        # when we get inside the mesh, we are free
+                        return 1.0
+
+                    closest_point = trimesh.proximity.closest_point(mesh, [current_point_id])[0][0]
                     if mesh_type == "voxel":
                         closest_point = self.indices_to_positions(closest_point)
 
                     mesh_direction = closest_point - current_point
                     distance = np.linalg.norm(mesh_direction)
                     if params.get("d_min", 0) < distance < params.get("d_max", 100):
-                        if mesh_type == "voxel":
-                            current_point = self.positions_to_indices(current_point)
-
                         p = (
                             1 - np.arccos(direction.dot(mesh_direction) / distance) / np.pi
                         ) ** params.get("power", 1.0)
@@ -302,7 +330,6 @@ class SpaceContext:
                     )
 
             boundaries.append(boundary)
-
         return boundaries
 
     def layer_fraction_to_position(self, layer: int, layer_fraction: float) -> float:
@@ -405,9 +432,6 @@ class SpaceWorker:
         if self.context.directions is not None:
             self.context.directions = json.loads(self.context.directions)
             for i, direction in enumerate(self.context.directions):
-                self.context.directions[i]["params"]["direction"] = self.cell.lookup_orientation(
-                    direction["params"]["direction"]
-                )
                 self.context.directions[i]["pia_direction"] = self.cell.lookup_orientation(
                     PIA_DIRECTION
                 ).tolist()
@@ -417,6 +441,7 @@ class SpaceWorker:
             for boundary in boundaries:
                 if boundary.get("multimesh_mode", "closest") == "closest_y":
                     boundary["direction"] = self.cell.lookup_orientation(PIA_DIRECTION).tolist()
+
             self.context.boundaries = json.dumps(boundaries)
 
         for neurite_type in params["grow_types"]:

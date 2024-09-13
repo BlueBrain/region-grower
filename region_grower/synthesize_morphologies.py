@@ -528,24 +528,11 @@ class SynthesizeMorphologies:
             positions = self.cells.positions[region_mask]
 
             LOGGER.debug("Extract atlas data for %s region", _region)
-            if (
-                _region in self.atlas.regions
-                and self.atlas.region_structure[_region].get("thicknesses") is not None
-                and self.atlas.region_structure[_region].get("layers") is not None
-            ):
-                layers = self.atlas.layers[_region]
-                thicknesses = [self.atlas.layer_thickness(layer) for layer in layers]
-                depths = self.atlas.compute_region_depth(_region)
-                layer_depths = self.atlas.get_layer_boundary_depths(
-                    positions, thicknesses
-                ).T.tolist()
-                current_depths = np.clip(depths.lookup(positions), min_depth, max_depth)
-            else:
-                LOGGER.warning(
-                    "We are not able to synthesize the region %s with thicknesses", _region
-                )
-                layer_depths = None
-                current_depths = None
+            layers = self.atlas.layers[_region]
+            thicknesses = [self.atlas.layer_thickness(layer) for layer in layers]
+            depths = self.atlas.compute_region_depth(_region)
+            layer_depths = self.atlas.get_layer_boundary_depths(positions, thicknesses).T.tolist()
+            current_depths = np.clip(depths.lookup(positions), min_depth, max_depth)
 
             self.cells_data.loc[region_mask, "current_depth"] = current_depths
             self.cells_data.loc[region_mask, "layer_depths"] = pd.Series(
@@ -574,12 +561,18 @@ class SynthesizeMorphologies:
                         boundary["path"] = str(
                             (self.atlas.region_structure_base_path / boundary["path"]).absolute()
                         )
+                    if boundary.get("multimesh_mode", "closest") == "territories":
+                        territories = self.atlas.atlas.load_data("glomerular_territories")
+                        pos = self.cells_data.loc[region_mask, ["x", "y", "z"]].to_numpy()
+                        self.cells_data.loc[region_mask, "glomerulus_id"] = territories.lookup(pos)
+
                 self.cells_data.loc[region_mask, "boundaries"] = json.dumps(boundaries)
                 self.cells_data.loc[region_mask, "atlas_info"] = json.dumps(
                     {
                         "voxel_dimensions": self.atlas.brain_regions.voxel_dimensions.tolist(),
                         "offset": self.atlas.brain_regions.offset.tolist(),
                         "shape": self.atlas.brain_regions.shape,
+                        "direction_nrrd_path": self.atlas.atlas.fetch_data("orientation"),
                     }
                 )
 
