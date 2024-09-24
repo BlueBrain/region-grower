@@ -98,6 +98,7 @@ class SpaceContext:
     directions: Dict = None
     atlas_info: Dict = {}  # voxel_dimensions, offset and shape from atlas for indices conversion
     orientations = None
+    mesh = None
 
     def indices_to_positions(self, indices):
         """Local version of voxcel's function to prevent atlas loading."""
@@ -207,6 +208,7 @@ class SpaceContext:
                     vx, vy, vz = ray_direction
                     with open("data.csv", "a", encoding="utf8") as file:
                         print(f"{x}, {y}, {z}, {vx}, {vy}, {vz}, {dist}", file=file)
+
                 return dist
 
             if debug:  # pragma: no cover
@@ -249,7 +251,7 @@ class SpaceContext:
                         ]
                     mesh_id = np.argmin(distances)
                     boundary["mesh_name"] = Path(mesh_paths[mesh_id]).stem
-                    mesh = meshes[mesh_id]
+                    self.mesh = meshes[mesh_id]
 
                 if boundary.get("multimesh_mode", "closest") == "closest_y":
                     mesh_paths = list(Path(boundary["path"]).iterdir())
@@ -265,26 +267,24 @@ class SpaceContext:
 
                     mesh_id = np.argmin(distances)
                     boundary["mesh_name"] = Path(mesh_paths[mesh_id]).stem
-                    mesh = meshes[mesh_id]
+                    self.mesh = meshes[mesh_id]
 
                 if boundary.get("multimesh_mode", "closest") == "inside":
-                    mesh = None
                     for mesh_path in Path(boundary["path"]).iterdir():
                         _mesh = trimesh.load_mesh(mesh_path)
                         if _mesh.contains([soma_position])[0]:
-                            mesh = _mesh
+                            self.mesh = _mesh
                             break
 
                 if boundary.get("multimesh_mode", "closest") == "territories":
                     glom_id = int(cell.other_parameters["glomerulus_id"])
-                    mesh = None
                     if glom_id >= 0:
-                        mesh = trimesh.load_mesh(
+                        self.mesh = trimesh.load_mesh(
                             Path(boundary["path"]) / f"glomeruli_{glom_id:03d}.obj"
                         )
 
             else:
-                mesh = trimesh.load_mesh(boundary["path"])
+                self.mesh = trimesh.load_mesh(boundary["path"])
 
             if mode == "repulsive":
 
@@ -325,15 +325,15 @@ class SpaceContext:
             else:
                 raise ValueError(f"boundary mode {mode} not understood!")
 
-            if mesh is not None:
+            if self.mesh is not None:
                 if "params_section" in boundary:
                     boundary["section_prob"] = partial(
-                        prob, mesh=mesh, mesh_type=mesh_type, params=boundary["params_section"]
+                        prob, mesh=self.mesh, mesh_type=mesh_type, params=boundary["params_section"]
                     )
 
                 if "params_trunk" in boundary:
                     boundary["trunk_prob"] = partial(
-                        prob, mesh=mesh, mesh_type=mesh_type, params=boundary["params_trunk"]
+                        prob, mesh=self.mesh, mesh_type=mesh_type, params=boundary["params_trunk"]
                     )
 
             boundaries.append(boundary)
@@ -350,6 +350,9 @@ class SpaceContext:
         Returns: target depth
         """
         layer_thickness = self.layer_depths[layer] - self.layer_depths[layer - 1]
+        if layer_thickness <= 0:
+            raise SkipSynthesisError(f"Layer {layer} has no/negative thickness")
+
         return self.layer_depths[layer - 1] + (1.0 - layer_fraction) * layer_thickness
 
     def lookup_target_reference_depths(self, depth: float) -> np.array:
@@ -382,7 +385,10 @@ class SpaceContext:
         constraint_position = self.layer_fraction_to_position(
             constraint["layer"], constraint["fraction"]
         )
-        return depth - constraint_position
+        out = depth - constraint_position
+        if np.isnan(out):
+            raise SkipSynthesisError("Nan in some PH values")
+        return out
 
 
 @attr.s(auto_attribs=True)
@@ -573,10 +579,13 @@ class SpaceWorker:
                 synthesized.apical_points, morph_path
             )
 
-        # enforce freeing memory of orientation nrrd data
+        # enforce freeing memory of orientation nrrd data and meshes
         if hasattr(self.context, "orientations"):
             if self.context.orientations is not None:
                 del self.context.orientations
+        if hasattr(self.context, "mesh"):
+            if self.context.mesh is not None:
+                del self.context.mesh
 
         return {
             "name": morph_name,
