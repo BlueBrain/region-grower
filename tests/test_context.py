@@ -1,4 +1,5 @@
 """Test the region_grower.context module."""
+
 # pylint: disable=missing-function-docstring
 # pylint: disable=use-implicit-booleaness-not-comparison
 

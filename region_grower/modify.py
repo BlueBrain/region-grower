@@ -1,4 +1,5 @@
 """Use spatial properties to modify synthesis input."""
+
 from typing import Dict
 from typing import List
 from typing import Optional

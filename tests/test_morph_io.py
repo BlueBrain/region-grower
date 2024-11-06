@@ -1,4 +1,5 @@
 """Test the region_grower.utils module."""
+
 # pylint: disable=missing-function-docstring
 # pylint: disable=protected-access
 from pathlib import Path

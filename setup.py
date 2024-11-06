@@ -1,4 +1,5 @@
 """Setup for the region-grower package."""
+
 import importlib.util
 from pathlib import Path
 
@@ -20,13 +21,12 @@ reqs = [
     "diameter-synthesis>=0.5.4,<1",
     "morphio>=3.3.6,<4",
     "morph-tool[nrn]>=2.9,<3",
-    "neuroc>=0.2.8,<1",
+    "neuroc>=0.3,<1",
     "neurom>=3,<4",
     "neurots>=3.6,<4",
     "numpy>=1.22",
     "pandas>=1.5.3",
     "tqdm>=4.28.1",
-    "urllib3>=1.26,<2; python_version < '3.9'",
     "voxcell>=3.1.1,<4",
 ]
 
@@ -45,7 +45,7 @@ doc_reqs = [
 ]
 
 test_reqs = [
-    "brainbuilder>=0.18.3",
+    "brainbuilder>=0.20",
     "dictdiffer>=0.9",
     "pytest>=6.2.5",
     "pytest-click>=1",
@@ -59,7 +59,7 @@ test_reqs = [
 setup(
     name="region-grower",
     author="bbp-ou-cells",
-    author_email="bbp-ou-cells@groupes.epfl.ch",
+    author_email="",
     description="Synthesize cells in a given spatial context.",
     long_description=Path("README.md").read_text(encoding="utf-8"),
     long_description_content_type="text/markdown",

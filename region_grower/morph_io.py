@@ -1,4 +1,5 @@
 """Module to load and write morphologies."""
+
 import os
 import random
 import uuid

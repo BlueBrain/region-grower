@@ -6,6 +6,7 @@ synthesis tools (here NeutoTS) and the circuit building pipeline.
 TLDR: SpaceContext.synthesized() is being called by
 the placement_algorithm package to synthesize circuit morphologies.
 """
+
 import os
 from collections import defaultdict
 from copy import deepcopy

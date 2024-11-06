@@ -1,4 +1,5 @@
 """Command Line Interface for the region_grower package."""
+
 # pylint: disable=redefined-outer-name
 import importlib.metadata
 import json
@@ -11,8 +12,8 @@ import yaml
 try:
     from mpi4py import MPI
 
-    mpi_enabled = True
-except ImportError:  # pragma: no cover
+    mpi_enabled = True  # pragma: no cover
+except ImportError:
     mpi_enabled = False
 
 from region_grower import generate

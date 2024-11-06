@@ -1,4 +1,5 @@
 """Tests for the region_grower.cli module."""
+
 # pylint: disable=missing-function-docstring
 import json
 from pathlib import Path
