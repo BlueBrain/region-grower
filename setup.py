@@ -28,6 +28,7 @@ reqs = [
     "pandas>=1.5.3",
     "tqdm>=4.28.1",
     "voxcell>=3.1.1,<4",
+    "pynrrd<1", # temp fix for nrrd saving in voxcell
 ]
 
 mpi_extras = [
