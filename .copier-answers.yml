@@ -9,7 +9,7 @@ copyright_year: '2022'
 distribution_name: region-grower
 download_url: https://github.com/BlueBrain/region-grower
 init_git: false
-maintainer: Adrien Berchet
+maintainer: Adrien Berchet (@adrien-berchet)
 package_name: region_grower
 project_description: Synthesize cells in a given spatial context.
 project_name: Region Grower

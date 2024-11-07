@@ -39,3 +39,11 @@ repos:
     rev: 7.1.1
     hooks:
       - id: flake8
+  - repo: https://github.com/arkinmodi/add-license-header
+    rev: v2.2.0
+    hooks:
+      - id: add-license-header
+        args:
+            - --license-file
+            - .copyright.tmpl
+        files: \.py$
