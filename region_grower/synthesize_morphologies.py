@@ -443,7 +443,7 @@ class SynthesizeMorphologies:
         dask.config.set(dask_config)
 
         if self.with_mpi:  # pragma: no cover
-            # pylint: disable=import-outside-toplevel
+            # pylint: disable=import-outside-toplevel,import-error
             import dask_mpi
             from mpi4py import MPI
 
