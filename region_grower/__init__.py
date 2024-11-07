@@ -2,6 +2,7 @@
 
 Synthesize cells in a given spatial context.
 """
+
 import importlib.metadata
 
 __version__ = importlib.metadata.version("region-grower")

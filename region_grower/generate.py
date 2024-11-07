@@ -1,4 +1,5 @@
 """Functions to generate parameters and distributions."""
+
 import json
 import logging
 import multiprocessing
@@ -33,9 +34,11 @@ def generate_parameters(
         pc_in_files = yaml.full_load(pc_in_file)
 
     neurite_types = {
-        mtype: ["basal_dendrite"]
-        if pc_in_files[mtype] == "IN"
-        else ["basal_dendrite", "apical_dendrite"]
+        mtype: (
+            ["basal_dendrite"]
+            if pc_in_files[mtype] == "IN"
+            else ["basal_dendrite", "apical_dendrite"]
+        )
         for mtype in morphologies_dict
     }
 
@@ -107,9 +110,11 @@ def generate_distributions(
         pc_in_files = yaml.full_load(pc_in_file)
 
     neurite_types = {
-        mtype: ["basal_dendrite"]
-        if pc_in_files[mtype] == "IN"
-        else ["basal_dendrite", "apical_dendrite"]
+        mtype: (
+            ["basal_dendrite"]
+            if pc_in_files[mtype] == "IN"
+            else ["basal_dendrite", "apical_dendrite"]
+        )
         for mtype in morphologies_dict
     }
 

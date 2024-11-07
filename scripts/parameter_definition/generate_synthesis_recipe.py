@@ -1,4 +1,5 @@
 """Script to generate a synthesis recipe."""
+
 import copy
 import json
 

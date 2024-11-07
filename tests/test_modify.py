@@ -1,4 +1,5 @@
 """Test the region_grower.modify module."""
+
 # pylint: disable=missing-function-docstring
 from copy import deepcopy
 

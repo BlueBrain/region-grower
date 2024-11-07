@@ -1,4 +1,5 @@
 """Test the region_grower.synthesize_morphologies module."""
+
 # pylint: disable=missing-function-docstring
 import json
 import logging
@@ -34,9 +35,10 @@ def check_yaml(ref_path, tested_path):
     print(f"Check YAML:\n\tref: {ref_path}\n\ttested: {tested_path}")
     assert ref_path.exists()
     assert tested_path.exists()
-    with open(ref_path, encoding="utf-8") as ref_file, open(
-        tested_path, encoding="utf-8"
-    ) as tested_file:
+    with (
+        open(ref_path, encoding="utf-8") as ref_file,
+        open(tested_path, encoding="utf-8") as tested_file,
+    ):
         ref_obj = yaml.load(ref_file, Loader=yaml.FullLoader)
         tested_obj = yaml.load(tested_file, Loader=yaml.FullLoader)
 
