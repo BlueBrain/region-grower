@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.1](https://github.com/BlueBrain/region-grower/compare/1.5.0..1.5.1)
+
+> 7 November 2024
+
+### Chores And Housekeeping
+
+- Fix URLs and metadata and add license headers (Adrien Berchet - [#5](https://github.com/BlueBrain/region-grower/pull/5))
+
 ## [1.5.0](https://github.com/BlueBrain/region-grower/compare/1.4.0..1.5.0)
 
 > 7 November 2024
