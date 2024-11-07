@@ -3,6 +3,16 @@
 This helper allows simple lookups without having to reason in term of [PH][1-6] and [PH]y.
 """
 
+# LICENSE HEADER MANAGED BY add-license-header
+#
+# Copyright (c) 2023-2024 Blue Brain Project, EPFL.
+#
+# This file is part of region-grower.
+# See https://github.com/BlueBrain/region-grower for further info.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
 import operator
 from pathlib import Path
 from typing import List
