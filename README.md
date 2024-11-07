@@ -105,7 +105,6 @@ The command ``region-grower synthesize-morphologies`` will create the following 
 
 The development of this software was supported by funding to the Blue Brain Project,
 a research center of the École polytechnique fédérale de Lausanne (EPFL),
-from the Swiss government's ETH Board of the Swiss Federal Institutes of Technology
-and from the Human Brain Project's Specific Grant Agreement 3.
+from the Swiss government's ETH Board of the Swiss Federal Institutes of Technology.
 
 Copyright (c) 2022-2024 Blue Brain Project/EPFL
