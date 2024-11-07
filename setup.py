@@ -1,18 +1,9 @@
 """Setup for the region-grower package."""
 
-import importlib.util
 from pathlib import Path
 
 from setuptools import find_namespace_packages
 from setuptools import setup
-
-spec = importlib.util.spec_from_file_location(
-    "region_grower.version",
-    "region_grower/version.py",
-)
-module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)
-VERSION = module.VERSION
 
 reqs = [
     "attrs>=19.3.0",
@@ -37,7 +28,7 @@ mpi_extras = [
 ]
 
 doc_reqs = [
-    "docutils<0.21",  # Temporary fix for m2r2
+    "docutils<0.21",
     "m2r2",
     "sphinx",
     "sphinx-bluebrain-theme",
@@ -59,20 +50,22 @@ test_reqs = [
 
 setup(
     name="region-grower",
-    author="bbp-ou-cells",
-    author_email="",
+    author="Blue Brain Project, EPFL",
     description="Synthesize cells in a given spatial context.",
     long_description=Path("README.md").read_text(encoding="utf-8"),
     long_description_content_type="text/markdown",
-    url="https://bbpteam.epfl.ch/documentation/projects/region-grower",
+    url="https://region-grower.readthedocs.io",
     project_urls={
-        "Tracker": "https://bbpteam.epfl.ch/project/issues/projects/CELLS/issues",
-        "Source": "https://bbpgitlab.epfl.ch/neuromath/region-grower",
+        "Tracker": "https://github.com/BlueBrain/region-grower/issues",
+        "Source": "https://github.com/BlueBrain/region-grower",
     },
-    license="BBP-internal-confidential",
+    license="Apache License 2.0",
     packages=find_namespace_packages(include=["region_grower*"]),
-    python_requires=">=3.8",
-    version=VERSION,
+    python_requires=">=3.9",
+    use_scm_version=True,
+    setup_requires=[
+        "setuptools_scm",
+    ],
     install_requires=reqs,
     extras_require={
         "docs": doc_reqs,
@@ -91,10 +84,10 @@ setup(
         "Intended Audience :: Science/Research",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
     ],
 )
