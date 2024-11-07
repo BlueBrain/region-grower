@@ -101,9 +101,11 @@ The command ``region-grower synthesize-morphologies`` will create the following 
 * a ``YAML`` file containing the apical point positions (see ``--out-apical`` parameter).
 * a ``YAML`` file containing the Neuron IDs of the sections containing the apical points (see ``--out-apical-nrn-sections`` parameter).
 
+## Funding & Acknowledgment
 
-## Reporting issues
+The development of this software was supported by funding to the Blue Brain Project,
+a research center of the École polytechnique fédérale de Lausanne (EPFL),
+from the Swiss government's ETH Board of the Swiss Federal Institutes of Technology
+and from the Human Brain Project's Specific Grant Agreement 3.
 
-``region-grower`` is maintained by BlueBrain Cells team at the moment.
-
-Should you face any issue with using it, please submit a ticket to our [issue tracker](https://bbpteam.epfl.ch/project/issues/browse/CELLS) or drop us an [email](mailto:bbp-ou-cells@groupes.epfl.ch).
+Copyright (c) 2022-2024 Blue Brain Project/EPFL
