@@ -6,8 +6,8 @@ Synthesize neuronal morphologies in a given spatial context provided by an atlas
 ## Introduction
 
 This package provides a general tools to synthesize cells in a given spatial context (a brain Atlas)
-with embarassingly parallel computation (with distributed computing via dask-mpi).
-This package is difficult to use on its own, as it requires several specific inputs from atlas and 
+with embarrassingly parallel computation (with distributed computing via dask-mpi).
+This package is difficult to use on its own, as it requires several specific inputs from atlas and
 synthesis. It is advised to use it via [synthesis-workflow](https://github.com/BlueBrain/synthesis-workflow),
 which is a workflow generating most of the inputs of region-grower.
 
