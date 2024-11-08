@@ -1,6 +1,6 @@
 # Region Grower
 
-Synthesize neuronal morphologies in a given spatial context provided by an atlas.
+Synthesize neuronal morphologies in a given spatial context provided by an atlas. The documentation can be found here: https://region-grower.readthedocs.io/en/latest/
 
 
 ## Introduction
