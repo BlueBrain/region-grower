@@ -58,7 +58,7 @@ test_reqs = [
     "pytest-html>=2",
     "pytest-mock>=3.5",
     "pytest-xdist>=3.0.2",
-    "neurocollage>=0.3.0",
+    "neurocollage>=0.3.6",
 ]
 
 setup(
