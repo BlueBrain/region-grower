@@ -49,7 +49,7 @@ doc_reqs = [
 ]
 
 test_reqs = [
-    "brainbuilder>=0.20",
+    "brainbuilder>=0.20.1",
     "dictdiffer>=0.9",
     "pytest>=6.2.5",
     "pytest-click>=1",
