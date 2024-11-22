@@ -52,6 +52,7 @@ from region_grower.context import ComputationParameters
 from region_grower.context import SpaceContext
 from region_grower.context import SpaceWorker
 from region_grower.context import SynthesisParameters
+from region_grower.context import SynthesisResult
 from region_grower.morph_io import MorphLoader
 from region_grower.morph_io import MorphWriter
 from region_grower.utils import assign_morphologies
@@ -134,10 +135,20 @@ def _parallel_wrapper(
             orientation=np.array([row["orientation"]]),
             mtype=row["mtype"],
             depth=row["current_depth"],
+            other_parameters={
+                p: row[p]
+                for p in row.keys()
+                if p not in ["x", "y", "z", "orientation", "mtype", "current_depth"]
+            },
         )
         current_space_context = SpaceContext(
             layer_depths=row["layer_depths"],
             cortical_depths=cortical_depths[row["synthesis_region"]],
+            directions=row["directions"] if "directions" in row else None,
+            boundaries=row["boundaries"] if "boundaries" in row else None,
+            atlas_info=json.loads(row["atlas_info"]) if "atlas_info" in row else None,
+            soma_position=current_cell.position,
+            soma_depth=row["current_depth"],
         )
 
         axon_scale = row.get("axon_scale", None)
@@ -155,7 +166,6 @@ def _parallel_wrapper(
             axon_morph_scale=axon_scale,
             rotational_jitter_std=rotational_jitter_std,
             scaling_jitter_std=scaling_jitter_std,
-            recenter=True,
             seed=row["seed"],
             min_hard_scale=min_hard_scale,
         )
@@ -165,9 +175,16 @@ def _parallel_wrapper(
             current_synthesis_parameters,
             computation_parameters,
         )
-        new_cell = space_worker.synthesize()
+        resume_path = space_worker.internals.morph_writer.check_resume(row["seed"])
+        if resume_path:
+            try:
+                new_cell = SynthesisResult(morphio.mut.Morphology(resume_path), [], [])
+            except morphio.RawDataError:
+                # in case it created an invalid morphology, just re-synthesize
+                new_cell = space_worker.synthesize()
+        else:
+            new_cell = space_worker.synthesize()
         res = space_worker.completion(new_cell)
-
         res["debug_infos"] = dict(space_worker.debug_infos)
     except (SkipSynthesisError, RegionGrowerError, NoDendriteException) as exc:  # pragma: no cover
         LOGGER.error("Skip %s because of the following error: %s", row.name, exc)
@@ -209,6 +226,7 @@ class SynthesizeMorphologies:
             should be used to graft the axon on each synthesized morphology.
         base_morph_dir: the path containing the morphologies listed in the TSV file given in
             ``morph_axon``.
+        synthesize_axons: set to True to synthesize axons instead of grafting
         atlas_cache: the path to the directory used for the atlas cache.
         seed: the starting seed to use (note that the GID of each cell is added to this seed
             to ensure all cells has different seeds).
@@ -217,6 +235,7 @@ class SynthesizeMorphologies:
         max_files_per_dir: the maximum number of file in each directory (will create
             subdirectories if needed).
         overwrite: if set to False, the directory given to ``out_morph_dir`` must be empty.
+        resume: set to True to resume synthesis, do not synthesize if file exists.
         max_drop_ratio: the maximum ratio that
         scaling_jitter_std: the std of the scaling jitter.
         rotational_jitter_std: the std of the rotational jitter.
@@ -254,6 +273,7 @@ class SynthesizeMorphologies:
         out_apical_nrn_sections=None,
         max_files_per_dir=None,
         overwrite=False,
+        resume=False,
         max_drop_ratio=0,
         scaling_jitter_std=None,
         rotational_jitter_std=None,
@@ -269,6 +289,7 @@ class SynthesizeMorphologies:
         hide_progress_bar=False,
         dask_config=None,
         chunksize=None,
+        synthesize_axons=False,
     ):  # pylint: disable=too-many-arguments, too-many-locals, too-many-statements
         self.seed = seed
         self.scaling_jitter_std = scaling_jitter_std
@@ -320,6 +341,16 @@ class SynthesizeMorphologies:
         with open(tmd_distributions, "r", encoding="utf-8") as f:
             self.tmd_distributions = convert_from_legacy_neurite_type(json.load(f))
 
+        for params in self.tmd_parameters.values():
+            for param in params.values():
+                if synthesize_axons:
+                    if "axon" not in param["grow_types"]:
+                        LOGGER.warning(
+                            "No axon data, but axon synthesis requested, you will not have axons"
+                        )
+                elif "axon" in param["grow_types"]:
+                    param["grow_types"].remove("axon")
+
         # Set default values to tmd_parameters and tmd_distributions
         self.set_default_params_and_distrs()
 
@@ -327,7 +358,9 @@ class SynthesizeMorphologies:
         self.set_cortical_depths()
 
         LOGGER.info("Preparing morphology output folder in %s", out_morph_dir)
-        self.morph_writer = MorphWriter(out_morph_dir, out_morph_ext or ["swc"], skip_write)
+        self.morph_writer = MorphWriter(
+            out_morph_dir, out_morph_ext or ["swc"], skip_write, resume=resume
+        )
         self.morph_writer.prepare(
             num_files=len(self.cells.positions),
             max_files_per_dir=max_files_per_dir,
@@ -352,7 +385,8 @@ class SynthesizeMorphologies:
 
         LOGGER.info("Fetching atlas data from %s", atlas)
         self.assign_atlas_data(min_depth, max_depth)
-        if morph_axon is not None:
+
+        if morph_axon is not None and not synthesize_axons:
             LOGGER.info("Loading axon morphologies from %s", morph_axon)
             self.axon_morph_list = load_morphology_list(morph_axon, self.task_ids)
             check_na_morphologies(
@@ -375,7 +409,7 @@ class SynthesizeMorphologies:
         for region in self.regions:
             if (
                 region not in self.atlas.region_structure
-                or self.atlas.region_structure[region]["thicknesses"] is None
+                or self.atlas.region_structure[region].get("thicknesses") is None
             ):  # pragma: no cover
                 self.cortical_depths[region] = self.cortical_depths["default"]
             else:
@@ -512,25 +546,11 @@ class SynthesizeMorphologies:
             positions = self.cells.positions[region_mask]
 
             LOGGER.debug("Extract atlas data for %s region", _region)
-            if (
-                _region in self.atlas.regions
-                and self.atlas.region_structure[_region].get("thicknesses", None) is not None
-                and self.atlas.region_structure[_region].get("layers", None) is not None
-            ):
-                layers = self.atlas.layers[_region]
-                thicknesses = [self.atlas.layer_thickness(layer) for layer in layers]
-                depths = self.atlas.compute_region_depth(_region)
-                layer_depths = self.atlas.get_layer_boundary_depths(
-                    positions, thicknesses
-                ).T.tolist()
-                current_depths = np.clip(depths.lookup(positions), min_depth, max_depth)
-            else:
-                LOGGER.warning(
-                    "We are not able to synthesize the region %s, we fallback to 'default' region",
-                    _region,
-                )
-                layer_depths = None
-                current_depths = None
+            layers = self.atlas.layers[_region]
+            thicknesses = [self.atlas.layer_thickness(layer) for layer in layers]
+            depths = self.atlas.compute_region_depth(_region)
+            layer_depths = self.atlas.get_layer_boundary_depths(positions, thicknesses).T.tolist()
+            current_depths = np.clip(depths.lookup(positions), min_depth, max_depth)
 
             self.cells_data.loc[region_mask, "current_depth"] = current_depths
             self.cells_data.loc[region_mask, "layer_depths"] = pd.Series(
@@ -538,12 +558,47 @@ class SynthesizeMorphologies:
             )
 
             LOGGER.debug("Extract orientations data for %s region", _region)
-            orientations = self.atlas.orientations.lookup(positions)
+            if self.atlas.orientations is not None:
+                orientations = self.atlas.orientations.lookup(positions)
+            else:
+                orientations = np.array(len(positions) * [np.eye(3)])
             self.cells_data.loc[region_mask, "orientation"] = pd.Series(
                 data=orientations.tolist(),
                 index=self.cells_data.loc[region_mask].index,
                 dtype=object,
             )
+
+            if "directions" in self.atlas.region_structure[_region]:
+                self.cells_data.loc[region_mask, "directions"] = json.dumps(
+                    self.atlas.region_structure[_region]["directions"]
+                )
+            if "boundaries" in self.atlas.region_structure[_region]:
+                boundaries = self.atlas.region_structure[_region]["boundaries"]
+                for boundary in boundaries:
+                    if not Path(boundary["path"]).is_absolute():
+                        boundary["path"] = str(
+                            (self.atlas.region_structure_base_path / boundary["path"]).absolute()
+                        )
+                    if boundary.get("multimesh_mode", "closest") == "territories":
+                        territories = self.atlas.atlas.load_data("glomerular_territories")
+                        pos = self.cells_data.loc[region_mask, ["x", "y", "z"]].to_numpy()
+                        self.cells_data.loc[region_mask, "glomerulus_id"] = territories.lookup(
+                            pos, outer_value=-1
+                        )
+
+                self.cells_data.loc[region_mask, "boundaries"] = json.dumps(boundaries)
+            if (
+                "directions" in self.atlas.region_structure[_region]
+                or "boundaries" in self.atlas.region_structure[_region]
+            ):
+                self.cells_data.loc[region_mask, "atlas_info"] = json.dumps(
+                    {
+                        "voxel_dimensions": self.atlas.brain_regions.voxel_dimensions.tolist(),
+                        "offset": self.atlas.brain_regions.offset.tolist(),
+                        "shape": self.atlas.brain_regions.shape,
+                        "direction_nrrd_path": self.atlas.atlas.fetch_data("orientation"),
+                    }
+                )
 
     @property
     def task_ids(self):
@@ -608,8 +663,8 @@ class SynthesizeMorphologies:
 
         func_kwargs = {
             "computation_parameters": computation_parameters,
-            "cortical_depths": self.cortical_depths,
             "rotational_jitter_std": self.rotational_jitter_std,
+            "cortical_depths": self.cortical_depths,
             "scaling_jitter_std": self.scaling_jitter_std,
             "min_hard_scale": self.min_hard_scale,
             "tmd_parameters": self.tmd_parameters,
@@ -617,6 +672,9 @@ class SynthesizeMorphologies:
         }
 
         meta = pd.DataFrame({name: pd.Series(dtype="object") for name in self.NEW_COLUMNS})
+
+        # shuffle rows to get more even loads on tasks
+        self.cells_data = self.cells_data.sample(frac=1.0).reset_index()
 
         if self.nb_processes == 0:
             LOGGER.info("Start computation")
@@ -637,8 +695,7 @@ class SynthesizeMorphologies:
             computed = future.compute()
 
         LOGGER.info("Format results")
-        res = self.cells_data.join(computed)
-        return res
+        return self.cells_data.join(computed).sort_values(by="index").set_index("index")
 
     def finalize(self, result: pd.DataFrame):
         """Finalize master work.

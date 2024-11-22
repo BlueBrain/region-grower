@@ -29,7 +29,12 @@ reqs = [
     "pandas>=1.5.3",
     "tqdm>=4.28.1",
     "voxcell>=3.1.1,<4",
+<<<<<<< HEAD
     "pynrrd>=0.4.0,<1.0",  # temp fix for nrrd saving in voxcell
+=======
+    "trimesh>=3.21",
+    "rtree>=1.0.1",
+>>>>>>> c14add4 (squashed)
 ]
 
 mpi_extras = [
@@ -56,6 +61,7 @@ test_reqs = [
     "pytest-html>=2",
     "pytest-mock>=3.5",
     "pytest-xdist>=3.0.2",
+    "neurocollage>=0.3.0",
 ]
 
 setup(

@@ -207,6 +207,12 @@ def generate_distributions(
     default=False,
 )
 @click.option(
+    "--resume",
+    help="Resume synthesis, do not synthesize if file exists (default: False)",
+    is_flag=True,
+    default=False,
+)
+@click.option(
     "--max-drop-ratio",
     help="Max drop ratio for any mtype (default: 0)",
     type=float,
@@ -291,6 +297,12 @@ def generate_distributions(
 )
 @click.option(
     "--show-pip-freeze",
+    help="Display the versions of all the accessible modules in a logger entry",
+    is_flag=True,
+    default=False,
+)
+@click.option(
+    "--synthesize-axons",
     help="Display the versions of all the accessible modules in a logger entry",
     is_flag=True,
     default=False,

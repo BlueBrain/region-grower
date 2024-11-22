@@ -89,9 +89,17 @@ class TestSpaceContext:
         assert space_context.distance_to_constraint(-100, {"layer": 6, "fraction": 0}) == -900
         assert space_context.distance_to_constraint(1000, {"layer": 6, "fraction": 0}) == 200
 
-        for i in [np.nan, None, []]:
-            space_context.layer_depths = i
-            assert space_context.distance_to_constraint(1000, {"layer": 6, "fraction": 0}) is None
+    def test_indices_to_positions(self, space_context):
+        pos = space_context.indices_to_positions([0, 0, 0])
+        assert_array_equal(pos, [-1100.0, -100.0, -1000.0])
+        pos = space_context.indices_to_positions([100, 100, 100])
+        assert_array_equal(pos, [8900.0, 9900.0, 9000.0])
+
+    def test_positions_to_indices(self, space_context):
+        indices = space_context.positions_to_indices([-1100.0, -100.0, -1000.0])
+        assert_array_equal(indices, [0, 0, 0])
+        indices = space_context.positions_to_indices([8900.0, 9900.0, -9000.0])
+        assert_array_equal(indices, [-1, -1, -1])
 
 
 class TestSpaceWorker:
@@ -123,11 +131,18 @@ class TestSpaceWorker:
         )
 
         # This tests that input orientations are not mutated by the synthesize() call
-        assert synthesis_parameters.tmd_parameters["apical_dendrite"]["orientation"] == {
-            "mode": "normal_pia_constraint",
-            "values": {"direction": {"mean": 0.0, "std": 0.0}},
-        }
-
+        assert (
+            list(
+                dictdiffer.diff(
+                    synthesis_parameters.tmd_parameters["apical_dendrite"]["orientation"],
+                    {
+                        "mode": "normal_pia_constraint",
+                        "values": {"direction": {"mean": 0.0, "std": 0.0}},
+                    },
+                )
+            )
+            == []
+        )
         assert_array_almost_equal(
             result.neuron.soma.points,
             np.array(
@@ -195,25 +210,25 @@ class TestSpaceWorker:
         assert_array_almost_equal(
             synthesis_parameters.tmd_parameters["apical_dendrite"]["orientation"], [[0.0, 1.0, 0.0]]
         )
-
         assert_array_almost_equal(
             result.neuron.soma.points,
             np.array(
                 [
-                    [-5.785500526428223, 4.9841227531433105, 0.0],
-                    [-7.5740227699279785, -0.9734848141670227, 0.0],
-                    [-1.966903805732727, -7.378671169281006, 0.0],
-                    [3.565324068069458, -6.752922534942627, 0.0],
-                    [7.266839027404785, -2.346604108810425, 0.0],
-                    [7.384983062744141, 1.059786081314087, 0.0],
-                    [6.818241119384766, 3.4387624263763428, 0.0],
-                    [4.675901919111924e-16, 7.636327266693115, 0.0],
+                    [-5.785500526428223, 4.984130859375, 0.0],
+                    [-7.5740227699279785, -0.973480224609375, 0.0],
+                    [-1.966903805732727, -7.378662109375, 0.0],
+                    [3.565324068069458, -6.7529296875, 0.0],
+                    [7.266839027404785, -2.34661865234375, 0.0],
+                    [7.384983062744141, 1.059783935546875, 0.0],
+                    [6.818241119384766, 3.438751220703125, 0.0],
+                    [4.675901919111924e-16, 7.636322021484375, 0.0],
                 ],
                 dtype=np.float32,
             ),
         )
 
         assert len(result.neuron.root_sections) == 4
+
         assert_array_almost_equal(
             next(result.neuron.iter()).points,
             np.array(
