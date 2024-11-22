@@ -1,15 +1,4 @@
 """Tests for the region_grower.cli module."""
-
-# LICENSE HEADER MANAGED BY add-license-header
-#
-# Copyright (c) 2023-2024 Blue Brain Project, EPFL.
-#
-# This file is part of region-grower.
-# See https://github.com/BlueBrain/region-grower for further info.
-#
-# SPDX-License-Identifier: Apache-2.0
-#
-
 # pylint: disable=missing-function-docstring
 import json
 from pathlib import Path
@@ -196,28 +185,28 @@ class TestCli:
         )
         assert equal_infos.all()
         assert debug_data["apical_sections"].tolist() == [
-            [72],
+            [36],
             None,
-            [23],
+            [20],
             None,
-            [42],
+            [43],
             None,
-            [38],
+            [49],
             None,
-            [67],
-            [74],
+            [76],
+            [75],
         ]
         assert debug_data["apical_NRN_sections"].tolist() == [
-            [50],
+            [14],
             None,
-            [9],
+            [6],
             None,
-            [9],
+            [10],
             None,
-            [12],
+            [18],
             None,
-            [35],
-            [20],
+            [57],
+            [21],
         ]
 
         cols = ["apical_sections", "apical_NRN_sections", "apical_points", "debug_infos"]

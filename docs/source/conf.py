@@ -1,15 +1,5 @@
 """Configuration file for the Sphinx documentation builder."""
 
-# LICENSE HEADER MANAGED BY add-license-header
-#
-# Copyright (c) 2023-2024 Blue Brain Project, EPFL.
-#
-# This file is part of region-grower.
-# See https://github.com/BlueBrain/region-grower for further info.
-#
-# SPDX-License-Identifier: Apache-2.0
-#
-
 # This file only contains a selection of the most common options. For a full
 # list see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
@@ -24,11 +14,10 @@ from importlib import metadata
 
 # -- Project information -----------------------------------------------------
 
-project_name = "Region Grower"
-package_name = "region-grower"
+project = "Region Grower"
 
 # The short X.Y version
-version = metadata.version(package_name)
+version = metadata.version("region-grower")
 
 # The full version, including alpha/beta/rc tags
 release = version
@@ -74,10 +63,10 @@ html_theme = "sphinx-bluebrain-theme"
 # html_static_path = ['_static']
 
 html_theme_options = {
-    "metadata_distribution": package_name,
+    "metadata_distribution": "region-grower",
 }
 
-html_title = project_name
+html_title = project
 
 # If true, links to the reST sources are added to the pages.
 html_show_sourcelink = False

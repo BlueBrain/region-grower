@@ -10,5 +10,4 @@
    parameters
    cli
    api_ref
-   contributing
    changelog

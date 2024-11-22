@@ -1,15 +1,4 @@
 """Generate atlas for tests."""
-
-# LICENSE HEADER MANAGED BY add-license-header
-#
-# Copyright (c) 2023-2024 Blue Brain Project, EPFL.
-#
-# This file is part of region-grower.
-# See https://github.com/BlueBrain/region-grower for further info.
-#
-# SPDX-License-Identifier: Apache-2.0
-#
-
 # pylint: disable=missing-function-docstring
 import json
 import os
@@ -19,6 +8,8 @@ from itertools import repeat
 
 import numpy as np
 import pandas as pd
+import yaml
+from neurocollage.mesh_helper import MeshHelper
 from voxcell import CellCollection
 
 DF_SIZE = 12
@@ -42,6 +33,31 @@ def generate_small_O1(directory):
     )
     # fmt: on
     return str(directory)
+
+
+def generate_mesh(atlas, mesh_path):
+    """Generate a mesh from atlas to test boundary code."""
+    mesh_helper = MeshHelper(atlas, "O0")
+    mesh = mesh_helper.get_boundary_mesh()
+    mesh.export(mesh_path)  # pylint: disable=no-member
+
+
+def generate_region_structure_boundary(
+    region_structure_path, out_path, mesh, with_sections=True, with_trunks=True
+):
+    """Generate region_structure file with boundary entries."""
+    with open(region_structure_path, encoding="utf-8") as f:
+        structure = yaml.safe_load(f)
+    structure["O0"]["boundaries"] = {"path": mesh}
+
+    if with_sections:
+        structure["O0"]["boundaries"]["params_section"] = {"d_min": 5, "d_max": 50}
+
+    if with_trunks:
+        structure["O0"]["boundaries"]["params_trunk"] = {"d_min": 5, "d_max": 5000}
+
+    with open(out_path, "w", encoding="utf-8") as f:
+        yaml.dump(structure, f)
 
 
 def generate_cells_df():
@@ -143,7 +159,7 @@ def get_tmd_distributions(filename):
 
 def get_cell_position():
     """The cell position."""
-    return [0, 500, 0]
+    return np.array([0, 500, 0])
 
 
 def get_cell_mtype():

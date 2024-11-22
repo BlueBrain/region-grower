@@ -1,26 +1,26 @@
 # Changes here will be overwritten by Copier
 
-_commit: 0.1.67
+_commit: 0.1.52
 _src_path: git@bbpgitlab.epfl.ch:neuromath/python-template.git
-author_email: ''
-author_name: Blue Brain Project, EPFL
-copyright_license: Apache License 2.0
+author_email: bbp-ou-cells@groupes.epfl.ch
+author_name: bbp-ou-cells
+copyright_license: BBP-internal-confidential
 copyright_year: '2022'
 distribution_name: region-grower
-download_url: https://github.com/BlueBrain/region-grower
+download_url: https://bbpgitlab.epfl.ch/neuromath/region-grower
 init_git: false
-maintainer: Adrien Berchet (@adrien-berchet)
+maintainer: null
 package_name: region_grower
 project_description: Synthesize cells in a given spatial context.
 project_name: Region Grower
-project_url: https://region-grower.readthedocs.io
+project_url: https://bbpteam.epfl.ch/documentation/projects/region-grower
 repository_name: region-grower
-repository_namespace: BlueBrain
-repository_provider: github
+repository_namespace: neuromath
+repository_provider: gitlab
 setup_codeql: false
-ssh_url: git@github.com:BlueBrain/region-grower.git
-team_name: ''
-tracker_url: https://github.com/BlueBrain/region-grower/issues
+ssh_url: git@bbpgitlab.epfl.ch:neuromath/region-grower.git
+team_name: neuromath
+tracker_url: https://bbpteam.epfl.ch/project/issues/projects/CELLS/issues
 use_pyproject_toml: false
 version: 0.4.1
 

@@ -1,15 +1,13 @@
 # Region Grower
 
-Synthesize neuronal morphologies in a given spatial context provided by an atlas. The documentation can be found here: https://region-grower.readthedocs.io/en/latest/
+Synthesize cells in a given spatial context.
 
 
 ## Introduction
 
-This package provides a general tools to synthesize cells in a given spatial context (a brain Atlas)
-with embarrassingly parallel computation (with distributed computing via dask-mpi).
-This package is difficult to use on its own, as it requires several specific inputs from atlas and
-synthesis. It is advised to use it via [synthesis-workflow](https://github.com/BlueBrain/synthesis-workflow),
-which is a workflow generating most of the inputs of region-grower.
+This package provides tools to synthesize cells in a given spatial context (a brain Atlas).
+It is an implementation of the algorithm for picking morphologies for given cell positions,
+which aims to match a set of constraints prescribed by *placement rules*.
 
 
 ## Installation
@@ -88,7 +86,7 @@ region-grower synthesize-morphologies --help
 
 The command ``region-grower synthesize-morphologies`` needs the following inputs:
 
-* a ``sonata`` file containing the positions of the cells that must be synthesized.
+* a ``MVD3`` file containing the positions of the cells that must be synthesized.
 * a ``JSON`` file containing the parameters used to synthesize the cells (see the ``--tmd-parameters`` parameter). This file should follow the schema given in :ref:`Parameters`.
 * a ``JSON`` file containing the distributions used to synthesize the cells (see the ``--tmd-distributions`` parameter). This file should follow the schema given in :ref:`Parameters`.
 * a ``TSV`` file giving which morphology should be used for axon grafting and the optional scaling factor (see the ``--morph-axon`` parameter). The morphologies referenced in this file should exist in the directory given with the ``--base-morph-dir`` parameter.
@@ -98,15 +96,14 @@ The command ``region-grower synthesize-morphologies`` needs the following inputs
 
 The command ``region-grower synthesize-morphologies`` will create the following outputs:
 
-* a ``sonata`` file containing all the positions and orientations of the synthesized cells (see ``--out-cells`` parameter).
+* a ``MVD3`` file containing all the positions and orientations of the synthesized cells (see ``--out-cells`` parameter).
 * a directory containing all the synthesized morphologies (see ``--out-morph-dir`` and ``--out-morph-ext`` parameters).
 * a ``YAML`` file containing the apical point positions (see ``--out-apical`` parameter).
 * a ``YAML`` file containing the Neuron IDs of the sections containing the apical points (see ``--out-apical-nrn-sections`` parameter).
 
-## Funding & Acknowledgment
 
-The development of this software was supported by funding to the Blue Brain Project,
-a research center of the École polytechnique fédérale de Lausanne (EPFL),
-from the Swiss government's ETH Board of the Swiss Federal Institutes of Technology.
+## Reporting issues
 
-Copyright (c) 2022-2024 Blue Brain Project/EPFL
+``region-grower`` is maintained by BlueBrain Cells team at the moment.
+
+Should you face any issue with using it, please submit a ticket to our [issue tracker](https://bbpteam.epfl.ch/project/issues/browse/CELLS) or drop us an [email](mailto:bbp-ou-cells@groupes.epfl.ch).

@@ -40,3 +40,6 @@ examples/.ipynb_checkpoints
 # Node
 node_modules
 package-lock.json
+
+# dask
+dask-worker-space

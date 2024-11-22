@@ -1,19 +1,17 @@
 """Setup for the region-grower package."""
-
-# LICENSE HEADER MANAGED BY add-license-header
-#
-# Copyright (c) 2023-2024 Blue Brain Project, EPFL.
-#
-# This file is part of region-grower.
-# See https://github.com/BlueBrain/region-grower for further info.
-#
-# SPDX-License-Identifier: Apache-2.0
-#
-
+import importlib.util
 from pathlib import Path
 
 from setuptools import find_namespace_packages
 from setuptools import setup
+
+spec = importlib.util.spec_from_file_location(
+    "region_grower.version",
+    "region_grower/version.py",
+)
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+VERSION = module.VERSION
 
 reqs = [
     "attrs>=19.3.0",
@@ -22,14 +20,16 @@ reqs = [
     "diameter-synthesis>=0.5.4,<1",
     "morphio>=3.3.6,<4",
     "morph-tool[nrn]>=2.9,<3",
-    "neuroc>=0.3,<1",
+    "neuroc>=0.2.8,<1",
     "neurom>=3,<4",
-    "neurots>=3.6,<4",
+    "neurots>=3.5,<4",
     "numpy>=1.22",
     "pandas>=1.5.3",
     "tqdm>=4.28.1",
+    "urllib3>=1.26,<2; python_version < '3.9'",
     "voxcell>=3.1.1,<4",
-    "pynrrd>=0.4.0,<1.0",  # temp fix for nrrd saving in voxcell
+    "trimesh>=3.21",
+    "rtree>=1.0.1",
 ]
 
 mpi_extras = [
@@ -38,7 +38,7 @@ mpi_extras = [
 ]
 
 doc_reqs = [
-    "docutils<0.21",
+    "docutils<0.21",  # Temporary fix for m2r2
     "m2r2",
     "sphinx",
     "sphinx-bluebrain-theme",
@@ -47,7 +47,7 @@ doc_reqs = [
 ]
 
 test_reqs = [
-    "brainbuilder>=0.20",
+    "brainbuilder>=0.18.3",
     "dictdiffer>=0.9",
     "pytest>=6.2.5",
     "pytest-click>=1",
@@ -56,26 +56,25 @@ test_reqs = [
     "pytest-html>=2",
     "pytest-mock>=3.5",
     "pytest-xdist>=3.0.2",
+    "neurocollage>=0.3.0",
 ]
 
 setup(
     name="region-grower",
-    author="Blue Brain Project, EPFL",
+    author="bbp-ou-cells",
+    author_email="bbp-ou-cells@groupes.epfl.ch",
     description="Synthesize cells in a given spatial context.",
     long_description=Path("README.md").read_text(encoding="utf-8"),
     long_description_content_type="text/markdown",
-    url="https://region-grower.readthedocs.io",
+    url="https://bbpteam.epfl.ch/documentation/projects/region-grower",
     project_urls={
-        "Tracker": "https://github.com/BlueBrain/region-grower/issues",
-        "Source": "https://github.com/BlueBrain/region-grower",
+        "Tracker": "https://bbpteam.epfl.ch/project/issues/projects/CELLS/issues",
+        "Source": "https://bbpgitlab.epfl.ch/neuromath/region-grower",
     },
-    license="Apache License 2.0",
+    license="BBP-internal-confidential",
     packages=find_namespace_packages(include=["region_grower*"]),
-    python_requires=">=3.9",
-    use_scm_version=True,
-    setup_requires=[
-        "setuptools_scm",
-    ],
+    python_requires=">=3.8",
+    version=VERSION,
     install_requires=reqs,
     extras_require={
         "docs": doc_reqs,
@@ -94,10 +93,10 @@ setup(
         "Intended Audience :: Science/Research",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
-        "Programming Language :: Python :: 3.12",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
     ],
 )
