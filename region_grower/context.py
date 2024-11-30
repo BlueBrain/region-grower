@@ -118,14 +118,9 @@ class SpaceContext:
 
     def positions_to_indices(self, positions):
         """Local and reduced version of voxcel's function to prevent atlas loading."""
-        result = (positions - np.array(self.atlas_info["offset"])) / np.array(
+        return (positions - np.array(self.atlas_info["offset"])) / np.array(
             self.atlas_info["voxel_dimensions"]
         )
-        result[np.abs(result) < 1e-7] = 0.0  # suppress rounding errors around 0
-        result = np.floor(result).astype(int)
-        result[result < 0] = -1
-        result[result >= self.atlas_info["shape"]] = -1
-        return result
 
     def get_direction(self, cell):
         """Get direction data for the given mtype."""
