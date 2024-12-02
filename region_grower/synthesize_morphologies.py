@@ -175,16 +175,9 @@ def _parallel_wrapper(
             current_synthesis_parameters,
             computation_parameters,
         )
-        resume_path = space_worker.internals.morph_writer.check_resume(row["seed"])
-        if resume_path:
-            try:
-                new_cell = SynthesisResult(morphio.mut.Morphology(resume_path), [], [])
-            except morphio.RawDataError:
-                # in case it created an invalid morphology, just re-synthesize
-                new_cell = space_worker.synthesize()
-        else:
-            new_cell = space_worker.synthesize()
+        new_cell = space_worker.synthesize()
         res = space_worker.completion(new_cell)
+
         res["debug_infos"] = dict(space_worker.debug_infos)
     except (SkipSynthesisError, RegionGrowerError, NoDendriteException) as exc:  # pragma: no cover
         LOGGER.error("Skip %s because of the following error: %s", row.name, exc)
@@ -235,7 +228,6 @@ class SynthesizeMorphologies:
         max_files_per_dir: the maximum number of file in each directory (will create
             subdirectories if needed).
         overwrite: if set to False, the directory given to ``out_morph_dir`` must be empty.
-        resume: set to True to resume synthesis, do not synthesize if file exists.
         max_drop_ratio: the maximum ratio that
         scaling_jitter_std: the std of the scaling jitter.
         rotational_jitter_std: the std of the rotational jitter.
@@ -273,7 +265,6 @@ class SynthesizeMorphologies:
         out_apical_nrn_sections=None,
         max_files_per_dir=None,
         overwrite=False,
-        resume=False,
         max_drop_ratio=0,
         scaling_jitter_std=None,
         rotational_jitter_std=None,
@@ -358,9 +349,7 @@ class SynthesizeMorphologies:
         self.set_cortical_depths()
 
         LOGGER.info("Preparing morphology output folder in %s", out_morph_dir)
-        self.morph_writer = MorphWriter(
-            out_morph_dir, out_morph_ext or ["swc"], skip_write, resume=resume
-        )
+        self.morph_writer = MorphWriter(out_morph_dir, out_morph_ext or ["swc"], skip_write)
         self.morph_writer.prepare(
             num_files=len(self.cells.positions),
             max_files_per_dir=max_files_per_dir,

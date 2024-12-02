@@ -50,8 +50,8 @@ from neurots import NeuronGrower  # noqa: E402 ; pylint: disable=C0413
 from neurots import NeuroTSError  # noqa: E402 ; pylint: disable=C0413
 from neurots.utils import Y_DIRECTION  # noqa: E402 ; pylint: disable=C0413
 from voxcell.cell_collection import CellCollection  # noqa: E402 ; pylint: disable=C0413
-from voxcell.voxel_data import OrientationField
-from voxcell import VoxcellError
+from voxcell.voxel_data import OrientationField  # noqa: E402 ; pylint: disable=C0413
+from voxcell import VoxcellError  # noqa: E402 ; pylint: disable=C0413
 
 from region_grower import RegionGrowerError  # noqa: E402 ; pylint: disable=C0413
 from region_grower import SkipSynthesisError  # noqa: E402 ; pylint: disable=C0413
@@ -86,7 +86,7 @@ class CellState:
     orientation: Matrix
     mtype: str
     depth: float
-    other_parameters: Dict
+    other_parameters: Dict = {}
 
     def lookup_orientation(self, vector: Optional[Point] = None) -> np.array:
         """Returns the looked-up orientation for the given position.
@@ -102,8 +102,8 @@ class SpaceContext:
 
     layer_depths: List
     cortical_depths: List
-    soma_position: float
-    soma_depth: float
+    soma_position: float = None
+    soma_depth: float = None
     boundaries: List = None
     directions: Dict = None
     atlas_info: Dict = {}  # voxel_dimensions, offset and shape from atlas for indices conversion
@@ -452,14 +452,14 @@ class SpaceWorker:
                 self.context.directions = json.loads(self.context.directions)
             for i, direction in enumerate(self.context.directions):
                 self.context.directions[i]["pia_direction"] = self.cell.lookup_orientation(
-                    PIA_DIRECTION
+                    Y_DIRECTION
                 ).tolist()
 
         if self.context.boundaries is not None:
             boundaries = json.loads(self.context.boundaries)
             for boundary in boundaries:
                 if boundary.get("multimesh_mode", "closest") == "closest_y":
-                    boundary["direction"] = self.cell.lookup_orientation(PIA_DIRECTION).tolist()
+                    boundary["direction"] = self.cell.lookup_orientation(Y_DIRECTION).tolist()
 
             self.context.boundaries = json.dumps(boundaries)
 

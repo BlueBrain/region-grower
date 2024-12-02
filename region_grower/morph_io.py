@@ -50,12 +50,11 @@ class MorphLoader:
 class MorphWriter:
     """Helper class for writing morphologies."""
 
-    def __init__(self, output_dir, file_exts, skip_write=False, resume=False):
+    def __init__(self, output_dir, file_exts, skip_write=False):
         self.output_dir = os.path.realpath(output_dir)
         self.file_exts = file_exts
         self._dir_depth = None
         self.skip_write = skip_write
-        self.resume = resume
 
     @staticmethod
     def _calc_dir_depth(num_files, max_files_per_dir=None):
@@ -87,9 +86,6 @@ class MorphWriter:
         - ensure it either does not exist, or is empty
         - if it does not exist, create an empty one
         """
-        if self.resume:
-            overwrite = True
-
         if self.skip_write:
             return
         self._dir_depth = MorphWriter._calc_dir_depth(
@@ -132,17 +128,5 @@ class MorphWriter:
 
         if not self.skip_write:
             for path in ext_paths:
-                if not (self.resume and path.exists()):
-                    morph.write(path)
+                morph.write(path)
         return str(full_stem), ext_paths
-
-    def check_resume(self, seed):
-        """Check if morphology exists if we are in resume mode, and return its path."""
-        if not self.resume:
-            return False
-
-        morph_name, subdirs = self.generate_name(seed)
-        full_stem = Path(subdirs, morph_name)
-        for ext_path in self.filepaths(full_stem):
-            if ext_path.exists():
-                return ext_path

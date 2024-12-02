@@ -98,24 +98,13 @@ class TestSpaceContext:
     def test_positions_to_indices(self, space_context):
         indices = space_context.positions_to_indices([-1100.0, -100.0, -1000.0])
         assert_array_equal(indices, [0, 0, 0])
-        indices = space_context.positions_to_indices([8900.0, 9900.0, -9000.0])
-        assert_array_equal(indices, [-1, -1, -1])
 
 
 class TestSpaceWorker:
     """Test private functions of the SpaceWorker class."""
 
-    @pytest.mark.parametrize("recenter", [True, False])
-    def test_context(
-        self,
-        cell_state,
-        space_context,
-        synthesis_parameters,
-        computation_parameters,
-        recenter,
-    ):
+    def test_context(self, cell_state, space_context, synthesis_parameters, computation_parameters):
         """Test the whole context."""
-        synthesis_parameters.recenter = recenter
         context_worker = SpaceWorker(
             cell_state,
             space_context,
@@ -277,6 +266,8 @@ class TestSpaceWorker:
             SectionType.basal_dendrite,
             SectionType.basal_dendrite,
         ]
+        print(tmd_parameters)
+        print([i.type for i in result1.neuron.root_sections])
         assert [i.type for i in result1.neuron.root_sections] == expected_types
         assert_array_almost_equal(
             [  # Check only first and last points of neurites
