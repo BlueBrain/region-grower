@@ -535,11 +535,25 @@ class SynthesizeMorphologies:
             positions = self.cells.positions[region_mask]
 
             LOGGER.debug("Extract atlas data for %s region", _region)
-            layers = self.atlas.layers[_region]
-            thicknesses = [self.atlas.layer_thickness(layer) for layer in layers]
-            depths = self.atlas.compute_region_depth(_region)
-            layer_depths = self.atlas.get_layer_boundary_depths(positions, thicknesses).T.tolist()
-            current_depths = np.clip(depths.lookup(positions), min_depth, max_depth)
+            if (
+                _region in self.atlas.regions
+                and self.atlas.region_structure[_region].get("thicknesses", None) is not None
+                and self.atlas.region_structure[_region].get("layers", None) is not None
+            ):
+                layers = self.atlas.layers[_region]
+                thicknesses = [self.atlas.layer_thickness(layer) for layer in layers]
+                depths = self.atlas.compute_region_depth(_region)
+                layer_depths = self.atlas.get_layer_boundary_depths(
+                    positions, thicknesses
+                ).T.tolist()
+                current_depths = np.clip(depths.lookup(positions), min_depth, max_depth)
+            else:
+                LOGGER.warning(
+                    "We are not able to synthesize the region %s, we fallback to 'default' region",
+                    _region,
+                )
+                layer_depths = None
+                current_depths = None
 
             self.cells_data.loc[region_mask, "current_depth"] = current_depths
             self.cells_data.loc[region_mask, "layer_depths"] = pd.Series(
