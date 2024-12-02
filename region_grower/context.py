@@ -102,6 +102,7 @@ class SpaceContext:
 
     layer_depths: List
     cortical_depths: List
+    y_direction: List = None
     soma_position: float = None
     soma_depth: float = None
     boundaries: List = None
@@ -154,7 +155,7 @@ class SpaceContext:
                 if layers:
                     # this does not work well in curved atlas
                     depth = self.soma_depth + (self.soma_position - current_point).dot(
-                        direction["pia_direction"]
+                        direction["y_direction"]
                     )
                     in_layer = False
                     for layer in layers:
@@ -451,7 +452,7 @@ class SpaceWorker:
             if isinstance(self.context.directions, str):
                 self.context.directions = json.loads(self.context.directions)
             for i, direction in enumerate(self.context.directions):
-                self.context.directions[i]["pia_direction"] = self.cell.lookup_orientation(
+                self.context.directions[i]["y_direction"] = self.cell.lookup_orientation(
                     Y_DIRECTION
                 ).tolist()
 
@@ -465,7 +466,7 @@ class SpaceWorker:
 
         for neurite_type in params["grow_types"]:
             if isinstance(params[neurite_type]["orientation"], dict):
-                params["pia_direction"] = self.cell.lookup_orientation(Y_DIRECTION).tolist()
+                self.context.y_direction = self.cell.lookup_orientation(Y_DIRECTION).tolist()
             if isinstance(params[neurite_type]["orientation"], list):
                 params[neurite_type]["orientation"] = [
                     self.cell.lookup_orientation(orient).tolist()
@@ -615,6 +616,8 @@ class SpaceWorker:
             axon_morph = None
 
         context = {"debug_data": self.debug_infos["input_scaling"]}
+        if self.context.y_direction is not None:
+            context["y_direction"] = self.context.y_direction
         if self.context.directions is not None:
             if "constraints" not in context:
                 context["constraints"] = []
