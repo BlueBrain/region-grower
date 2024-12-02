@@ -43,7 +43,7 @@ from neuroc.scale import scale_morphology  # noqa: E402 ; pylint: disable=C0413
 from neuroc.scale import scale_section  # noqa: E402 ; pylint: disable=C0413
 from neurots import NeuronGrower  # noqa: E402 ; pylint: disable=C0413
 from neurots import NeuroTSError  # noqa: E402 ; pylint: disable=C0413
-from neurots.utils import PIA_DIRECTION  # noqa: E402 ; pylint: disable=C0413
+from neurots.utils import Y_DIRECTION  # noqa: E402 ; pylint: disable=C0413
 from voxcell.cell_collection import CellCollection  # noqa: E402 ; pylint: disable=C0413
 
 from region_grower import RegionGrowerError  # noqa: E402 ; pylint: disable=C0413
@@ -85,7 +85,7 @@ class CellState:
 
         If orientation is None, the direction is assumed towards the pia.
         """
-        return np.dot(self.orientation, vector)[0] if vector else PIA_DIRECTION
+        return np.dot(self.orientation, vector)[0] if vector else Y_DIRECTION
 
 
 @attr.s(auto_attribs=True)
@@ -197,7 +197,7 @@ class SpaceWorker:
 
         for neurite_type in params["grow_types"]:
             if isinstance(params[neurite_type]["orientation"], dict):
-                params["pia_direction"] = self.cell.lookup_orientation(PIA_DIRECTION).tolist()
+                params["pia_direction"] = self.cell.lookup_orientation(Y_DIRECTION).tolist()
             if isinstance(params[neurite_type]["orientation"], list):
                 params[neurite_type]["orientation"] = [
                     self.cell.lookup_orientation(orient).tolist()
@@ -249,7 +249,7 @@ class SpaceWorker:
 
             scale = modify.output_scaling(
                 root_section,
-                self.cell.orientation.dot(PIA_DIRECTION)[0],
+                self.cell.orientation.dot(Y_DIRECTION)[0],
                 target_min_length=target_min_length,
                 target_max_length=target_max_length,
             )

@@ -26,7 +26,7 @@ from numpy.testing import assert_array_equal
 import region_grower
 from region_grower import RegionGrowerError
 from region_grower import SkipSynthesisError
-from region_grower.context import PIA_DIRECTION
+from region_grower.context import Y_DIRECTION
 from region_grower.context import SpaceWorker
 from region_grower.context import SynthesisParameters
 
@@ -41,7 +41,7 @@ class TestCellState:
 
     def test_lookup_orientation(self, cell_state):
         """Test the `lookup_orientation()` method."""
-        assert cell_state.lookup_orientation() == PIA_DIRECTION
+        assert cell_state.lookup_orientation() == Y_DIRECTION
         vectors = [
             [1, 0, 0],
             [0, 1, 0],
@@ -456,7 +456,7 @@ class TestSpaceWorker:
 
         # pylint: disable=protected-access
         fixed_params = small_context_worker._correct_position_orientation_scaling(params)
-        assert fixed_params["pia_direction"] == PIA_DIRECTION
+        assert fixed_params["pia_direction"] == Y_DIRECTION
 
     def test_debug_scales(self, small_context_worker, tmd_parameters):
         """Test debug logger."""
