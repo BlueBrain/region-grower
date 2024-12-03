@@ -49,9 +49,9 @@ from neuroc.scale import scale_section  # noqa: E402 ; pylint: disable=C0413
 from neurots import NeuronGrower  # noqa: E402 ; pylint: disable=C0413
 from neurots import NeuroTSError  # noqa: E402 ; pylint: disable=C0413
 from neurots.utils import Y_DIRECTION  # noqa: E402 ; pylint: disable=C0413
+from voxcell import VoxcellError  # noqa: E402 ; pylint: disable=C0413
 from voxcell.cell_collection import CellCollection  # noqa: E402 ; pylint: disable=C0413
 from voxcell.voxel_data import OrientationField  # noqa: E402 ; pylint: disable=C0413
-from voxcell import VoxcellError  # noqa: E402 ; pylint: disable=C0413
 
 from region_grower import RegionGrowerError  # noqa: E402 ; pylint: disable=C0413
 from region_grower import SkipSynthesisError  # noqa: E402 ; pylint: disable=C0413
@@ -106,7 +106,7 @@ class SpaceContext:
     soma_position: float = None
     soma_depth: float = None
     boundaries: List = None
-    directions: Dict = None
+    directions: List = None
     atlas_info: Dict = {}  # voxel_dimensions, offset and shape from atlas for indices conversion
     orientations = None
     mesh = None
@@ -126,7 +126,7 @@ class SpaceContext:
     def get_direction(self, cell):
         """Get direction data for the given mtype."""
         directions = []
-        for direction in self.directions:
+        for direction in self.directions:  # pylint: disable=not-an-iterable
             mtypes = direction.get("mtypes", None)
             if mtypes is not None and cell.mtype not in mtypes:
                 continue
@@ -451,10 +451,8 @@ class SpaceWorker:
         if self.context.directions is not None:
             if isinstance(self.context.directions, str):
                 self.context.directions = json.loads(self.context.directions)
-            for i, direction in enumerate(self.context.directions):
-                self.context.directions[i]["y_direction"] = self.cell.lookup_orientation(
-                    Y_DIRECTION
-                ).tolist()
+            for direction in self.context.directions:
+                direction["y_direction"] = self.cell.lookup_orientation(Y_DIRECTION).tolist()
 
         if self.context.boundaries is not None:
             boundaries = json.loads(self.context.boundaries)

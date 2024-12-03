@@ -52,7 +52,6 @@ from region_grower.context import ComputationParameters
 from region_grower.context import SpaceContext
 from region_grower.context import SpaceWorker
 from region_grower.context import SynthesisParameters
-from region_grower.context import SynthesisResult
 from region_grower.morph_io import MorphLoader
 from region_grower.morph_io import MorphWriter
 from region_grower.utils import assign_morphologies
@@ -519,7 +518,7 @@ class SynthesizeMorphologies:
             self._parallel_client.close()
             self._parallel_client = None
 
-    def assign_atlas_data(self, min_depth=25, max_depth=5000):
+    def assign_atlas_data(self, min_depth=25, max_depth=5000):  # pylint: disable=too-many-locals
         """Open an Atlas and compute depths and orientations according to the given positions."""
         self.cells_data["current_depth"] = np.nan
         self.cells_data["layer_depths"] = pd.Series(
