@@ -140,9 +140,7 @@ class TestOutputScaling:
 
     def test_output_scaling_min(self, root_sec):
         """Test with a min value that is greater than a few values (useful)."""
-        assert modify.output_scaling(root_sec, [0, 1, 0], 40.657597, None) == pytest.approx(
-            1.7270042868523088
-        )
+        assert modify.output_scaling(root_sec, [0, 1, 0], 40.657597, None) == pytest.approx(1)
 
     def test_output_scaling_useless_max(self, root_sec):
         """Test with a max value that is greater than all values (useless)."""
@@ -150,7 +148,9 @@ class TestOutputScaling:
 
     def test_output_scaling_max(self, root_sec):
         """Test with a max value that is greater than a few values (useful)."""
-        assert modify.output_scaling(root_sec, [0, 1, 0], None, 27.105065) == pytest.approx(1)
+        assert modify.output_scaling(root_sec, [0, 1, 0], None, 27.105065) == pytest.approx(
+            0.2607304228132
+        )
 
     def test_output_scaling_useless_min_useless_max(self, root_sec):
         """Test with an useless min value and useless max values."""
@@ -158,10 +158,12 @@ class TestOutputScaling:
 
     def test_output_scaling_useless_min_max(self, root_sec):
         """Test with an useless min value and useful max values."""
-        assert modify.output_scaling(root_sec, [0, 1, 0], 1, 27.105065) == pytest.approx(1)
+        assert modify.output_scaling(root_sec, [0, 1, 0], 1, 27.105065) == pytest.approx(
+            0.2607304228132
+        )
 
     def test_output_scaling_min_max(self, root_sec):
         """Test with an useful min value and useful max values."""
         assert modify.output_scaling(root_sec, [0, 1, 0], 40.657597, 27.105065) == pytest.approx(
-            1.7270042868523088
+            0.2607304228132996
         )
