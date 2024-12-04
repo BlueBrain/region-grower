@@ -200,7 +200,6 @@ class SpaceContext:
             locations = mesh.ray.intersects_location(
                 ray_origins=[ray_origin], ray_directions=[ray_direction]
             )[0]
-
             if len(locations):
                 intersect = locations[0]
                 if mesh_type == "voxel":
