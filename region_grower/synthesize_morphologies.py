@@ -148,9 +148,9 @@ def _parallel_wrapper(
             cortical_depths=cortical_depths[row["synthesis_region"]],
             directions=row["directions"] if "directions" in row and use_boundary else None,
             boundaries=row["boundaries"] if "boundaries" in row and use_boundary else None,
-            atlas_info=json.loads(row["atlas_info"])
-            if "atlas_info" in row and use_boundary
-            else None,
+            atlas_info=(
+                json.loads(row["atlas_info"]) if "atlas_info" in row and use_boundary else None
+            ),
             soma_position=current_cell.position,
             soma_depth=row["current_depth"],
         )
