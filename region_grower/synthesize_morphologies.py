@@ -140,12 +140,17 @@ def _parallel_wrapper(
                 if p not in ["x", "y", "z", "orientation", "mtype", "current_depth"]
             },
         )
+        use_boundary = False
+        if "atlas_info" in row and isinstance(row["atlas_info"], str):
+            use_boundary = True
         current_space_context = SpaceContext(
             layer_depths=row["layer_depths"],
             cortical_depths=cortical_depths[row["synthesis_region"]],
-            directions=row["directions"] if "directions" in row else None,
-            boundaries=row["boundaries"] if "boundaries" in row else None,
-            atlas_info=json.loads(row["atlas_info"]) if "atlas_info" in row else None,
+            directions=row["directions"] if "directions" in row and use_boundary else None,
+            boundaries=row["boundaries"] if "boundaries" in row and use_boundary else None,
+            atlas_info=json.loads(row["atlas_info"])
+            if "atlas_info" in row and use_boundary
+            else None,
             soma_position=current_cell.position,
             soma_depth=row["current_depth"],
         )
@@ -570,11 +575,11 @@ class SynthesizeMorphologies:
                 dtype=object,
             )
 
-            if "directions" in self.atlas.region_structure[_region]:
+            if "directions" in self.atlas.region_structure.get(_region, []):
                 self.cells_data.loc[region_mask, "directions"] = json.dumps(
                     self.atlas.region_structure[_region]["directions"]
                 )
-            if "boundaries" in self.atlas.region_structure[_region]:
+            if "boundaries" in self.atlas.region_structure.get(_region, []):
                 boundaries = self.atlas.region_structure[_region]["boundaries"]
                 for boundary in boundaries:
                     if not Path(boundary["path"]).is_absolute():
@@ -589,10 +594,9 @@ class SynthesizeMorphologies:
                         )
 
                 self.cells_data.loc[region_mask, "boundaries"] = json.dumps(boundaries)
-            if (
-                "directions" in self.atlas.region_structure[_region]
-                or "boundaries" in self.atlas.region_structure[_region]
-            ):
+            if "directions" in self.atlas.region_structure.get(
+                _region, []
+            ) or "boundaries" in self.atlas.region_structure.get(_region, []):
                 self.cells_data.loc[region_mask, "atlas_info"] = json.dumps(
                     {
                         "voxel_dimensions": self.atlas.brain_regions.voxel_dimensions.tolist(),

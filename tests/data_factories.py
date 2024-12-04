@@ -59,13 +59,13 @@ def generate_region_structure_boundary(
     """Generate region_structure file with boundary entries."""
     with open(region_structure_path, encoding="utf-8") as f:
         structure = yaml.safe_load(f)
-    structure["O0"]["boundaries"] = {"path": mesh}
+    structure["O0"]["boundaries"] = [{"path": mesh}]
 
     if with_sections:
-        structure["O0"]["boundaries"]["params_section"] = {"d_min": 5, "d_max": 50}
+        structure["O0"]["boundaries"][0]["params_section"] = {"d_min": 5, "d_max": 50}
 
     if with_trunks:
-        structure["O0"]["boundaries"]["params_trunk"] = {"d_min": 5, "d_max": 5000}
+        structure["O0"]["boundaries"][0]["params_trunk"] = {"d_min": 5, "d_max": 5000}
 
     with open(out_path, "w", encoding="utf-8") as f:
         yaml.dump(structure, f)

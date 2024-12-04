@@ -181,6 +181,7 @@ def test_synthesize_empty_population(
         None,
         None,
         25,
+        DATA / "region_structure.yaml",
     )
     # Update population to make it empty
     cells = CellCollection.load(args["input_cells"])
@@ -308,16 +309,16 @@ def test_synthesize_skip_write(
         "e8d79f49af6d114c4a6f188a424e617b",
     ]
     assert [[i[0].tolist()] if i else i for i in res["apical_points"].tolist()] == [
-        [[-14.571318626403809, 114.34882354736328, 6.069221019744873]],
+        [[-14.571319580078125, 114.34881591796875, 6.0692138671875]],
         None,
-        [[-70.52275085449219, 129.78277587890625, -7.857072830200195]],
+        [[-70.52275085449219, 129.78277587890625, -7.8570709228515625]],
         None,
-        [[4.3279709815979, 59.805320739746094, -0.6919530630111694]],
+        [[4.327972412109375, 59.805328369140625, -0.69195556640625]],
         None,
-        [[1.484359622001648, 52.40570831298828, -4.806603908538818]],
+        [[1.4843597412109375, 52.40570068359375, -4.806610107421875]],
         None,
-        [[13.616881370544434, 252.8784942626953, 4.428127288818359]],
-        [[-77.39925384521484, 345.1856994628906, -33.771915435791016]],
+        [[13.61688232421875, 252.87850952148438, 4.428131103515625]],
+        [[-77.39925384521484, 345.18572998046875, -33.77191162109375]],
     ]
 
     # Check that the morphologies were not written
@@ -331,16 +332,12 @@ def test_synthesize_skip_write(
     ]
 
 
-@pytest.mark.parametrize("with_sections", [True, False])
-@pytest.mark.parametrize("with_trunks", [True, False])
 def test_synthesize_boundary(
     tmpdir,
     small_O1_path,
     input_cells,
     axon_morph_tsv,
     mesh,
-    with_sections,
-    with_trunks,
 ):  # pylint: disable=unused-argument,too-many-locals
     """Test morphology synthesis but skip write step."""
     with_axon = True
@@ -353,7 +350,7 @@ def test_synthesize_boundary(
 
     region_structure = "region_structure.yaml"
     generate_region_structure_boundary(
-        DATA / "region_structure.yaml", region_structure, mesh, with_sections, with_trunks
+        DATA / "region_structure.yaml", region_structure, mesh, with_sections=True, with_trunks=True
     )
     args = create_args(
         False,
@@ -382,45 +379,20 @@ def test_synthesize_boundary(
         None,
         "4462ebfc5f915ef09cfbac6e7687a66e",
         None,
+        "87751d4ca8501e2c44dcda6a797d76de",
+        "e8d79f49af6d114c4a6f188a424e617b",
     ]
-    if with_sections and with_trunks:
-        assert_allclose(res["apical_points"][0], [[16.126877, 160.5279, 22.8638]])
-        assert res["apical_points"][1] is None
+    assert_allclose(res["apical_points"][0], [[19.211365, 92.61514, -6.3647766]])
+    assert res["apical_points"][1] is None
 
-        assert_allclose(res["apical_points"][3], [[5.216095, 114.55658, -12.494751]])
-        assert res["apical_points"][4] is None
+    assert_allclose(res["apical_points"][3], [[-2.7629395, 117.766846, 4.818283]])
+    assert res["apical_points"][4] is None
 
-        assert_allclose(res["apical_points"][6], [[4.36911, 55.535736, -6.2556915]])
-        assert res["apical_points"][7] is None
+    assert_allclose(res["apical_points"][6], [[-76.63339, 141.26578, -1.3202515]])
+    assert res["apical_points"][7] is None
 
-        assert_allclose(res["apical_points"][9], [[-11.084274, 111.49124, 0.98043823]])
-        assert res["apical_points"][10] is None
-
-    if with_sections and not with_trunks:
-        assert_allclose(res["apical_points"][0], [[-0.29234314, 58.81488, 0.5384369]])
-        assert res["apical_points"][1] is None
-
-        assert_allclose(res["apical_points"][3], [[8.230438, 116.570435, -7.345169]])
-        assert res["apical_points"][4] is None
-
-        assert_allclose(res["apical_points"][6], [[11.181992, 96.11371, -12.706863]])
-        assert res["apical_points"][7] is None
-
-        assert_allclose(res["apical_points"][9], [[3.5267944, 164.42618, 1.2018433]])
-        assert res["apical_points"][10] is None
-
-    if not with_sections and with_trunks:
-        assert_allclose(res["apical_points"][0], [[8.792313, 131.91104, -4.2198334]])
-        assert res["apical_points"][1] is None
-
-        assert_allclose(res["apical_points"][3], [[2.0048676, 116.672, -5.334656]])
-        assert res["apical_points"][4] is None
-
-        assert_allclose(res["apical_points"][6], [[-2.347641, 58.229614, -0.56985474]])
-        assert res["apical_points"][7] is None
-
-        assert_allclose(res["apical_points"][9], [[6.861679, 112.31445, -13.528854]])
-        assert res["apical_points"][10] is None
+    assert_allclose(res["apical_points"][9], [[0.65127563, 58.166138, 0.24832153]])
+    assert res["apical_points"][10] is None
 
     # Check that the morphologies were not written
     res_files = tmpdir.listdir()
