@@ -297,7 +297,7 @@ def generate_distributions(
 )
 @click.option(
     "--synthesize-axons",
-    help="Display the versions of all the accessible modules in a logger entry",
+    help="Use to synthesize axons or not",
     is_flag=True,
     default=False,
 )
