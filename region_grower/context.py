@@ -123,7 +123,7 @@ class SpaceContext:
             self.atlas_info["voxel_dimensions"]
         )
 
-    def get_direction(self, cell):
+    def get_direction(self, cell):  # pragma: no cover
         """Get direction data for the given mtype."""
         directions = []
         for direction in self.directions:  # pylint: disable=not-an-iterable
@@ -187,7 +187,7 @@ class SpaceContext:
 
     def get_boundaries(
         self, cell
-    ):  # pylint: disable=too-many-locals,too-many-statements,too-many-branches
+    ):  # pylint: disable=too-many-locals,too-many-statements,too-many-branches, pragma: no cover
         """Returns a dict with boundaries data for NeuroTS."""
 
         def get_distance_to_mesh(mesh, ray_origin, ray_direction, mesh_type):

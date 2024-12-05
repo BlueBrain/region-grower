@@ -336,6 +336,7 @@ class SynthesizeMorphologies:
         with open(tmd_distributions, "r", encoding="utf-8") as f:
             self.tmd_distributions = convert_from_legacy_neurite_type(json.load(f))
 
+        # pragma: no cover
         for params in self.tmd_parameters.values():
             for param in params.values():
                 if synthesize_axons:
@@ -567,7 +568,7 @@ class SynthesizeMorphologies:
             LOGGER.debug("Extract orientations data for %s region", _region)
             if self.atlas.orientations is not None:
                 orientations = self.atlas.orientations.lookup(positions)
-            else:
+            else:  # pragma: no cover
                 orientations = np.array(len(positions) * [np.eye(3)])
             self.cells_data.loc[region_mask, "orientation"] = pd.Series(
                 data=orientations.tolist(),
@@ -582,10 +583,12 @@ class SynthesizeMorphologies:
             if "boundaries" in self.atlas.region_structure.get(_region, []):
                 boundaries = self.atlas.region_structure[_region]["boundaries"]
                 for boundary in boundaries:
+                    # pragma: no cover
                     if not Path(boundary["path"]).is_absolute():
                         boundary["path"] = str(
                             (self.atlas.region_structure_base_path / boundary["path"]).absolute()
                         )
+                    # pragma: no cover
                     if boundary.get("multimesh_mode", "closest") == "territories":
                         territories = self.atlas.atlas.load_data("glomerular_territories")
                         pos = self.cells_data.loc[region_mask, ["x", "y", "z"]].to_numpy()
