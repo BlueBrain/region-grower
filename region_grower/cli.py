@@ -19,10 +19,11 @@ from pathlib import Path
 import click
 import yaml
 
+# pragma: no cover
 try:
     from mpi4py import MPI
 
-    mpi_enabled = True  # pragma: no cover
+    mpi_enabled = True
 except ImportError:
     mpi_enabled = False
 
