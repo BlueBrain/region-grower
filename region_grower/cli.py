@@ -19,10 +19,11 @@ from pathlib import Path
 import click
 import yaml
 
+# pragma: no cover
 try:
     from mpi4py import MPI
 
-    mpi_enabled = True  # pragma: no cover
+    mpi_enabled = True
 except ImportError:
     mpi_enabled = False
 
@@ -292,6 +293,12 @@ def generate_distributions(
 @click.option(
     "--show-pip-freeze",
     help="Display the versions of all the accessible modules in a logger entry",
+    is_flag=True,
+    default=False,
+)
+@click.option(
+    "--synthesize-axons",
+    help="Use to synthesize axons or not",
     is_flag=True,
     default=False,
 )
