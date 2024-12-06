@@ -323,12 +323,16 @@ def test_synthesize_skip_write(
     ]
 
 
+@pytest.mark.parametrize("with_sections", [True, False])
+@pytest.mark.parametrize("with_trunks", [True, False])
 def test_synthesize_boundary(
     tmpdir,
     small_O1_path,
     input_cells,
     axon_morph_tsv,
     mesh,
+    with_sections,
+    with_trunks,
 ):  # pylint: disable=unused-argument,too-many-locals
     """Test morphology synthesis but skip write step."""
     with_axon = True
@@ -341,7 +345,11 @@ def test_synthesize_boundary(
 
     region_structure = "region_structure.yaml"
     generate_region_structure_boundary(
-        DATA / "region_structure.yaml", region_structure, mesh, with_sections=True, with_trunks=True
+        DATA / "region_structure.yaml",
+        region_structure,
+        mesh,
+        with_sections=with_sections,
+        with_trunks=with_trunks,
     )
     args = create_args(
         False,
@@ -373,17 +381,18 @@ def test_synthesize_boundary(
         "87751d4ca8501e2c44dcda6a797d76de",
         "e8d79f49af6d114c4a6f188a424e617b",
     ]
-    assert_allclose(res["apical_points"][0], [[19.211365, 92.61514, -6.3647766]])
-    assert res["apical_points"][1] is None
+    if with_sections and with_trunks:
+        assert_allclose(res["apical_points"][0], [[19.211365, 92.61514, -6.3647766]])
+        assert res["apical_points"][1] is None
 
-    assert_allclose(res["apical_points"][3], [[-2.7629395, 117.766846, 4.818283]])
-    assert res["apical_points"][4] is None
+        assert_allclose(res["apical_points"][3], [[-2.7629395, 117.766846, 4.818283]])
+        assert res["apical_points"][4] is None
 
-    assert_allclose(res["apical_points"][6], [[-76.63339, 141.26578, -1.3202515]])
-    assert res["apical_points"][7] is None
+        assert_allclose(res["apical_points"][6], [[-76.63339, 141.26578, -1.3202515]])
+        assert res["apical_points"][7] is None
 
-    assert_allclose(res["apical_points"][9], [[0.65127563, 58.166138, 0.24832153]])
-    assert res["apical_points"][10] is None
+        assert_allclose(res["apical_points"][9], [[0.65127563, 58.166138, 0.24832153]])
+        assert res["apical_points"][10] is None
 
     # Check that the morphologies were not written
     res_files = tmpdir.listdir()
