@@ -185,9 +185,10 @@ class SpaceContext:
             directions.append(direction)
         return directions
 
+    # pragma: no cover
     def get_boundaries(
         self, cell
-    ):  # pylint: disable=too-many-locals,too-many-statements,too-many-branches, pragma: no cover
+    ):  # pylint: disable=too-many-locals,too-many-statements,too-many-branches
         """Returns a dict with boundaries data for NeuroTS."""
 
         def get_distance_to_mesh(mesh, ray_origin, ray_direction, mesh_type):
