@@ -28,8 +28,11 @@ from region_grower.morph_io import MorphWriter
 
 from .data_factories import generate_axon_morph_tsv
 from .data_factories import generate_cell_collection
+from .data_factories import generate_cell_collection_boundary
 from .data_factories import generate_cells_df
+from .data_factories import generate_cells_boundary_df
 from .data_factories import generate_input_cells
+from .data_factories import generate_input_cells_boundary
 from .data_factories import generate_mesh
 from .data_factories import generate_small_O1
 from .data_factories import get_cell_mtype
@@ -72,6 +75,18 @@ def cells_df():
 
 
 @pytest.fixture(scope="function")
+def cells_boundary_df():
+    """Raw data for the cell collection."""
+    return generate_cells_boundary_df()
+
+
+@pytest.fixture(scope="function")
+def cell_collection_boundary(cells_boundary_df):
+    """The cell collection."""
+    return generate_cell_collection_boundary(cells_boundary_df)
+
+
+@pytest.fixture(scope="function")
 def cell_collection(cells_df):
     """The cell collection."""
     return generate_cell_collection(cells_df)
@@ -81,6 +96,12 @@ def cell_collection(cells_df):
 def input_cells(cell_collection, tmpdir):
     """The path to the MVD3 file containing the cell collection."""
     return generate_input_cells(cell_collection, tmpdir)
+
+
+@pytest.fixture(scope="function")
+def input_cells_boundary(cell_collection_boundary, tmpdir):
+    """The path to the MVD3 file containing the cell collection."""
+    return generate_input_cells_boundary(cell_collection_boundary, tmpdir)
 
 
 @pytest.fixture

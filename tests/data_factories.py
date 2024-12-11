@@ -53,22 +53,77 @@ def generate_mesh(atlas, mesh_path):
     mesh.export(mesh_path)  # pylint: disable=no-member
 
 
-def generate_region_structure_boundary(
-    region_structure_path, out_path, mesh, with_sections=True, with_trunks=True
-):
+def generate_region_structure_boundary(region_structure_path, out_path, mesh):
     """Generate region_structure file with boundary entries."""
     with open(region_structure_path, encoding="utf-8") as f:
         structure = yaml.safe_load(f)
-    structure["O0"]["boundaries"] = [{"path": mesh}]
+    structure["O0"]["boundaries"] = [
+        {
+            "path": mesh,
+            "params_section": {
+                "d_min": 0,
+                "d_max": 20,
+                "power": 1.2,
+                "neurite_types": ["apical_dendrite"],
+            },
+            "params_trunk": {
+                "mtype": "L2_TPC:A",
+                "d_min": 0,
+                "d_max": 500,
+                "neurite_types": ["basal_dendrite"],
+            },
+        },
+        {
+            "path": mesh,
+            "params_section": {
+                "d_min": 0,
+                "d_max": 400,
+                "power": 0.8,
+                "mode": "attractive",
+                "neurite_types": ["basal_dendrite"],
+            },
+        },
+    ]
 
-    if with_sections:
-        structure["O0"]["boundaries"][0]["params_section"] = {"d_min": 5, "d_max": 50}
-
-    if with_trunks:
-        structure["O0"]["boundaries"][0]["params_trunk"] = {"d_min": 5, "d_max": 5000}
+    structure["O0"]["directions"] = [
+        {
+            "params": {
+                "direction": [0, 1, 0],
+                "mode": "perpendicular",
+            },
+            "neurite_types": ["basal_dendrite"],
+        },
+        {
+            "params": {
+                "direction": [0, 1, 0],
+                "mode": "parallel",
+                "layers": [2, 3],
+            },
+            "neurite_types": ["apical_dendrite"],
+        },
+    ]
 
     with open(out_path, "w", encoding="utf-8") as f:
         yaml.dump(structure, f)
+
+
+def generate_cells_boundary_df():
+    """Raw data for the cell collection."""
+    DF_SIZE = 2
+    x = [100, -100]
+    y = [450, 470]
+    z = [0, 0]
+    df = pd.DataFrame(
+        {
+            "mtype": list(repeat("L2_TPC:A", DF_SIZE)),
+            "region": list(repeat("mc0;2", DF_SIZE)),
+            "x": x,
+            "y": y,
+            "z": z,
+        }
+    )
+    df.index += 1
+    return df
 
 
 def generate_cells_df():
@@ -114,9 +169,26 @@ def generate_cell_collection(cells_df):
     return CellCollection.from_dataframe(cells_df)
 
 
+def generate_cell_collection_boundary(cells_boundary_df):
+    """The cell collection."""
+    return CellCollection.from_dataframe(cells_boundary_df)
+
+
 def input_cells_path(tmpdir):
     """The path to the MVD3 file containing the cell collection."""
     return tmpdir / "input_cells.mvd3"
+
+
+def input_cells_boundary_path(tmpdir):
+    """The path to the MVD3 file containing the cell collection."""
+    return tmpdir / "input_cells_boundary.mvd3"
+
+
+def generate_input_cells_boundary(cell_collection_boundary, tmpdir):
+    """The path to the MVD3 file containing the cell collection."""
+    filename = input_cells_boundary_path(tmpdir)
+    cell_collection_boundary.save_mvd3(filename)
+    return filename
 
 
 def generate_input_cells(cell_collection, tmpdir):

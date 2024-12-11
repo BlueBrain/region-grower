@@ -38,14 +38,6 @@ O0:
       - L5_TPC:B
       - L5_TPC:C
       - L5_UPC
-      neurite_types:
-        - apical_dendrite
-        - axon
-      params_section:
-        d_min: 0
-        d_max: 20
-      path: pia_mesh.obj
-    - mtypes:
       - L1_DAC
       - L1_HAC
       - L1_NGC-SA
@@ -64,24 +56,36 @@ O0:
       - L23_NGC
       - L23_BP
       neurite_types:
+        - apical_dendrite
+        - basal_dendrite
         - axon
       params_section:
-        d_min: 0
+        d_min: 2
         d_max: 20
       path: pia_mesh.obj
   directions:
     - mtypes:
       - L1_HAC
+      - L1_DAC
       - L1_LAC
       - L1_SAC
       neurite_types:
         - axon
-      processes:
-        - major
       params:
         direction: [0, 1, 0]
-        power : 2.0
         mode: perpendicular
+        layers: [1]
+    - mtypes:
+      - L1_HAC
+      - L1_DAC
+      - L1_LAC
+      - L1_SAC
+      neurite_types:
+        - axon
+      params:
+        direction: [0, -1, 0]
+        mode: parallel
+        layers: [2, 3, 4]
     - mtypes:
       - L1_NGC-SA
       - L1_NGC-DA
@@ -133,7 +137,7 @@ O0:
         - major
       params:
         direction: [0, -1.0, 0]
-        power: 1.0
+        power: 0.5
         mode: parallel
     - mtypes:
       - L4_ChC
@@ -168,7 +172,7 @@ O0:
         - axon
       params:
         direction: [0, 1.0, 0]
-        power: 1.0
+        power: 2.0
         layers: [1]
         mode: perpendicular
     - mtypes:
@@ -198,36 +202,4 @@ O0:
         direction: [0, 1.0, 0]
         power: 0.8
         layers: [2, 3, 4, 5]
-        mode: parallel
-    - mtypes:
-      - L6_TPC:A
-      - L6_TPC:C
-      - L6_UPC
-      - L6_IPC
-      - L6_BPC
-      - L6_HPC
-      neurite_types:
-        - axon
-      processes:
-        - secondary
-      params:
-        direction: [0, 1.0, 0]
-        power: 1.5
-        layers: [6]
-        mode: parallel
-    - mtypes:
-      - L6_TPC:A
-      - L6_TPC:C
-      - L6_UPC
-      - L6_IPC
-      - L6_BPC
-      - L6_HPC
-      neurite_types:
-        - axon
-      processes:
-        - secondary
-      params:
-        direction: [0, 1.0, 0]
-        power: 2.5
-        layers: [1, 2, 3, 4, 5]
         mode: parallel

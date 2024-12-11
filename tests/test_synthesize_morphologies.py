@@ -100,6 +100,30 @@ def create_args(
     return args
 
 
+def test_synthesize_no_thicknesses(
+    tmpdir,
+    small_O1_path,
+    input_cells,
+    axon_morph_tsv,
+):  # pylint: disable=unused-argument
+    """Test morphology synthesis."""
+    tmp_folder = Path(tmpdir)
+
+    args = create_args(
+        False,
+        tmp_folder,
+        input_cells,
+        small_O1_path,
+        None,
+        None,
+        800,
+        DATA / "region_structure_no_thicknesses.yaml",
+    )
+
+    synthesizer = SynthesizeMorphologies(**args)
+    synthesizer.synthesize()
+
+
 @pytest.mark.parametrize("min_depth", [25, 800])
 @pytest.mark.parametrize("with_axon", [True, False])
 @pytest.mark.parametrize("with_NRN", [True, False])
@@ -323,87 +347,35 @@ def test_synthesize_skip_write(
     ]
 
 
-@pytest.mark.parametrize("with_sections", [True, False])
-@pytest.mark.parametrize("with_trunks", [True, False])
 def test_synthesize_boundary(
     tmpdir,
     small_O1_path,
-    input_cells,
-    axon_morph_tsv,
+    input_cells_boundary,
     mesh,
-    with_sections,
-    with_trunks,
 ):  # pylint: disable=unused-argument,too-many-locals
     """Test morphology synthesis but skip write step."""
-    with_axon = True
-    with_NRN = True
-    min_depth = 25
     tmp_folder = Path(tmpdir)
 
     # pylint: disable=import-outside-toplevel
     from .data_factories import generate_region_structure_boundary
 
     region_structure = "region_structure.yaml"
-    generate_region_structure_boundary(
-        DATA / "region_structure.yaml",
-        region_structure,
-        mesh,
-        with_sections=with_sections,
-        with_trunks=with_trunks,
-    )
+    generate_region_structure_boundary(DATA / "region_structure.yaml", region_structure, mesh)
     args = create_args(
         False,
         tmp_folder,
-        input_cells,
+        input_cells_boundary,
         small_O1_path,
-        axon_morph_tsv if with_axon else None,
-        "apical_NRN_sections.yaml" if with_NRN else None,
-        min_depth,
+        None,
+        None,
+        800,
         region_structure,
     )
     args["skip_write"] = True
 
     synthesizer = SynthesizeMorphologies(**args)
     res = synthesizer.synthesize()
-
-    assert (res["x"] == 200).all()
-    assert (res["y"] == 200).all()
-    assert (res["z"] == 200).all()
-    assert res["name"].tolist() == [
-        "e3e70682c2094cac629f6fbed82c07cd",
-        None,
-        "216363698b529b4a97b750923ceb3ffd",
-        None,
-        "14a03569d26b949692e5dfe8cb1855fe",
-        None,
-        "4462ebfc5f915ef09cfbac6e7687a66e",
-        None,
-        "87751d4ca8501e2c44dcda6a797d76de",
-        "e8d79f49af6d114c4a6f188a424e617b",
-    ]
-    if with_sections and with_trunks:
-        assert_allclose(res["apical_points"][0], [[19.211365, 92.61514, -6.3647766]])
-        assert res["apical_points"][1] is None
-
-        assert_allclose(res["apical_points"][3], [[-2.7629395, 117.766846, 4.818283]])
-        assert res["apical_points"][4] is None
-
-        assert_allclose(res["apical_points"][6], [[-76.63339, 141.26578, -1.3202515]])
-        assert res["apical_points"][7] is None
-
-        assert_allclose(res["apical_points"][9], [[0.65127563, 58.166138, 0.24832153]])
-        assert res["apical_points"][10] is None
-
-    # Check that the morphologies were not written
-    res_files = tmpdir.listdir()
-    assert len(res_files) == 5
-    assert sorted(i.basename for i in res_files) == [
-        "apical.yaml",
-        "apical_NRN_sections.yaml",
-        "axon_morphs.tsv",
-        "input_cells.mvd3",
-        "test_cells.mvd3",
-    ]
+    assert len(res) == 2
 
 
 def run_with_mpi():

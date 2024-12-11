@@ -1,4 +1,5 @@
 import json
+import pandas as pd
 from voxcell.cell_collection import CellCollection
 
 if __name__ == "__main__":
@@ -12,7 +13,17 @@ if __name__ == "__main__":
     except:
         pass
 
+    cells_df = CellCollection.load("nodes.h5").as_dataframe()
+    cells_df["region"] = "O0"
 
-    cells = CellCollection.load("nodes.h5")
-    cells.properties["region"] = "O0"
-    cells.save('nodes.h5')
+    # zoom into center of region to avoid boundary effects
+    cells_df = cells_df[(400 > cells_df.x) & (cells_df.x > -400)]
+    cells_df = cells_df[(2040 > cells_df.y)]
+    cells_df = cells_df[(400 > cells_df.z) & (cells_df.z > -400)]
+    dfs = []
+    for mtype in cells_df.mtype.unique():
+        dfs.append(cells_df[cells_df.mtype == mtype].sample(10))
+    cells_df = pd.concat(dfs).reset_index(drop=True)
+    print(len(cells_df.index), "cells to synthesize")
+    cells_df.index += 1
+    CellCollection.from_dataframe(cells_df).save("nodes.h5")

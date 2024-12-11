@@ -1,6 +1,5 @@
 """Create the pia mesh for O1 atlas."""
-import os
-
+import numpy as np
 from neurocollage.mesh_helper import MeshHelper
 
 if __name__ == "__main__":
@@ -10,3 +9,10 @@ if __name__ == "__main__":
     # hence an artificial shift of the outer boundaries
     mesh.apply_translation([0, 2, 0])
     mesh.export("pia_mesh.obj")
+
+    meshes = mesh_helper.get_layer_meshes()
+    for i, mesh in enumerate(meshes):
+        mesh.export(f"L{i+1}_mesh.obj")
+        # meshes to use with brayns, in world coordinate, not voxel ids
+        mesh.vertices = mesh.vertices * 10.0 + np.array([-810.0, -10.0, -700.0])
+        mesh.export(f"L{i+1}_mesh_viz.obj", include_color=False, include_texture=False)

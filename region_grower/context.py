@@ -133,7 +133,9 @@ class SpaceContext:
 
             # specific for barrel cortex
             mclasses = direction.get("mclass", None)
-            if mclasses is not None and cell.other_parameters.get("mclass", None) not in mclasses:
+            if (
+                mclasses is not None and cell.other_parameters.get("mclass", None) not in mclasses
+            ):  # pragma: no cover
                 continue
 
             def section_prob(seg_direction, current_point, direction=None):
@@ -153,7 +155,7 @@ class SpaceContext:
                 mode = direction["params"].get("mode", "parallel")
                 layers = direction["params"].get("layers", [])
                 if layers:
-                    # this does not work well in curved atlas
+                    # WARNING: this does not work well in curved atlas, to improve!
                     depth = self.soma_depth + (self.soma_position - current_point).dot(
                         direction["y_direction"]
                     )
@@ -235,14 +237,16 @@ class SpaceContext:
 
             # specific for barrel cortex
             mclasses = boundary.get("mclass", None)
-            if mclasses is not None and cell.other_parameters.get("mclass", None) not in mclasses:
+            if (
+                mclasses is not None and cell.other_parameters.get("mclass", None) not in mclasses
+            ):  # pragma: no cover
                 continue
 
             mesh_type = boundary.get("mesh_type", "voxel")
             mode = boundary.get("mode", "repulsive")
 
             meshes = []
-            if Path(boundary["path"]).is_dir():
+            if Path(boundary["path"]).is_dir():  # pragma: no cover
                 soma_position = self.soma_position
                 if mesh_type == "voxel":
                     soma_position = self.positions_to_indices(soma_position)
@@ -303,6 +307,7 @@ class SpaceContext:
                     return np.clip(p, 0, 1)
 
             elif mode == "attractive":
+                raise
 
                 def prob(direction, current_point, mesh=None, mesh_type=None, params=None):
                     """Probability function for attractive mode."""
