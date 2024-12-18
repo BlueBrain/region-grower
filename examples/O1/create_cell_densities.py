@@ -8,6 +8,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+"""Create cell densities."""
 import json
 import os
 import sys

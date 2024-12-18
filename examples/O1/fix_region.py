@@ -8,6 +8,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+"""Fix regions."""
+
 import json
 
 import pandas as pd
@@ -21,7 +23,7 @@ if __name__ == "__main__":
         distr = {"O0": distr["Isocortex"]}
         json.dump(params, open("tmd_parameters.json", "w"), indent=4)
         json.dump(distr, open("tmd_distributions.json", "w"), indent=4)
-    except:
+    except:  # noqa: E722
         pass
 
     cells_df = CellCollection.load("nodes.h5").as_dataframe()

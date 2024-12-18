@@ -26,10 +26,12 @@ from numpy.testing import assert_array_equal
 import region_grower
 from region_grower import RegionGrowerError
 from region_grower import SkipSynthesisError
+
 try:
     from neurots.utils import Y_DIRECTION
 except ImportError:
     from neurots.utils import PIA_DIRECTION as Y_DIRECTION
+
 from region_grower.context import SpaceWorker
 from region_grower.context import SynthesisParameters
 

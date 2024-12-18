@@ -8,6 +8,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+"""Plot synthesized cells."""
+
 import json
 import os
 

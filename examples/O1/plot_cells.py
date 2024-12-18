@@ -8,6 +8,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+"""Plot reconstructed cells."""
+
 import json
 import os
 
