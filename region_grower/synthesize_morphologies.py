@@ -336,8 +336,7 @@ class SynthesizeMorphologies:
         with open(tmd_distributions, "r", encoding="utf-8") as f:
             self.tmd_distributions = convert_from_legacy_neurite_type(json.load(f))
 
-        # pragma: no cover
-        for params in self.tmd_parameters.values():
+        for params in self.tmd_parameters.values():  # pragma: no cover
             for param in params.values():
                 if synthesize_axons:
                     if "axon" not in param["grow_types"]:
@@ -583,13 +582,11 @@ class SynthesizeMorphologies:
             if "boundaries" in self.atlas.region_structure.get(_region, []):
                 boundaries = self.atlas.region_structure[_region]["boundaries"]
                 for boundary in boundaries:
-                    # pragma: no cover
-                    if not Path(boundary["path"]).is_absolute():
+                    if not Path(boundary["path"]).is_absolute():  # pragma: no cover
                         boundary["path"] = str(
                             (self.atlas.region_structure_base_path / boundary["path"]).absolute()
                         )
-                    # pragma: no cover
-                    if boundary.get("multimesh_mode", "closest") == "territories":
+                    if boundary.get("multimesh_mode", "closest") == "territories":  # pragma: no cover
                         territories = self.atlas.atlas.load_data("glomerular_territories")
                         pos = self.cells_data.loc[region_mask, ["x", "y", "z"]].to_numpy()
                         self.cells_data.loc[region_mask, "glomerulus_id"] = territories.lookup(
