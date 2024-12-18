@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.6.0](https://github.com/BlueBrain/region-grower/compare/1.5.1..1.6.0)
+
+> 18 December 2024
+
+### New Features
+
+- Add boundary context (Alexis Arnaudon - [#9](https://github.com/BlueBrain/region-grower/pull/9))
+
+### Fixes
+
+- Update to 3d angles and latest neurots (Alexis Arnaudon - [#10](https://github.com/BlueBrain/region-grower/pull/10))
+
+### General Changes
+
+- Update README.md (Alexis Arnaudon - [1dc1a45](https://github.com/BlueBrain/region-grower/commit/1dc1a45a36ea61407cb44c4bb84f2a625c79a224))
+
 ## [1.5.1](https://github.com/BlueBrain/region-grower/compare/1.5.0..1.5.1)
 
 > 7 November 2024
