@@ -312,7 +312,6 @@ class SpaceContext:
                     return np.clip(p, 0, 1)
 
             elif mode == "attractive":
-                raise
 
                 def prob(direction, current_point, mesh=None, mesh_type=None, params=None):
                     """Probability function for attractive mode."""

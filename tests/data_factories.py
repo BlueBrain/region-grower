@@ -109,14 +109,13 @@ def generate_region_structure_boundary(region_structure_path, out_path, mesh):
 
 def generate_cells_boundary_df():
     """Raw data for the cell collection."""
-    DF_SIZE = 2
     x = [100, -100]
     y = [450, 470]
     z = [0, 0]
     df = pd.DataFrame(
         {
-            "mtype": list(repeat("L2_TPC:A", DF_SIZE)),
-            "region": list(repeat("mc0;2", DF_SIZE)),
+            "mtype": list(repeat("L2_TPC:A", 2)),
+            "region": list(repeat("mc0;2", 2)),
             "x": x,
             "y": y,
             "z": z,

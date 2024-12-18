@@ -23,15 +23,14 @@ from neurots import NeuroTSError
 from numpy.testing import assert_array_almost_equal
 from numpy.testing import assert_array_equal
 
-import region_grower
-from region_grower import RegionGrowerError
-from region_grower import SkipSynthesisError
-
 try:
-    from neurots.utils import Y_DIRECTION
+    from neurots.utils import Y_DIRECTION  # pylint: disable=ungrouped-imports
 except ImportError:
     from neurots.utils import PIA_DIRECTION as Y_DIRECTION
 
+import region_grower
+from region_grower import RegionGrowerError
+from region_grower import SkipSynthesisError
 from region_grower.context import SpaceWorker
 from region_grower.context import SynthesisParameters
 
