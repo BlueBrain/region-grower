@@ -1,0 +1,205 @@
+O0:
+  layers:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  names:
+    1: layer 1
+    2: layer 2
+    3: layer 3
+    4: layer 4
+    5: layer 5
+    6: layer 6
+  region_queries:
+    1: '@.*1$'
+    2: '@.*2[a|b]?$'
+    3: '@.*3$'
+    4: '@.*4$'
+    5: '@.*5$'
+    6: '@.*6[a|b]?$'
+  thicknesses:
+    1: 165
+    2: 149
+    3: 353
+    4: 190
+    5: 525
+    6: 700
+  boundaries:
+    - mtypes:
+      - L2_TPC:A
+      - L2_TPC:B
+      - L3_TPC:A
+      - L3_TPC:C
+      - L4_TPC
+      - L5_TPC:A
+      - L5_TPC:B
+      - L5_TPC:C
+      - L5_UPC
+      - L1_DAC
+      - L1_HAC
+      - L1_NGC-SA
+      - L1_NGC-DA
+      - L1_SAC
+      - L1_LAC
+      - L23_MC
+      - L4_MC
+      - L5_MC
+      - L6_MC
+      - L23_ChC
+      - L23_NBC
+      - L23_DBC
+      - L23_LBC
+      - L23_BTC
+      - L23_NGC
+      - L23_BP
+      neurite_types:
+        - apical_dendrite
+        - basal_dendrite
+        - axon
+      params_section:
+        d_min: 2
+        d_max: 20
+      path: pia_mesh.obj
+  directions:
+    - mtypes:
+      - L1_HAC
+      - L1_DAC
+      - L1_LAC
+      - L1_SAC
+      neurite_types:
+        - axon
+      params:
+        direction: [0, 1, 0]
+        mode: perpendicular
+        layers: [1]
+    - mtypes:
+      - L1_HAC
+      - L1_DAC
+      - L1_LAC
+      - L1_SAC
+      neurite_types:
+        - axon
+      params:
+        direction: [0, -1, 0]
+        mode: parallel
+        layers: [2, 3, 4]
+    - mtypes:
+      - L1_NGC-SA
+      - L1_NGC-DA
+      neurite_types:
+        - axon
+      processes:
+        - major
+      params:
+        direction: [0, 1, 0]
+        power: 1.0
+        mode: perpendicular
+    - mtypes:
+      - L23_BP
+      - L23_DBC
+      - L23_BTC
+      - L23_LBC
+      neurite_types:
+        - axon
+      processes:
+        - major
+      params:
+        direction: [0, -1.0, 0]
+        power: 1.5
+        mode: parallel
+    - mtypes:
+      - L4_DBC
+      - L4_BTC
+      - L4_LBC
+      - L5_DBC
+      - L5_BTC
+      - L5_SBC
+      - L5_LBC
+      - L6_DBC
+      - L6_BTC
+      - L6_LBC
+      neurite_types:
+        - axon
+      processes:
+        - major
+      params:
+        direction: [0, 1.0, 0]
+        power: 1.5
+        mode: parallel
+    - mtypes:
+      - L23_ChC
+      neurite_types:
+        - axon
+      processes:
+        - major
+      params:
+        direction: [0, -1.0, 0]
+        power: 0.5
+        mode: parallel
+    - mtypes:
+      - L4_ChC
+      neurite_types:
+        - axon
+      processes:
+        - major
+      params:
+        direction: [0, 1.0, 0]
+        power: 1.0
+        mode: parallel
+    - mtypes:
+      - L23_MC
+      - L4_MC
+      - L5_MC
+      - L6_MC
+      neurite_types:
+        - axon
+      processes:
+        - major
+      params:
+        direction: [0, 1.0, 0]
+        power: 2.0
+        layers: [2, 3, 4, 5, 6]
+        mode: parallel
+    - mtypes:
+      - L23_MC
+      - L4_MC
+      - L5_MC
+      - L6_MC
+      neurite_types:
+        - axon
+      params:
+        direction: [0, 1.0, 0]
+        power: 2.0
+        layers: [1]
+        mode: perpendicular
+    - mtypes:
+      - L2_IPC
+      - L2_TPC:A
+      - L2_TPC:B
+      - L3_TPC:A
+      - L3_TPC:C
+      - L4_SSC
+      neurite_types:
+        - axon
+      processes:
+        - major
+      params:
+        direction: [0, -1.0, 0]
+        power: 1.0
+        mode: parallel
+    - mtypes:
+      - L4_BP
+      - L5_BP
+      - L6_BP
+      neurite_types:
+        - axon
+      processes:
+        - major
+      params:
+        direction: [0, 1.0, 0]
+        power: 0.8
+        layers: [2, 3, 4, 5]
+        mode: parallel

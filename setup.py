@@ -21,15 +21,17 @@ reqs = [
     "dask[dataframe, distributed]>=2023.3.2",
     "diameter-synthesis>=0.5.4,<1",
     "morphio>=3.3.6,<4",
-    "morph-tool[nrn]>=2.9,<3",
+    "morph-tool[nrn]>=2.11,<3",
     "neuroc>=0.3,<1",
-    "neurom>=3,<4",
-    "neurots>=3.7,<4",
-    "numpy>=1.22",
-    "pandas>=1.5.3",
-    "tqdm>=4.28.1",
-    "voxcell>=3.1.1,<4",
-    "pynrrd>=0.4.0,<1.0",  # temp fix for nrrd saving in voxcell
+    "neurom>=3.2,<4",
+    "neurots>=3.6,<4",
+    "numpy>=1.26",
+    "pandas>=2.1",
+    "tqdm>=4.60",
+    "voxcell>=3.1.5,<4",
+    "pynrrd>=0.4.0",
+    "trimesh>=3.23",
+    "rtree>=1.0.1",
 ]
 
 mpi_extras = [
@@ -47,7 +49,7 @@ doc_reqs = [
 ]
 
 test_reqs = [
-    "brainbuilder>=0.20",
+    "brainbuilder>=0.20.1",
     "dictdiffer>=0.9",
     "pytest>=6.2.5",
     "pytest-click>=1",
@@ -56,6 +58,8 @@ test_reqs = [
     "pytest-html>=2",
     "pytest-mock>=3.5",
     "pytest-xdist>=3.0.2",
+    "neurocollage>=0.3.6",
+    "scikit-image>=0.19",
 ]
 
 setup(

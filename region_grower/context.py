@@ -17,13 +17,18 @@ the placement_algorithm package to synthesize circuit morphologies.
 # SPDX-License-Identifier: Apache-2.0
 #
 
+import json
 import os
 from collections import defaultdict
 from copy import deepcopy
+from functools import partial
+from pathlib import Path
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
+
+import trimesh
 
 os.environ.setdefault("NEURON_MODULE_OPTIONS", "-nogui")  # suppress NEURON warning
 # This environment variable must be set before 'NEURON' is loaded in 'morph_tool.nrnhines'.
@@ -43,8 +48,15 @@ from neuroc.scale import scale_morphology  # noqa: E402 ; pylint: disable=C0413
 from neuroc.scale import scale_section  # noqa: E402 ; pylint: disable=C0413
 from neurots import NeuronGrower  # noqa: E402 ; pylint: disable=C0413
 from neurots import NeuroTSError  # noqa: E402 ; pylint: disable=C0413
-from neurots.utils import Y_DIRECTION  # noqa: E402 ; pylint: disable=C0413
+
+try:
+    from neurots.utils import Y_DIRECTION  # noqa: E402 ; pylint: disable=C0413
+except ImportError:
+    from neurots.utils import PIA_DIRECTION as Y_DIRECTION  # noqa: E402 ; pylint: disable=C0413
+
+from voxcell import VoxcellError  # noqa: E402 ; pylint: disable=C0413
 from voxcell.cell_collection import CellCollection  # noqa: E402 ; pylint: disable=C0413
+from voxcell.voxel_data import OrientationField  # noqa: E402 ; pylint: disable=C0413
 
 from region_grower import RegionGrowerError  # noqa: E402 ; pylint: disable=C0413
 from region_grower import SkipSynthesisError  # noqa: E402 ; pylint: disable=C0413
@@ -79,6 +91,7 @@ class CellState:
     orientation: Matrix
     mtype: str
     depth: float
+    other_parameters: Dict = {}
 
     def lookup_orientation(self, vector: Optional[Point] = None) -> np.array:
         """Returns the looked-up orientation for the given position.
@@ -94,6 +107,252 @@ class SpaceContext:
 
     layer_depths: List
     cortical_depths: List
+    y_direction: List = None
+    soma_position: float = None
+    soma_depth: float = None
+    boundaries: List = None
+    directions: List = None
+    atlas_info: Dict = {}  # voxel_dimensions, offset and shape from atlas for indices conversion
+    orientations = None
+    mesh = None
+
+    def indices_to_positions(self, indices):
+        """Local version of voxcel's function to prevent atlas loading."""
+        return indices * np.array(self.atlas_info["voxel_dimensions"]) + np.array(
+            self.atlas_info["offset"]
+        )
+
+    def positions_to_indices(self, positions):
+        """Local and reduced version of voxcel's function to prevent atlas loading."""
+        return (positions - np.array(self.atlas_info["offset"])) / np.array(
+            self.atlas_info["voxel_dimensions"]
+        )
+
+    def get_direction(self, cell):  # pragma: no cover
+        """Get direction data for the given mtype."""
+        directions = []
+        for direction in self.directions:  # pylint: disable=not-an-iterable
+            mtypes = direction.get("mtypes", None)
+            if mtypes is not None and cell.mtype not in mtypes:
+                continue
+
+            # specific for barrel cortex
+            mclasses = direction.get("mclass", None)
+            if (
+                mclasses is not None and cell.other_parameters.get("mclass", None) not in mclasses
+            ):  # pragma: no cover
+                continue
+
+            def section_prob(seg_direction, current_point, direction=None):
+                """Probability function for the sections."""
+                if self.orientations is None:
+                    self.orientations = OrientationField.load_nrrd(
+                        self.atlas_info["direction_nrrd_path"]
+                    )
+                try:
+                    target_direction = np.dot(
+                        self.orientations.lookup(current_point), direction["params"]["direction"]
+                    )[0]
+                except VoxcellError:
+                    # if we are outside, we do nothing
+                    return 1.0
+                power = direction["params"].get("power", 1.0)
+                mode = direction["params"].get("mode", "parallel")
+                layers = direction["params"].get("layers", [])
+                if layers:
+                    # WARNING: this does not work well in curved atlas, to improve!
+                    depth = self.soma_depth + (self.soma_position - current_point).dot(
+                        direction["y_direction"]
+                    )
+                    in_layer = False
+                    for layer in layers:
+                        if self.layer_depths[layer - 1] < depth < self.layer_depths[layer]:
+                            in_layer = True
+                    if not in_layer:
+                        return 1.0
+
+                if mode == "parallel":
+                    p = (1.0 - np.arccos(seg_direction.dot(target_direction)) / np.pi) ** power
+                elif mode == "perpendicular":
+                    p = (
+                        1.0
+                        - abs(np.arccos(seg_direction.dot(target_direction)) / np.pi * 2.0 - 1.0)
+                    ) ** power
+
+                else:
+                    raise ValueError(f"mode {mode} not understood for direction probability")
+
+                if np.isnan(p):
+                    # sometimes we get nan from this computation, to check why
+                    return 1.0
+
+                return np.clip(p, 0, 1)
+
+            direction["section_prob"] = partial(section_prob, direction=direction)
+            directions.append(direction)
+        return directions
+
+    # pragma: no cover
+    def get_boundaries(
+        self, cell
+    ):  # pylint: disable=too-many-locals,too-many-statements,too-many-branches
+        """Returns a dict with boundaries data for NeuroTS."""
+
+        def get_distance_to_mesh(mesh, ray_origin, ray_direction, mesh_type):
+            """Compute distances from point/directions to a mesh."""
+            debug = os.environ.get("REGION_GROWER_BOUNDARY_DEBUG", 0)
+
+            if mesh_type == "voxel":
+                ray_origin = self.positions_to_indices(ray_origin)
+
+            locations = mesh.ray.intersects_location(
+                ray_origins=[ray_origin], ray_directions=[ray_direction]
+            )[0]
+            if len(locations):
+                intersect = locations[0]
+                if mesh_type == "voxel":
+                    intersect = self.indices_to_positions(intersect)
+                    ray_origin = self.indices_to_positions(ray_origin)
+
+                dist = np.linalg.norm(intersect - ray_origin)
+
+                if debug:  # pragma: no cover
+                    x, y, z = ray_origin
+                    vx, vy, vz = ray_direction
+                    with open("data.csv", "a", encoding="utf8") as file:
+                        print(f"{x}, {y}, {z}, {vx}, {vy}, {vz}, {dist}", file=file)
+
+                return dist
+
+            if debug:  # pragma: no cover
+                x, y, z = ray_origin
+                vx, vy, vz = ray_direction
+                with open("data.csv", "a", encoding="utf8") as file:
+                    print(f"{x}, {y}, {z}, {vx}, {vy}, {vz}, {-100}", file=file)
+
+            return np.inf  # pragma: no cover
+
+        # add here necessary logic to convert raw config data to NeuroTS context data
+        all_boundaries = json.loads(self.boundaries)
+        boundaries = []
+        for boundary in all_boundaries:
+            mtypes = boundary.get("mtypes", None)
+            if mtypes is not None and cell.mtype not in mtypes:
+                continue
+
+            # specific for barrel cortex
+            mclasses = boundary.get("mclass", None)
+            if (
+                mclasses is not None and cell.other_parameters.get("mclass", None) not in mclasses
+            ):  # pragma: no cover
+                continue
+
+            mesh_type = boundary.get("mesh_type", "voxel")
+            mode = boundary.get("mode", "repulsive")
+
+            meshes = []
+            if Path(boundary["path"]).is_dir():  # pragma: no cover
+                soma_position = self.soma_position
+                if mesh_type == "voxel":
+                    soma_position = self.positions_to_indices(soma_position)
+
+                if boundary.get("multimesh_mode", "closest") == "closest":
+                    mesh_paths = list(Path(boundary["path"]).iterdir())
+                    for mesh_path in mesh_paths:
+                        meshes.append(trimesh.load_mesh(mesh_path))
+                        distances = [
+                            trimesh.proximity.closest_point(mesh, [soma_position])[1][0]
+                            for mesh in meshes
+                        ]
+                    mesh_id = np.argmin(distances)
+                    boundary["mesh_name"] = Path(mesh_paths[mesh_id]).stem
+                    self.mesh = meshes[mesh_id]
+
+                if boundary.get("multimesh_mode", "closest") == "closest_y":
+                    mesh_paths = list(Path(boundary["path"]).iterdir())
+                    meshes = [trimesh.load_mesh(mesh_path) for mesh_path in mesh_paths]
+                    # this is assuming the original direction can be used
+                    # as straight line, refinement would be to follow the vector field
+                    distances = [
+                        np.linalg.norm(
+                            np.cross(soma_position - mesh.center_mass, boundary["direction"])
+                        )
+                        for mesh in meshes
+                    ]
+
+                    mesh_id = np.argmin(distances)
+                    boundary["mesh_name"] = Path(mesh_paths[mesh_id]).stem
+                    self.mesh = meshes[mesh_id]
+
+                if boundary.get("multimesh_mode", "closest") == "inside":
+                    for mesh_path in Path(boundary["path"]).iterdir():
+                        _mesh = trimesh.load_mesh(mesh_path)
+                        if _mesh.contains([soma_position])[0]:
+                            self.mesh = _mesh
+                            break
+
+                if boundary.get("multimesh_mode", "closest") == "territories":
+                    glom_id = int(cell.other_parameters["glomerulus_id"])
+                    if glom_id >= 0:
+                        self.mesh = trimesh.load_mesh(
+                            Path(boundary["path"]) / f"glomeruli_{glom_id:03d}.obj"
+                        )
+
+            else:
+                self.mesh = trimesh.load_mesh(boundary["path"])
+
+            if mode == "repulsive":
+
+                def prob(direction, current_point, mesh=None, mesh_type=None, params=None):
+                    """Probability function for repulsive mode."""
+                    dist = get_distance_to_mesh(mesh, current_point, direction, mesh_type=mesh_type)
+                    p = (dist - params.get("d_min", 0)) / (
+                        params.get("d_max", 100) - max(0, params.get("d_min", 0))
+                    ) ** params.get("power", 1.5)
+                    return np.clip(p, 0, 1)
+
+            elif mode == "attractive":
+
+                def prob(direction, current_point, mesh=None, mesh_type=None, params=None):
+                    """Probability function for attractive mode."""
+                    if mesh_type == "voxel":
+                        current_point_id = self.positions_to_indices(current_point)
+                    else:
+                        current_point_id = current_point
+
+                    if mesh.contains([current_point_id])[0]:
+                        # when we get inside the mesh, we are free
+                        return 1.0
+
+                    closest_point = trimesh.proximity.closest_point(mesh, [current_point_id])[0][0]
+                    if mesh_type == "voxel":
+                        closest_point = self.indices_to_positions(closest_point)
+
+                    mesh_direction = closest_point - current_point
+                    distance = np.linalg.norm(mesh_direction)
+                    if params.get("d_min", 0) < distance < params.get("d_max", 100):
+                        p = (
+                            1 - np.arccos(direction.dot(mesh_direction) / distance) / np.pi
+                        ) ** params.get("power", 1.0)
+                        return np.clip(p, 0, 1)
+                    return 1.0
+
+            else:
+                raise ValueError(f"boundary mode {mode} not understood!")
+
+            if self.mesh is not None:
+                if "params_section" in boundary:
+                    boundary["section_prob"] = partial(
+                        prob, mesh=self.mesh, mesh_type=mesh_type, params=boundary["params_section"]
+                    )
+
+                if "params_trunk" in boundary:
+                    boundary["trunk_prob"] = partial(
+                        prob, mesh=self.mesh, mesh_type=mesh_type, params=boundary["params_trunk"]
+                    )
+
+            boundaries.append(boundary)
+        return boundaries
 
     def layer_fraction_to_position(self, layer: int, layer_fraction: float) -> float:
         """Returns an absolute position from a layer and a fraction of the layer.
@@ -106,6 +365,9 @@ class SpaceContext:
         Returns: target depth
         """
         layer_thickness = self.layer_depths[layer] - self.layer_depths[layer - 1]
+        if layer_thickness <= 0:
+            raise SkipSynthesisError(f"Layer {layer} has no/negative thickness")
+
         return self.layer_depths[layer - 1] + (1.0 - layer_fraction) * layer_thickness
 
     def lookup_target_reference_depths(self, depth: float) -> np.array:
@@ -122,7 +384,6 @@ class SpaceContext:
             # we round to avoid being outside due to numerical precision
             if np.round(depth, 3) <= np.round(layer_depth, 3):
                 return layer_depth, cortical_depth
-
         raise RegionGrowerError(f"Current depth ({depth}) is outside of circuit boundaries")
 
     def distance_to_constraint(self, depth: float, constraint: Dict) -> Optional[float]:
@@ -139,7 +400,10 @@ class SpaceContext:
         constraint_position = self.layer_fraction_to_position(
             constraint["layer"], constraint["fraction"]
         )
-        return depth - constraint_position
+        out = depth - constraint_position
+        if np.isnan(out):
+            raise SkipSynthesisError("Nan in some PH values")
+        return out
 
 
 @attr.s(auto_attribs=True)
@@ -152,7 +416,6 @@ class SynthesisParameters:
     axon_morph_scale: Optional[float] = None
     rotational_jitter_std: float = None
     scaling_jitter_std: float = None
-    recenter: bool = True
     seed: int = 0
     min_hard_scale: float = 0
 
@@ -194,10 +457,23 @@ class SpaceWorker:
     def _correct_position_orientation_scaling(self, params_orig: Dict) -> Dict:
         """Return a copy of the parameter with the correct orientation and scaling."""
         params = deepcopy(params_orig)
+        if self.context.directions is not None:
+            if isinstance(self.context.directions, str):
+                self.context.directions = json.loads(self.context.directions)
+            for direction in self.context.directions:
+                direction["y_direction"] = self.cell.lookup_orientation(Y_DIRECTION).tolist()
+
+        if self.context.boundaries is not None:
+            boundaries = json.loads(self.context.boundaries)
+            for boundary in boundaries:
+                if boundary.get("multimesh_mode", "closest") == "closest_y":
+                    boundary["direction"] = self.cell.lookup_orientation(Y_DIRECTION).tolist()
+
+            self.context.boundaries = json.dumps(boundaries)
 
         for neurite_type in params["grow_types"]:
             if isinstance(params[neurite_type]["orientation"], dict):
-                params["pia_direction"] = self.cell.lookup_orientation(Y_DIRECTION).tolist()
+                self.context.y_direction = self.cell.lookup_orientation(Y_DIRECTION).tolist()
             if isinstance(params[neurite_type]["orientation"], list):
                 params[neurite_type]["orientation"] = [
                     self.cell.lookup_orientation(orient).tolist()
@@ -253,7 +529,6 @@ class SpaceWorker:
                 target_min_length=target_min_length,
                 target_max_length=target_max_length,
             )
-
             if scale > self.params.min_hard_scale:
                 scale_section(root_section, ScaleParameters(mean=scale), recursive=True)
                 is_deleted = False
@@ -293,7 +568,10 @@ class SpaceWorker:
         for _ in range(self.internals.retries):
             try:
                 return self._synthesize_once(rng)
-            except NeuroTSError:
+            except (
+                NeuroTSError,
+                ValueError,
+            ):  # value error is raised when nan in orientation results in soma generation error
                 pass
 
         raise SkipSynthesisError(
@@ -314,6 +592,14 @@ class SpaceWorker:
                 synthesized.apical_points, morph_path
             )
 
+        # enforce freeing memory of orientation nrrd data and meshes
+        if hasattr(self.context, "orientations"):
+            if self.context.orientations is not None:
+                del self.context.orientations
+        if hasattr(self.context, "mesh"):
+            if self.context.mesh is not None:
+                del self.context.mesh
+
         return {
             "name": morph_name,
             "apical_points": synthesized.apical_points,
@@ -324,14 +610,7 @@ class SpaceWorker:
     def _synthesize_once(self, rng) -> SynthesisResult:
         """One try to synthesize the cell."""
         params = self._correct_position_orientation_scaling(self.params.tmd_parameters)
-
-        # Today we don't use the atlas during the synthesis (we just use it to
-        # generate the parameters) so we can
-        # grow the cell as if it was in [0, 0, 0]
-        # But the day we use it during the actual growth, we will need to grow the cell at its
-        # absolute position and translate to [0, 0, 0] after the growth
-        if self.params.recenter:
-            params["origin"] = [0, 0, 0]
+        params["origin"] = self.cell.position.tolist()
 
         if self.params.tmd_parameters["diameter_params"]["method"] == "external":
             external_diametrizer = build_diameters.build
@@ -343,16 +622,30 @@ class SpaceWorker:
         else:
             axon_morph = None
 
+        context = {"debug_data": self.debug_infos["input_scaling"]}
+        if self.context.y_direction is not None:
+            context["y_direction"] = self.context.y_direction
+        if self.context.directions is not None:
+            if "constraints" not in context:
+                context["constraints"] = []
+            context["constraints"] += self.context.get_direction(self.cell)
+        if self.context.boundaries is not None:
+            if "constraints" not in context:
+                context["constraints"] = []
+            context["constraints"] += self.context.get_boundaries(self.cell)
+            if context["constraints"] and "mesh_name" in context["constraints"][-1]:
+                self.debug_infos["mesh_name"] = context["constraints"][-1]["mesh_name"]
+
         grower = NeuronGrower(
             input_parameters=params,
             input_distributions=self.params.tmd_distributions,
             external_diametrizer=external_diametrizer,
             skip_preprocessing=True,
-            context={"debug_data": self.debug_infos["input_scaling"]},
+            context=context,
             rng_or_seed=rng,
         )
         grower.grow()
-
+        mt.translate(grower.neuron, -self.cell.position)
         self._post_growth_rescaling(grower, params)
 
         if axon_morph is not None:

@@ -42,14 +42,16 @@ class AtlasHelper:
         if region_structure_path is not None and Path(region_structure_path).exists():
             with open(region_structure_path, "r", encoding="utf-8") as region_file:
                 self.region_structure = yaml.safe_load(region_file)
+                self.region_structure_base_path = Path(region_structure_path).parent
         else:
-            raise ValueError("Please provide an existing region_structure file.")
+            raise ValueError(f"region_structure file not found at {region_structure_path}.")
 
         self.regions = list(self.region_structure.keys())
         self.layers = {}
         for region in self.regions:
             self.layers[region] = self.region_structure[region]["layers"]
         self.y = atlas.load_data("[PH]y")
+
         self.brain_regions = atlas.load_data("brain_regions")
         self.orientations = atlas.load_data("orientation", cls=OrientationField)
 

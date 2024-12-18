@@ -295,6 +295,12 @@ def generate_distributions(
     is_flag=True,
     default=False,
 )
+@click.option(
+    "--synthesize-axons",
+    help="Use to synthesize axons or not",
+    is_flag=True,
+    default=False,
+)
 def synthesize_morphologies(**kwargs):  # pylint: disable=too-many-arguments, too-many-locals
     """Synthesize morphologies."""
     if mpi_enabled and kwargs.get("with_mpi", False):  # pragma: no cover

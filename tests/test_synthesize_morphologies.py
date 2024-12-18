@@ -11,19 +11,14 @@
 #
 
 # pylint: disable=missing-function-docstring
-import json
 import logging
 import os
 import shutil
 from copy import deepcopy
-from itertools import combinations
 from pathlib import Path
 from uuid import uuid4
 
-import attr
 import dask
-import jsonschema
-import neurots
 import pandas as pd
 import pytest
 import yaml
@@ -31,10 +26,7 @@ from morph_tool.utils import iter_morphology_files
 from morphio import Morphology
 from numpy.testing import assert_allclose
 from voxcell import CellCollection
-from voxcell import RegionMap
 
-from region_grower import RegionGrowerError
-from region_grower.synthesize_morphologies import RegionMapper
 from region_grower.synthesize_morphologies import SynthesizeMorphologies
 
 DATA = Path(__file__).parent / "data"
@@ -65,6 +57,7 @@ def create_args(
     axon_morph_tsv,
     out_apical_NRN_sections,
     min_depth,
+    region_structure,
 ):
     """Create the arguments used for tests."""
     args = {}
@@ -102,9 +95,33 @@ def create_args(
     args["max_drop_ratio"] = 0.5
     args["rotational_jitter_std"] = 10
     args["scaling_jitter_std"] = 0.5
-    args["region_structure"] = DATA / "region_structure.yaml"
+    args["region_structure"] = region_structure
 
     return args
+
+
+def test_synthesize_no_thicknesses(
+    tmpdir,
+    small_O1_path,
+    input_cells,
+    axon_morph_tsv,
+):  # pylint: disable=unused-argument
+    """Test morphology synthesis."""
+    tmp_folder = Path(tmpdir)
+
+    args = create_args(
+        False,
+        tmp_folder,
+        input_cells,
+        small_O1_path,
+        None,
+        None,
+        800,
+        DATA / "region_structure_no_thicknesses.yaml",
+    )
+
+    synthesizer = SynthesizeMorphologies(**args)
+    synthesizer.synthesize()
 
 
 @pytest.mark.parametrize("min_depth", [25, 800])
@@ -130,6 +147,7 @@ def test_synthesize(
         axon_morph_tsv if with_axon else None,
         "apical_NRN_sections.yaml" if with_NRN else None,
         min_depth,
+        DATA / "region_structure.yaml",
     )
 
     synthesizer = SynthesizeMorphologies(**args)
@@ -178,6 +196,7 @@ def test_synthesize_empty_population(
         None,
         None,
         25,
+        DATA / "region_structure.yaml",
     )
     # Update population to make it empty
     cells = CellCollection.load(args["input_cells"])
@@ -216,6 +235,7 @@ def test_synthesize_dask_config(
         None,
         None,
         100,
+        DATA / "region_structure.yaml",
     )
 
     custom_scratch_config = str(tmp_folder / "custom_scratch_config")
@@ -274,6 +294,7 @@ def test_synthesize_skip_write(
         axon_morph_tsv if with_axon else None,
         "apical_NRN_sections.yaml" if with_NRN else None,
         min_depth,
+        DATA / "region_structure.yaml",
     )
     args["skip_write"] = True
     args["nb_processes"] = nb_processes
@@ -303,16 +324,16 @@ def test_synthesize_skip_write(
         "e8d79f49af6d114c4a6f188a424e617b",
     ]
     assert [[i[0].tolist()] if i else i for i in res["apical_points"].tolist()] == [
-        [[-14.571318626403809, 114.34882354736328, 6.069221019744873]],
+        [[-14.571319580078125, 114.34881591796875, 6.0692138671875]],
         None,
-        [[-70.52275085449219, 129.78277587890625, -7.857072830200195]],
+        [[-70.52275085449219, 129.78277587890625, -7.8570709228515625]],
         None,
-        [[4.3279709815979, 59.805320739746094, -0.6919530630111694]],
+        [[4.327972412109375, 59.805328369140625, -0.69195556640625]],
         None,
-        [[1.484359622001648, 52.40570831298828, -4.806603908538818]],
+        [[1.4843597412109375, 52.40570068359375, -4.806610107421875]],
         None,
-        [[13.616881370544434, 252.8784942626953, 4.428127288818359]],
-        [[-77.39925384521484, 345.1856994628906, -33.771915435791016]],
+        [[13.61688232421875, 252.87850952148438, 4.428131103515625]],
+        [[-77.39925384521484, 345.18572998046875, -33.77191162109375]],
     ]
 
     # Check that the morphologies were not written
@@ -324,6 +345,37 @@ def test_synthesize_skip_write(
         "input_cells.mvd3",
         "test_cells.mvd3",
     ]
+
+
+def test_synthesize_boundary(
+    tmpdir,
+    small_O1_path,
+    input_cells_boundary,
+    mesh,
+):  # pylint: disable=unused-argument,too-many-locals
+    """Test morphology synthesis but skip write step."""
+    tmp_folder = Path(tmpdir)
+
+    # pylint: disable=import-outside-toplevel
+    from .data_factories import generate_region_structure_boundary
+
+    region_structure = "region_structure.yaml"
+    generate_region_structure_boundary(DATA / "region_structure.yaml", region_structure, mesh)
+    args = create_args(
+        False,
+        tmp_folder,
+        input_cells_boundary,
+        small_O1_path,
+        None,
+        None,
+        800,
+        region_structure,
+    )
+    args["skip_write"] = True
+
+    synthesizer = SynthesizeMorphologies(**args)
+    res = synthesizer.synthesize()
+    assert len(res) == 2
 
 
 def run_with_mpi():
@@ -357,6 +409,7 @@ def run_with_mpi():
         tmp_folder / "axon_morphs.tsv",
         "apical_NRN_sections.yaml",
         min_depth=25,
+        region_structure=DATA / "region_structure.yaml",
     )
 
     setup_logger("debug", prefix=f"Rank = {rank} - ")
@@ -387,260 +440,12 @@ def run_with_mpi():
         print(f"============= #{rank}: Checking results")
         expected_size = 18
         assert len(list(iter_morphology_files(tmp_folder))) == expected_size
-
-        check_yaml(DATA / ("apical.yaml"), args["out_apical"])
-        check_yaml(
-            DATA / ("apical_NRN_sections.yaml"),
-            args["out_apical_nrn_sections"],
-        )
+        check_yaml(DATA / "apical.yaml", args["out_apical"])
+        check_yaml(DATA / "apical_NRN_sections.yaml", args["out_apical_nrn_sections"])
     finally:
         # Clean the directory
         print(f"============= #{rank}: Cleaning")
         shutil.rmtree(tmp_folder)
-
-
-def test_verify(cell_collection, tmd_distributions, tmd_parameters, small_O1_path):
-    """Test the `verify` step."""
-    mtype = "L2_TPC:A"
-
-    @attr.s(auto_attribs=True)
-    class Data:
-        """Container to mimic SynthesizeMorphologies class."""
-
-        tmd_distributions: dict
-        tmd_parameters: dict
-        cells: CellCollection
-        region_mapper: dict
-
-    region_mapper = RegionMapper(
-        ["test"], RegionMap.load_json(Path(small_O1_path) / "hierarchy.json")
-    )
-    data = Data(
-        tmd_distributions=tmd_distributions,
-        tmd_parameters=tmd_parameters,
-        cells=cell_collection,
-        region_mapper=region_mapper,
-    )
-    SynthesizeMorphologies.verify(data)
-
-    cell_collection.properties.loc[0, "mtype"] = "UNKNOWN_MTYPE"
-    data = Data(
-        tmd_distributions=tmd_distributions,
-        tmd_parameters=tmd_parameters,
-        cells=cell_collection,
-        region_mapper=region_mapper,
-    )
-    with pytest.raises(
-        RegionGrowerError,
-        match="Missing distributions for mtype 'UNKNOWN_MTYPE' in region 'default'",
-    ):
-        SynthesizeMorphologies.verify(data)
-
-    cell_collection.properties.loc[0, "mtype"] = "L2_TPC:A"
-
-    failing_params = deepcopy(tmd_parameters)
-    del failing_params["default"][mtype]
-    data = Data(
-        tmd_distributions=tmd_distributions,
-        tmd_parameters=failing_params,
-        cells=cell_collection,
-        region_mapper=region_mapper,
-    )
-    with pytest.raises(
-        RegionGrowerError, match="Missing parameters for mtype 'L2_TPC:A' in region 'default'"
-    ):
-        SynthesizeMorphologies.verify(data)
-
-    failing_params = deepcopy(tmd_parameters)
-    del failing_params["default"][mtype]["origin"]
-    data = Data(
-        tmd_distributions=tmd_distributions,
-        tmd_parameters=failing_params,
-        cells=cell_collection,
-        region_mapper=region_mapper,
-    )
-    with pytest.raises(neurots.validator.ValidationError, match=r"'origin' is a required property"):
-        SynthesizeMorphologies.verify(data)
-
-    # Fail when missing attributes
-    attributes = ["layer", "fraction", "slope", "intercept"]
-    good_params = deepcopy(tmd_parameters)
-    good_params["default"][mtype]["context_constraints"] = {
-        "apical_dendrite": {
-            "hard_limit_min": {
-                "layer": 1,
-                "fraction": 0.1,
-            },
-            "extent_to_target": {
-                "slope": 0.5,
-                "intercept": 1,
-                "layer": 1,
-                "fraction": 0.5,
-            },
-            "hard_limit_max": {
-                "layer": 1,
-                "fraction": 0.9,
-            },
-        }
-    }
-    data = Data(
-        tmd_distributions=tmd_distributions,
-        tmd_parameters=good_params,
-        cells=cell_collection,
-        region_mapper=region_mapper,
-    )
-    SynthesizeMorphologies.verify(data)
-    for i in range(1, 5):
-        for missing_attributes in combinations(attributes, i):
-            failing_params = deepcopy(good_params["default"][mtype])
-            for att in missing_attributes:
-                del failing_params["context_constraints"]["apical_dendrite"]["extent_to_target"][
-                    att
-                ]
-            tmd_parameters["default"][mtype] = failing_params
-            data = Data(
-                tmd_distributions=tmd_distributions,
-                tmd_parameters=tmd_parameters,
-                cells=cell_collection,
-                region_mapper=region_mapper,
-            )
-            with pytest.raises(
-                jsonschema.exceptions.ValidationError, match="is a required property"
-            ):
-                SynthesizeMorphologies.verify(data)
-
-
-def test_check_axon_morphology(caplog):
-    """Test the _check_axon_morphology() function."""
-    # pylint: disable=protected-access
-    # Test with no missing name
-    caplog.set_level(logging.WARNING)
-    caplog.clear()
-    df = pd.DataFrame({"axon_name": ["a", "b", "c"], "other_col": [1, 2, 3]})
-
-    assert SynthesizeMorphologies._check_axon_morphology(df) is None
-    assert caplog.record_tuples == []
-
-    # Test with no missing names
-    caplog.clear()
-    df = pd.DataFrame({"axon_name": ["a", None, "c"], "other_col": [1, 2, 3]})
-
-    assert SynthesizeMorphologies._check_axon_morphology(df).tolist() == [0, 2]
-    assert caplog.record_tuples == [
-        (
-            "region_grower.synthesize_morphologies",
-            30,
-            "The following gids were not found in the axon morphology list: [1]",
-        ),
-    ]
-
-
-def test_RegionMapper(small_O1_path):
-    region_mapper = RegionMapper(
-        ["O0", "UNKNOWN"], RegionMap.load_json(Path(small_O1_path) / "hierarchy.json")
-    )
-    # pylint: disable=protected-access
-    assert region_mapper.mapper == {
-        "mc0_Column": "O0",
-        "mc0;6": "O0",
-        "mc0;5": "O0",
-        "mc0;4": "O0",
-        "mc0;3": "O0",
-        "mc0;2": "O0",
-        "mc0;1": "O0",
-        "O0": "O0",
-    }
-    assert region_mapper.inverse_mapper == {
-        "O0": set(["mc0_Column", "mc0;1", "mc0;2", "mc0;3", "mc0;4", "mc0;5", "mc0;6", "O0"]),
-        "default": set(),
-    }
-
-    assert region_mapper["O0"] == "O0"
-    assert region_mapper["mc0;1"] == "O0"
-    assert region_mapper["OTHER"] == "default"
-
-
-def test_inconsistent_params(
-    tmpdir,
-    small_O1_path,
-    input_cells,
-    axon_morph_tsv,
-):  # pylint: disable=unused-argument
-    """Test morphology synthesis but skip write step."""
-    min_depth = 25
-    tmp_folder = Path(tmpdir)
-
-    args = create_args(
-        False,
-        tmp_folder,
-        input_cells,
-        small_O1_path,
-        axon_morph_tsv,
-        "apical_NRN_sections.yaml",
-        min_depth,
-    )
-    args["out_morph_ext"] = ["h5"]
-
-    with pytest.raises(
-        ValueError,
-        match=(
-            r"""The 'out_morph_ext' parameter must contain one of \["asc", "swc"\] when """
-            r"""'with_NRN_sections' is set to True \(current value is \['h5'\]\)\."""
-        ),
-    ):
-        SynthesizeMorphologies(**args)
-
-
-def test_inconsistent_context(
-    tmpdir,
-    small_O1_path,
-    input_cells,
-    axon_morph_tsv,
-    caplog,
-):  # pylint: disable=unused-argument
-    """Test morphology synthesis with inconsistent context constraints."""
-    min_depth = 25
-    tmp_folder = Path(tmpdir)
-
-    args = create_args(
-        False,
-        tmp_folder,
-        input_cells,
-        small_O1_path,
-        axon_morph_tsv,
-        "apical_NRN_sections.yaml",
-        min_depth,
-    )
-    args["nb_processes"] = 0
-
-    with args["tmd_parameters"].open("r", encoding="utf-8") as f:
-        tmd_parameters = json.load(f)
-
-    tmd_parameters["default"]["L2_TPC:A"]["context_constraints"] = {
-        "apical_dendrite": {
-            "extent_to_target": {
-                "slope": 0.5,
-                "intercept": 1,
-                "layer": 1,
-                "fraction": 0.5,
-            }
-        }
-    }
-
-    args["tmd_parameters"] = tmp_folder / "tmd_parameters.json"
-    with args["tmd_parameters"].open("w", encoding="utf-8") as f:
-        json.dump(tmd_parameters, f)
-
-    synthesizer = SynthesizeMorphologies(**args)
-    caplog.set_level(logging.WARNING)
-    caplog.clear()
-    synthesizer.synthesize()
-    assert caplog.record_tuples[0] == (
-        "region_grower.synthesize_morphologies",
-        30,
-        "The morphologies with the following region/mtype couples have inconsistent context and "
-        "constraints: [('default', 'L2_TPC:A')]",
-    )
 
 
 if __name__ == "__main__":  # pragma: no cover

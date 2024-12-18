@@ -28,8 +28,12 @@ from region_grower.morph_io import MorphWriter
 
 from .data_factories import generate_axon_morph_tsv
 from .data_factories import generate_cell_collection
+from .data_factories import generate_cell_collection_boundary
+from .data_factories import generate_cells_boundary_df
 from .data_factories import generate_cells_df
 from .data_factories import generate_input_cells
+from .data_factories import generate_input_cells_boundary
+from .data_factories import generate_mesh
 from .data_factories import generate_small_O1
 from .data_factories import get_cell_mtype
 from .data_factories import get_cell_orientation
@@ -49,6 +53,16 @@ def small_O1_path(tmpdir_factory):
 
 
 @pytest.fixture(scope="session")
+def mesh(small_O1_path, tmpdir_factory):
+    """Generate mesh from atlas."""
+    mesh_path = str(tmpdir_factory.mktemp("mesh") / "mesh.obj")
+
+    atlas = {"atlas": small_O1_path, "structure": DATA / "region_structure.yaml"}
+    generate_mesh(atlas, mesh_path)
+    return mesh_path
+
+
+@pytest.fixture(scope="session")
 def small_O1(small_O1_path):
     """Open the atlas."""
     return Atlas.open(small_O1_path)
@@ -61,6 +75,18 @@ def cells_df():
 
 
 @pytest.fixture(scope="function")
+def cells_boundary_df():
+    """Raw data for the cell collection."""
+    return generate_cells_boundary_df()
+
+
+@pytest.fixture(scope="function")
+def cell_collection_boundary(cells_boundary_df):
+    """The cell collection."""
+    return generate_cell_collection_boundary(cells_boundary_df)
+
+
+@pytest.fixture(scope="function")
 def cell_collection(cells_df):
     """The cell collection."""
     return generate_cell_collection(cells_df)
@@ -70,6 +96,12 @@ def cell_collection(cells_df):
 def input_cells(cell_collection, tmpdir):
     """The path to the MVD3 file containing the cell collection."""
     return generate_input_cells(cell_collection, tmpdir)
+
+
+@pytest.fixture(scope="function")
+def input_cells_boundary(cell_collection_boundary, tmpdir):
+    """The path to the MVD3 file containing the cell collection."""
+    return generate_input_cells_boundary(cell_collection_boundary, tmpdir)
 
 
 @pytest.fixture
@@ -124,7 +156,15 @@ def space_context():
     """A space context object."""
     layer_depth = [0.0, 200.0, 300.0, 400.0, 500.0, 600.0, 800.0]
     thicknesses = [165, 149, 353, 190, 525, 700]
-    return SpaceContext(layer_depths=layer_depth, cortical_depths=np.cumsum(thicknesses))
+    atlas_info = {
+        "voxel_dimensions": [100.0, 100.0, 100.0],
+        "offset": [-1100.0, -100.0, -1000.0],
+        "shape": (22, 10, 20),
+    }
+
+    return SpaceContext(
+        layer_depths=layer_depth, cortical_depths=np.cumsum(thicknesses), atlas_info=atlas_info
+    )
 
 
 @pytest.fixture(scope="function")
