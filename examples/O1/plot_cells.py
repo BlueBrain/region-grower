@@ -1,10 +1,21 @@
-from morph_tool.morphdb import MorphDB
-import neurom as nm
+# LICENSE HEADER MANAGED BY add-license-header
+#
+# Copyright (c) 2023-2024 Blue Brain Project, EPFL.
+#
+# This file is part of region-grower.
+# See https://github.com/BlueBrain/region-grower for further info.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
 import json
 import os
-from neurom import view
-from matplotlib.backends.backend_pdf import PdfPages
+
 import matplotlib.pyplot as plt
+import neurom as nm
+from matplotlib.backends.backend_pdf import PdfPages
+from morph_tool.morphdb import MorphDB
+from neurom import view
 
 if __name__ == "__main__":
     df = MorphDB.from_neurondb(

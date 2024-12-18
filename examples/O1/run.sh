@@ -24,7 +24,7 @@ brainbuilder cells place --composition cell_composition_red.yaml \
     --output nodes.h5
 
 # 6: fix the region name in synthesis and node file (could also use atlas-property in step 5)
-python fix_region.py 
+python fix_region.py
 
 # 7: run synthesis
 rm -rf morphologies

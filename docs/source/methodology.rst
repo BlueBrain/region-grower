@@ -212,11 +212,11 @@ Here is an example:
         mode: perpendicular
         layers: [1, 2]
 
-This block contains a list of rules, with the following entries.  
-* ``mtypes`` is the list of mtypes to apply this rule, 
-* ``neurite_types`` is the list of neurite_types to apply this rule. 
+This block contains a list of rules, with the following entries.
+* ``mtypes`` is the list of mtypes to apply this rule,
+* ``neurite_types`` is the list of neurite_types to apply this rule.
 * ``processes`` is optional and is the list of type of sections in NeuroTS (``major`` or ``secondary``) to differentiate between trunk (``major``) and obliques or collaterals (``secondary``).
-* ``params`` is a dictionary to parametrize the rule. 
+* ``params`` is a dictionary to parametrize the rule.
 
    * First, we specify the ``direction`` with a 3-vector, where ``[0, 1, 0]`` is the pia direction and ``[0, -1, 0]`` is opposite. For non-cortical regions, pia generalises to ``y`` coordinate of the orientation vector in ``orientation.nrrd``.
    * The ``mode`` selects between ``parallel`` (default if omitted) to follow the direction, and ``perpendicular`` to follow the perpendicular directions, hence a plane.
@@ -251,18 +251,18 @@ Here is an example:
 
 This block contains a list of rules for boundary constraints, similar to the direction for ``mtypes`` and ``neurite_types`` entries.
 Each rule contains the following:
-* a ``path`` entry to a mesh (readabe by https://github.com/mikedh/trimesh) in either voxel id or coordinates. If the path is relative, it will be interpreted as relative to the location of ``region_structure.yaml`` file. If the ``path`` is a folder, then it must contain mesh files which will be used for this rule. 
+* a ``path`` entry to a mesh (readabe by https://github.com/mikedh/trimesh) in either voxel id or coordinates. If the path is relative, it will be interpreted as relative to the location of ``region_structure.yaml`` file. If the ``path`` is a folder, then it must contain mesh files which will be used for this rule.
 * ``mesh_type`` entry can be used with value ``voxel`` (default) for voxel ids or ``spatial`` for coordinates of the mesh.
-* For a folder of meshes, the way the mesh are selected to act as boundary depends on the rule parametrized by ``multimesh_mode``, which can be set to 
+* For a folder of meshes, the way the mesh are selected to act as boundary depends on the rule parametrized by ``multimesh_mode``, which can be set to
 
-   * ``closest`` (default) for selecting the closest (in euclidiean morm) mesh to the soma as the unique mesh, 
+   * ``closest`` (default) for selecting the closest (in euclidiean morm) mesh to the soma as the unique mesh,
    * ``closest_y`` as closst along the y direction only,
    * ``inside`` to select the mesh surrounding the soma (used for barrel cortext for example),
    * ``territories``, specific for olfactory bulb glomeruli (see code for details, it assumes specific form of input data)
 
-* There are two main modes for these rules, parametrized by ``modes``. 
+* There are two main modes for these rules, parametrized by ``modes``.
 
-   * ``repulsive`` (default) where the mesh will act as a repulsive wall/boundary, 
+   * ``repulsive`` (default) where the mesh will act as a repulsive wall/boundary,
    * ``attractive`` where the mesh will attract the growing sections (more experimental, used for glomeruli spherical meshes for example).
 
 * This rule can then be applied to either the section growing with ``params_section`` or trunk placements with ``params_trunk`` (only if the non-default trunk angle method is selected, see above), with following entries:

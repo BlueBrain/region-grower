@@ -48,7 +48,10 @@ from neuroc.scale import scale_morphology  # noqa: E402 ; pylint: disable=C0413
 from neuroc.scale import scale_section  # noqa: E402 ; pylint: disable=C0413
 from neurots import NeuronGrower  # noqa: E402 ; pylint: disable=C0413
 from neurots import NeuroTSError  # noqa: E402 ; pylint: disable=C0413
-from neurots.utils import Y_DIRECTION  # noqa: E402 ; pylint: disable=C0413
+try:
+    from neurots.utils import Y_DIRECTION  # noqa: E402 ; pylint: disable=C0413
+except ImportError:
+    from neurots.utils import PIA_DIRECTION as Y_DIRECTION  # noqa: E402 ; pylint: disable=C0413
 from voxcell import VoxcellError  # noqa: E402 ; pylint: disable=C0413
 from voxcell.cell_collection import CellCollection  # noqa: E402 ; pylint: disable=C0413
 from voxcell.voxel_data import OrientationField  # noqa: E402 ; pylint: disable=C0413

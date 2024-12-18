@@ -1,9 +1,20 @@
-import neurom as nm
-from neurom import view
-from matplotlib.backends.backend_pdf import PdfPages
-import os
-import matplotlib.pyplot as plt
+# LICENSE HEADER MANAGED BY add-license-header
+#
+# Copyright (c) 2023-2024 Blue Brain Project, EPFL.
+#
+# This file is part of region-grower.
+# See https://github.com/BlueBrain/region-grower for further info.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
 import json
+import os
+
+import matplotlib.pyplot as plt
+import neurom as nm
+from matplotlib.backends.backend_pdf import PdfPages
+from neurom import view
 from voxcell.cell_collection import CellCollection
 
 if __name__ == "__main__":

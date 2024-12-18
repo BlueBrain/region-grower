@@ -586,7 +586,9 @@ class SynthesizeMorphologies:
                         boundary["path"] = str(
                             (self.atlas.region_structure_base_path / boundary["path"]).absolute()
                         )
-                    if boundary.get("multimesh_mode", "closest") == "territories":  # pragma: no cover
+                    if (
+                        boundary.get("multimesh_mode", "closest") == "territories"
+                    ):  # pragma: no cover
                         territories = self.atlas.atlas.load_data("glomerular_territories")
                         pos = self.cells_data.loc[region_mask, ["x", "y", "z"]].to_numpy()
                         self.cells_data.loc[region_mask, "glomerulus_id"] = territories.lookup(

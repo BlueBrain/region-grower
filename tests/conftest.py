@@ -29,8 +29,8 @@ from region_grower.morph_io import MorphWriter
 from .data_factories import generate_axon_morph_tsv
 from .data_factories import generate_cell_collection
 from .data_factories import generate_cell_collection_boundary
-from .data_factories import generate_cells_df
 from .data_factories import generate_cells_boundary_df
+from .data_factories import generate_cells_df
 from .data_factories import generate_input_cells
 from .data_factories import generate_input_cells_boundary
 from .data_factories import generate_mesh
